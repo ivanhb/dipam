@@ -1,0 +1,34 @@
+
+.cover{
+  margin:0 auto;
+}
+
+.diagram_content{
+  margin:0 auto;
+  width:850px;
+  height: 500px;
+}
+
+.diagram_container{
+}
+
+.property-builder-drop-container.yui3-dd-drop{
+  background-color:#fff2e6;
+}
+
+/**/
+.diagram-node-tool-icon{
+  background: url(../../doc/tool.png) no-repeat scroll center center transparent;
+}
+.diagram-node-tool .diagram-node-tool {
+    background: url(../../doc/tool.png) no-repeat scroll center center transparent;
+}
+
+
+.diagram-node-fork-icon {
+    background: url(../../doc/tool.png) no-repeat scroll center center transparent;
+}
+
+.diagram-node-fork .diagram-node-content {
+    background: url(../../doc/tool.png) no-repeat scroll center center transparent;
+}

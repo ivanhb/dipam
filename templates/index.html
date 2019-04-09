@@ -1,7 +1,29 @@
 <!doctype html>
-<title>Hello from Flask</title>
-{% if name %}
-  <h1>Hello {{ workflow }}!</h1>
-{% else %}
-  <h1>Hello, World!</h1>
-{% endif %}
+<head>
+
+    <!--
+    <title>Hello from Flask</title>
+    {% if name %}
+      <h1>Hello {{ workflow }}!</h1>
+    {% else %}
+      <h1>Hello, World!</h1>
+    {% endif %}
+    -->
+    <script src="https://cdn.alloyui.com/3.0.1/aui/aui-min.js"></script>
+    <!--<script src="../src/alloy-ui/src/aui-diagram-builder/js/aui-diagram-builder.js"></script>-->
+    <link href="https://cdn.alloyui.com/3.0.1/aui-css/css/bootstrap.min.css" rel="stylesheet"></link>
+    <link href="../src/css/index.css" rel="stylesheet"></link>
+
+</head>
+<body>
+
+  <div class="cover">
+    <div id="diagram-builder-bb" class="diagram_container">
+      <div id="diagram-builder-sn" class="diagram_content"></div>
+    </div>
+  </div>
+
+  <script src="../src/js/diagram.js"></script>
+
+</body>
+</html>
