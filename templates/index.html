@@ -1,29 +1,34 @@
 <!doctype html>
-<head>
+  <head>
+    <title>cytoscape-edgehandles.js demo</title>
 
-    <!--
-    <title>Hello from Flask</title>
-    {% if name %}
-      <h1>Hello {{ workflow }}!</h1>
-    {% else %}
-      <h1>Hello, World!</h1>
-    {% endif %}
-    -->
-    <script src="https://cdn.alloyui.com/3.0.1/aui/aui-min.js"></script>
-    <!--<script src="../src/alloy-ui/src/aui-diagram-builder/js/aui-diagram-builder.js"></script>-->
-    <link href="https://cdn.alloyui.com/3.0.1/aui-css/css/bootstrap.min.css" rel="stylesheet"></link>
-    <link href="../src/css/index.css" rel="stylesheet"></link>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 
-</head>
-<body>
+    <link rel="stylesheet" href="../src/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../src/css/index.css">
 
-  <div class="cover">
-    <div id="diagram-builder-bb" class="diagram_container">
-      <div id="diagram-builder-sn" class="diagram_content"></div>
-    </div>
-  </div>
 
-  <script src="../src/js/diagram.js"></script>
+    <script src="../static/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.10/lodash.js"></script>
 
-</body>
+    <!--config file-->
+    <!--<script type="text/javascript" src="../src/js/config.json"></script>-->
+    <!--cytoscape-->
+    <script src="../src/js/cytoscape-edgehandles.js"></script>
+    <script src="../src/js/diagram_cytoscape.js"></script>
+  </head>
+
+  <body>
+    <span>
+      <div id="control">
+        <ul id="control_nav" class="nav control-nav"><li id="nav_overview" class="active"><a href="javascript:">Overview</a></li><li id="nav_info" class=""><a href="javascript:">Info</a></li></ul>
+      </div>
+    </span><span><div id="cy"></div></span>
+
+
+
+  </body>
+
 </html>

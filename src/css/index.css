@@ -1,34 +1,40 @@
-
-.cover{
-  margin:0 auto;
+body {
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  font-size: 14px;
 }
 
-.diagram_content{
-  margin:0 auto;
-  width:850px;
+#control {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  top: 20px;
+  left: 20px;
+  border: solid 1px;
+}
+
+#cy {
+  border: solid 1px;
+  position: absolute;
+  width: 70%;
   height: 500px;
+  left: 350px;
+  top: 20px;
+  bottom: 0;
+  right: 0;
+  z-index: 999;
 }
 
-.diagram_container{
+#control_nav {
+    width: 100%;
+    text-align:center;
 }
-
-.property-builder-drop-container.yui3-dd-drop{
-  background-color:#fff2e6;
+#control_nav li {
+  display:inline-block;
 }
-
-/**/
-.diagram-node-tool-icon{
-  background: url(../../doc/tool.png) no-repeat scroll center center transparent;
-}
-.diagram-node-tool .diagram-node-tool {
-    background: url(../../doc/tool.png) no-repeat scroll center center transparent;
-}
-
-
-.diagram-node-fork-icon {
-    background: url(../../doc/tool.png) no-repeat scroll center center transparent;
-}
-
-.diagram-node-fork .diagram-node-content {
-    background: url(../../doc/tool.png) no-repeat scroll center center transparent;
+#control_nav li a{font-size:150%;}
+#control_nav > .active > a,
+#control_nav > .active > a:hover,
+#control_nav > .active > a:focus {
+  color: black;
+  border-bottom-color: grey ;
 }
