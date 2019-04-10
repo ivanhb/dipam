@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="../src/css/index.css">
 
 
-    <script src="../static/js/bootstrap.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="../src/js/bootstrap.min.js"></script>
     <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.10/lodash.js"></script>
 
@@ -17,18 +17,20 @@
     <!--<script type="text/javascript" src="../src/js/config.json"></script>-->
     <!--cytoscape-->
     <script src="../src/js/__local__config_loader.js"></script>
+    <script src="../src/js/interface.js"></script>
     <script src="../src/js/cytoscape-edgehandles.js"></script>
     <script src="../src/js/diagram_cytoscape.js"></script>
+
+
   </head>
 
   <body>
     <span>
       <div id="control">
-        <ul id="control_nav" class="nav control-nav"><li id="nav_overview" class="active"><a href="javascript:">Overview</a></li><li id="nav_info" class=""><a href="javascript:">Info</a></li></ul>
+        <ul id="control_nav" class="nav control-nav"><li id="nav_overview" class="nav-btn"><a id="nav_overview_a" href="">Overview</a></li><li id="nav_info" class="nav-btn"><a id="nav_info_a" href="">Info</a></li></ul>
+        <div id="control_body"></div>
       </div>
     </span><span><div id="cy"></div></span>
-
-
 
   </body>
 

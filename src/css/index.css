@@ -31,10 +31,18 @@ body {
 #control_nav li {
   display:inline-block;
 }
-#control_nav li a{font-size:150%;}
+#control_nav li a{font-size:150%; background-color: transparent;}
 #control_nav > .active > a,
 #control_nav > .active > a:hover,
 #control_nav > .active > a:focus {
   color: black;
+  border-bottom: solid;
   border-bottom-color: grey ;
+  margin-bottom: 25px;
+}
+
+#control_body *{
+  text-align:center;
+  margin: auto 0;
+  width: 100%;
 }

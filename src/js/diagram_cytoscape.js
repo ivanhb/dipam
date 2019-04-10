@@ -1,6 +1,10 @@
+var vw_interface = null;
+
 document.addEventListener('DOMContentLoaded', function(){
 
-        var vwbata = new vwbata();
+        vw_interface = new vwbata(config);
+
+        vw_interface.init_nav();
 
         var cy = window.cy = cytoscape({
           container: document.getElementById('cy'),
@@ -85,10 +89,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
           elements: {
             nodes: [
-              { data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'txt_data' } },
-              { data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 'filter_name' } },
-              { data: { id: 't-0002', name: 'Filter footnotes (t2)', type: 'tool', value: 'filter_footnotes' } },
-              { data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 'bar_chart' } }
+              { data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
+              { data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 't-filter-names' } },
+              { data: { id: 't-0002', name: 'Topic modeling (t2)', type: 'tool', value: 't-topic-lda' } },
+              { data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 't-chart-bar' } }
             ],
             edges: [
               { data: { source: 'd-0001', target: 't-0001' } },
@@ -98,10 +102,10 @@ document.addEventListener('DOMContentLoaded', function(){
           }
         });
 
-        cy.nodes().one('click', function(e){
+        cy.nodes().on('click', function(e){
           var node = this._private.data;
           console.log(node);
-          build_info(node);
+          vw_interface.click_on_node(node);
         });
 
         var eh = cy.edgehandles();
