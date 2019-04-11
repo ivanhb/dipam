@@ -12,13 +12,13 @@ class vwbata {
     overview_section_html = "";
 
     constructor(config_file) {
-        this.nodes = [];
-        this.edges = [];
 
         //define the dom ids
         this.NAV_INFO = document.getElementById('nav_info_a');
         this.NAV_OVERVIEW = document.getElementById('nav_overview_a');
         this.CONTROL_CONTAINER = document.getElementById('control_body');
+        this.ADD_TOOL = document.getElementById('add_tool');
+        this.ADD_DATA = document.getElementById('add_data');
 
         //Construct the DOM types
         if (config_file.hasOwnProperty('tool')) {
@@ -34,12 +34,12 @@ class vwbata {
       this.NAV_INFO.setAttribute("href", "javascript:vw_interface.click_info_nav()");
     }
 
-    add_node(n) {
-      this.nodes.push(n);
+    __get__add_tool_container(){
+      return this.ADD_TOOL;
     }
 
-    add_edge(e) {
-      this.nodes.push(e);
+    __get__add_data_container(){
+      return this.ADD_DATA;
     }
 
     get_tools() {
@@ -87,7 +87,7 @@ class vwbata {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+obj_dom_type.title+`</label>
                       </div>
-                      <select class="custom-select">`+str_options+`</select>
+                      <select class="val-box custom-select">`+str_options+`</select>
                 </div>
                 `;
           break;
@@ -97,7 +97,7 @@ class vwbata {
               <div class="input-group-prepend">
                 <label class="input-group-text">`+obj_dom_type.title+`</label>
               </div>
-              <input value="`+node.name+`" type="text">
+              <input class="val-box" value="`+node.name+`" type="text">
             </div>
             `;
           break;
@@ -131,8 +131,6 @@ class vwbata {
           document.getElementsByClassName('nav-btn')[i].className = "nav-btn";
         }
       }
-
     }
-
 
 }

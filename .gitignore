@@ -2,4 +2,5 @@
 __pycache__
 .ipynb_checkpoints
 __local__config_loader
-__local_index.html
+__local__index.html
+__local__config_loader.js

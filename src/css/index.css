@@ -5,15 +5,17 @@ body {
 
 #control {
   position: absolute;
-  width: 300px;
+  width: 350px;
   height: 300px;
-  top: 20px;
-  left: 20px;
-  border: solid 1px;
+  top: 120px;
+  border-right: solid 3px;
+  border-color: gray;
 }
 
+
 #cy {
-  border: solid 1px;
+  border-top: solid 3px;
+  border-color: grey ;
   position: absolute;
   width: 70%;
   height: 500px;
@@ -27,6 +29,8 @@ body {
 #control_nav {
     width: 100%;
     text-align:center;
+    /*border-top: solid 1px;*/
+    border-top-color: grey ;
 }
 #control_nav li {
   display:inline-block;
@@ -37,12 +41,34 @@ body {
 #control_nav > .active > a:focus {
   color: black;
   border-bottom: solid;
-  border-bottom-color: grey ;
+  border-bottom-color: grey;
   margin-bottom: 25px;
 }
-
-#control_body *{
-  text-align:center;
-  margin: auto 0;
+#control_body{
   width: 100%;
+
 }
+
+#control_body * + *{
+  top: 25px;
+}
+
+.input-group{
+  font-size:120%;
+  left: 50px;
+  width: 300px;
+}
+
+
+#diagram_editor{
+  position: absolute;
+  width: 350px;
+  top: 30px;
+}
+#diagram_editor_nav li {
+  display:inline-block;
+  margin-left: 20px;
+}
+#diagram_editor_nav li{
+}
+#diagram_editor_nav li button{font-size:140%;}
