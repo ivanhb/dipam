@@ -1,13 +1,14 @@
 
 class diagram {
-
   NODE_COLOR = {'tool': 'orange', 'data': '#74beda'};
   NODE_SHAPE = {'tool': 'diamond', 'data': 'round-rectangle'};
 
-  constructor(container_id, config) {
+  constructor(container_id, config, diagram_name) {
     this.CONFIG = config;
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
+
+    this.DIAGRAM_GENERAL = {id: 'diagram-01', name: diagram_name, type: 'general'};
 
     this.ALL_NODES = [
       { style: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data}, data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
@@ -17,9 +18,9 @@ class diagram {
     ];
 
     this.ALL_EDGES = [
-      { data: { source: 'd-0001', target: 't-0001' } },
-      { data: { source: 'd-0001', target: 't-0003' } },
-      { data: { source: 't-0002', target: 't-0003' } }
+      { data: {id: 'e-0001', source: 'd-0001', target: 't-0001' } },
+      { data: {id: 'e-0002', source: 'd-0001', target: 't-0003' } },
+      { data: {id: 'e-0003',source: 't-0002', target: 't-0003' } }
     ];
 
     this.cy = cytoscape({
@@ -110,6 +111,10 @@ class diagram {
     });
   }
 
+  get_diagram_gen_node(){
+    return this.DIAGRAM_GENERAL;
+  }
+
   get_tools(){
     var ret_arr = [];
     for (var k in this.ALL_NODES) {
@@ -193,4 +198,39 @@ class diagram {
     }
     return node_obj;
   }
+
+
+  editelem(elem_id){
+    var corresponding_elem = this._search_for_elem(elem_id);
+    console.log(corresponding_elem);
+  }
+
+  removeelem(elem_id){
+    var corresponding_elem = this._search_for_elem(elem_id);
+    console.log(corresponding_elem);
+  }
+
+  _search_for_elem(elem_id){
+    //check if is the DIAGRAM_GENERAL
+    if (this.DIAGRAM_GENERAL.id == elem_id) {
+      return this.DIAGRAM_GENERAL;
+    }
+
+    //check ALL_NODES
+    for (var i = 0; i < this.ALL_NODES.length; i++) {
+      if(this.ALL_NODES[i].data.id == elem_id){
+        return this.ALL_NODES[i];
+      }
+    }
+
+    //check ALL_EDGES
+    for (var i = 0; i < this.ALL_EDGES.length; i++) {
+      if(this.ALL_EDGES[i].data.id == elem_id){
+        return this.ALL_EDGES[i];
+      }
+    }
+
+    return -1;
+  }
+
 }

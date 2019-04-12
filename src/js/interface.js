@@ -1,15 +1,13 @@
 
 class vwbata {
 
-    GENERAL = {'id': 'catarsi_tool','name': 'My Catarsi Diagram'};
-
     DOMTYPE = {
       'graphName': {'type':'input_box', 'title': 'Graph name', 'value':'name'},
       'dataName': {'type':'input_box', 'title': 'Data name', 'value':'name'},
       'toolName': {'type':'input_box', 'title': 'Tool name', 'value':'name'},
       'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
-      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'', 'event':{'onclick':"click_editelem([[id]])"}},
-      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'', 'event':{'onclick':"click_removeelem([[id]])"}}
+      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'', 'event':{'onclick':"[[DIAGRAM]].editelem([[id]])"}},
+      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'', 'event':{'onclick':"[[DIAGRAM]].removeelem([[id]])"}}
     }
 
     OVERVIEW_SECTION = "graphName-editElem";
@@ -19,7 +17,9 @@ class vwbata {
     overview_section_html = "";
     eventdom = {};
 
-    constructor(config_file) {
+    constructor(config_file, diagram_instance,interface_instance) {
+        this.DIAGRAM_INSTANCE = diagram_instance;
+        this.INTERFACE_INSTANCE = interface_instance;
 
         //define the dom ids
         this.NAV_INFO = document.getElementById('nav_info_a');
@@ -36,7 +36,7 @@ class vwbata {
           }
         }
 
-        this.build_overview();
+        //this.build_overview();
     }
 
     init_nav() {
@@ -62,10 +62,10 @@ class vwbata {
         return all_tools;
     }
 
-    build_overview() {
+    build_overview(node_general) {
       //first decide what doms should be visualized (defined in DOMTYPE)
       var dom_key = this.OVERVIEW_SECTION;
-      this.overview_section_html = this._build_section(dom_key, this.GENERAL);
+      this.overview_section_html = this._build_section(dom_key, node_general);
     }
 
     build_info(node) {
@@ -86,7 +86,7 @@ class vwbata {
         var obj_dom = this.DOMTYPE[dom_key_arr[i]];
         obj_dom['id'] = dom_key_arr[i];
         if (obj_dom.event != undefined) {
-            this.eventdom[dom_key_arr[i]] = this.__normalize_eventdom(dom_key_arr[i],obj_dom,node);
+            this.eventdom[dom_key_arr[i]] = this.__normalize_eventdom(obj_dom,node);
         }
         if (obj_dom.position != 'divfoot') {
           str_html = str_html + this.__build_corresponding_dom(obj_dom, node);
@@ -103,32 +103,29 @@ class vwbata {
       }
       str_html = str_html + '</div>';
 
-      console.log(this.eventdom);
       return str_html;
     }
-    __normalize_eventdom(key, obj_dom, node){
+    __normalize_eventdom(obj_dom, node){
       var res_dom = JSON.parse(JSON.stringify(obj_dom));
-      res_dom['class'] = key;
       for (var k_event_type in obj_dom.event) {
         var event_func = obj_dom.event[k_event_type];
-        var regex = /\[\[(.*)\]\]/g;
+
+        var arr_regex = [/\[\[(DIAGRAM)\]\]/g,/\[\[(INTERFACE)\]\]/g,/\[\[(.*)\]\]/g]
         var str = event_func;
-        let m;
-        var param = null;
-        while ((m = regex.exec(str)) !== null) {
-            if (m.index === regex.lastIndex) {
-                regex.lastIndex++;
+        for (var i = 0; i < arr_regex.length; i++) {
+          var param = this.apply_regex(arr_regex[i],str);
+          if (param != null) {
+                str = str.replace("[["+param+"]]","");
+                var replacer = "";
+                if (param == "DIAGRAM") {
+                  replacer = this.DIAGRAM_INSTANCE;
+                }else if (param == "INTERFACE") {
+                  replacer = this.INTERFACE_INSTANCE;
+                }else{
+                  replacer = "'"+node[param]+"'";
+                }
+                res_dom.event[k_event_type] = res_dom.event[k_event_type].replace("[["+param+"]]",replacer);
             }
-            // The result can be accessed through the `m`-variable.
-            m.forEach((match, groupIndex) => {
-                param = m[groupIndex];
-            });
-            if (param != null) {
-              break;
-            }
-        }
-        if (param != null) {
-          res_dom.event[k_event_type] = res_dom.event[k_event_type].replace("[["+param+"]]",node[param]);
         }
       }
       return res_dom;
@@ -163,7 +160,7 @@ class vwbata {
                     <div class="input-group-prepend">
                       <label class="input-group-text">`+obj_dom_type.title+`</label>
                     </div>
-                    <select `+str_html_event+` class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
+                    <select `+str_html_event+` id="`+obj_dom_type.id+`" class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
               </div>
               `;
         break;
@@ -173,12 +170,12 @@ class vwbata {
             <div class="input-group-prepend">
               <label class="input-group-text">`+obj_dom_type.title+`</label>
             </div>
-            <input `+str_html_event+` class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
+            <input `+str_html_event+` id="`+obj_dom_type.id+`" class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
           </div>
           `;
         break;
         case 'light_button':
-          str_html = str_html + '<span><button '+str_html_event+' type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
+          str_html = str_html + '<span><button '+str_html_event+' id="'+obj_dom_type.id+'" type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
           break;
       }
 
@@ -187,6 +184,10 @@ class vwbata {
 
     __get__eventdom_containers(){
       var containers = [];
+      for (var k_eventelem in this.eventdom) {
+        containers.push(document.getElementById(this.eventdom[k_eventelem].id));
+      }
+      return containers;
     }
 
     click_on_node(node){
@@ -215,9 +216,22 @@ class vwbata {
       }
     }
 
-    click_editelem(){
-    }
+    apply_regex(regex,str){
+      let m;
+      var param = null;
+      while ((m = regex.exec(str)) !== null) {
+          if (m.index === regex.lastIndex) {
+              regex.lastIndex++;
+          }
+          // The result can be accessed through the `m`-variable.
+          m.forEach((match, groupIndex) => {
+              param = m[groupIndex];
+          });
 
-    click_removeelem(){
+          if (param != null) {
+            break;
+          }
     }
+    return param;
+  }
 }
