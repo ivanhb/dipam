@@ -1,3 +1,7 @@
+:disabled{
+  opacity: 0.6;
+}
+
 body {
   font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
   font-size: 14px;
@@ -25,9 +29,15 @@ body {
 #control_foot{
   padding-top: 20%;
   margin: 0 auto;
-  border-bottom: solid 2px gray;
+  border-bottom: solid 2px black;
   text-align:center;
   width: 80%;
+}
+#control_foot *{
+  font-size: 103%;
+}
+#control_foot *:hover{
+ color: #82683b;
 }
 
 
@@ -55,13 +65,17 @@ body {
 #control_nav li {
   display:inline-block;
 }
-#control_nav li a{font-size:150%; background-color: transparent;}
+#control_nav li a{
+  font-size:150%;
+  background-color: transparent;
+  color: black;
+}
 #control_nav > .active > a,
 #control_nav > .active > a:hover,
 #control_nav > .active > a:focus {
-  color: black;
+  color: #82683b;
   border-bottom: solid;
-  border-bottom-color: grey;
+  border-bottom-color: #82683b;
   margin-bottom: 25px;
 }
 #control_body{
@@ -78,7 +92,6 @@ body {
   left: 50px;
   width: 300px;
 }
-
 
 #diagram_editor{
   position: absolute;

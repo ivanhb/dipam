@@ -1,15 +1,15 @@
 
 class vwbata {
 
-    GENERAL = {'name': 'My Catarsi Diagram'};
+    GENERAL = {'id': 'catarsi_tool','name': 'My Catarsi Diagram'};
 
     DOMTYPE = {
       'graphName': {'type':'input_box', 'title': 'Graph name', 'value':'name'},
       'dataName': {'type':'input_box', 'title': 'Data name', 'value':'name'},
       'toolName': {'type':'input_box', 'title': 'Tool name', 'value':'name'},
       'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
-      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':''},
-      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':''},
+      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'', 'event':{'onclick':"click_editelem([[id]])"}},
+      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'', 'event':{'onclick':"click_removeelem([[id]])"}}
     }
 
     OVERVIEW_SECTION = "graphName-editElem";
@@ -17,6 +17,7 @@ class vwbata {
 
     info_section_html = "";
     overview_section_html = "";
+    eventdom = {};
 
     constructor(config_file) {
 
@@ -75,6 +76,7 @@ class vwbata {
 
     _build_section(dom_key, node){
 
+      this.eventdom = {};
       //now populate the html page
       //first the body
       var domfoot_key_arr = [];
@@ -82,6 +84,10 @@ class vwbata {
       var dom_key_arr = dom_key.split("-");
       for (var i = 0; i < dom_key_arr.length; i++) {
         var obj_dom = this.DOMTYPE[dom_key_arr[i]];
+        obj_dom['id'] = dom_key_arr[i];
+        if (obj_dom.event != undefined) {
+            this.eventdom[dom_key_arr[i]] = this.__normalize_eventdom(dom_key_arr[i],obj_dom,node);
+        }
         if (obj_dom.position != 'divfoot') {
           str_html = str_html + this.__build_corresponding_dom(obj_dom, node);
         }else {
@@ -97,10 +103,48 @@ class vwbata {
       }
       str_html = str_html + '</div>';
 
+      console.log(this.eventdom);
       return str_html;
+    }
+    __normalize_eventdom(key, obj_dom, node){
+      var res_dom = JSON.parse(JSON.stringify(obj_dom));
+      res_dom['class'] = key;
+      for (var k_event_type in obj_dom.event) {
+        var event_func = obj_dom.event[k_event_type];
+        var regex = /\[\[(.*)\]\]/g;
+        var str = event_func;
+        let m;
+        var param = null;
+        while ((m = regex.exec(str)) !== null) {
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+            // The result can be accessed through the `m`-variable.
+            m.forEach((match, groupIndex) => {
+                param = m[groupIndex];
+            });
+            if (param != null) {
+              break;
+            }
+        }
+        if (param != null) {
+          res_dom.event[k_event_type] = res_dom.event[k_event_type].replace("[["+param+"]]",node[param]);
+        }
+      }
+      return res_dom;
     }
     __build_corresponding_dom(obj_dom_type, node){
       var str_html= "";
+
+      //check if there is an event handler for the dom
+      var str_html_event = "";
+      if(obj_dom_type.id in this.eventdom){
+        var event_obj = this.eventdom[obj_dom_type.id].event;
+        for (var k_event in event_obj) {
+          str_html_event = str_html_event+' '+k_event+'="'+event_obj[k_event]+'"';
+        }
+      }
+
       switch (obj_dom_type.type) {
         case 'dropdown':
               var str_options = "";
@@ -119,7 +163,7 @@ class vwbata {
                     <div class="input-group-prepend">
                       <label class="input-group-text">`+obj_dom_type.title+`</label>
                     </div>
-                    <select class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
+                    <select `+str_html_event+` class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
               </div>
               `;
         break;
@@ -129,16 +173,20 @@ class vwbata {
             <div class="input-group-prepend">
               <label class="input-group-text">`+obj_dom_type.title+`</label>
             </div>
-            <input class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
+            <input `+str_html_event+` class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
           </div>
           `;
         break;
         case 'light_button':
-          str_html = str_html + '<span><button type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
+          str_html = str_html + '<span><button '+str_html_event+' type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
           break;
       }
 
       return str_html;
+    }
+
+    __get__eventdom_containers(){
+      var containers = [];
     }
 
     click_on_node(node){
@@ -167,4 +215,9 @@ class vwbata {
       }
     }
 
+    click_editelem(){
+    }
+
+    click_removeelem(){
+    }
 }
