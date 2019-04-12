@@ -7,15 +7,34 @@ body {
   position: absolute;
   width: 350px;
   height: 300px;
-  top: 120px;
-  border-right: solid 3px;
-  border-color: gray;
+  top: 95px;
+  padding-top: 20px;
+  padding-left: 20px;
+  border-right: solid 4px #917442;
+}
+
+#null_div{
+  position: absolute;
+  width: 350px;
+  height: 130px;
+  top: 390px;
+  border-right: dotted 4px #917442;
+}
+
+
+#control_foot{
+  padding-top: 20%;
+  margin: 0 auto;
+  border-bottom: solid 2px gray;
+  text-align:center;
+  width: 80%;
 }
 
 
 #cy {
-  border-top: solid 3px;
-  border-color: grey ;
+  border-top: solid 2px #917442;
+  border-bottom: solid 2px #917442;
+  border-right: solid 2px #917442;
   position: absolute;
   width: 70%;
   height: 500px;
@@ -24,6 +43,7 @@ body {
   bottom: 0;
   right: 0;
   z-index: 999;
+  background-color: #fff9ef;
 }
 
 #control_nav {
@@ -49,7 +69,7 @@ body {
 
 }
 
-#control_body * + *{
+#control_body .input-group + .input-group{
   top: 25px;
 }
 
@@ -63,12 +83,18 @@ body {
 #diagram_editor{
   position: absolute;
   width: 350px;
-  top: 30px;
+  top: 20px;
+  left: 30px;
+  height: 75px;
+  padding-top: 15px;
+  background-color: #fff9ef;
+  border-bottom: solid 2px #917442;
+  border-top: solid 2px #917442;
+  border-left: solid 2px #917442;
 }
 #diagram_editor_nav li {
   display:inline-block;
-  margin-left: 20px;
 }
-#diagram_editor_nav li{
+#diagram_editor_nav li button{
+  font-size:140%;
 }
-#diagram_editor_nav li button{font-size:140%;}

@@ -42,21 +42,7 @@ function node_onclick_handle(){
 
 
 
-
-
-
-
-/*
-document.querySelector('#draw-on').addEventListener('click', function() {
-    eh.enableDrawMode();
-    cy.fit();
-});
-
-document.querySelector('#draw-off').addEventListener('click', function() {
-    eh.disableDrawMode();
-});
-
-document.querySelector('#start').addEventListener('click', function() {
-    eh.start( cy.$('node:selected') );
-});
-*/
+//******************************************//
+//********** First Operations **************//
+//******************************************//
+vw_interface.click_overview_nav();

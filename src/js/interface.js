@@ -7,11 +7,13 @@ class vwbata {
       'graphName': {'type':'input_box', 'title': 'Graph name', 'value':'name'},
       'dataName': {'type':'input_box', 'title': 'Data name', 'value':'name'},
       'toolName': {'type':'input_box', 'title': 'Tool name', 'value':'name'},
-      'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]}
+      'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
+      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':''},
+      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':''},
     }
 
-    OVERVIEW_SECTION = "graphName";
-    INFO_SECTION = { tool: "toolName-toolType", 'data':"dataName"};
+    OVERVIEW_SECTION = "graphName-editElem";
+    INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-editElem-removeElem"};
 
     info_section_html = "";
     overview_section_html = "";
@@ -62,32 +64,41 @@ class vwbata {
     build_overview() {
       //first decide what doms should be visualized (defined in DOMTYPE)
       var dom_key = this.OVERVIEW_SECTION;
-
-      //now populate the html page
-      var str_html= "";
-      var dom_key_arr = dom_key.split("-");
-      for (var i = 0; i < dom_key_arr.length; i++) {
-        var obj_dom_type = this.DOMTYPE[dom_key_arr[i]];
-        str_html = str_html + this.__build_corresponding_dom(obj_dom_type, this.GENERAL);
-      }
-      this.overview_section_html = str_html;
+      this.overview_section_html = this._build_section(dom_key, this.GENERAL);
     }
 
     build_info(node) {
       //first decide what doms should be visualized (defined in DOMTYPE)
       var dom_key = this.INFO_SECTION[node.type];
+      this.info_section_html = this._build_section(dom_key, node);
+    }
+
+    _build_section(dom_key, node){
 
       //now populate the html page
+      //first the body
+      var domfoot_key_arr = [];
       var str_html= "";
       var dom_key_arr = dom_key.split("-");
       for (var i = 0; i < dom_key_arr.length; i++) {
-        var obj_dom_type = this.DOMTYPE[dom_key_arr[i]];
-        str_html = str_html + this.__build_corresponding_dom(obj_dom_type, node);
+        var obj_dom = this.DOMTYPE[dom_key_arr[i]];
+        if (obj_dom.position != 'divfoot') {
+          str_html = str_html + this.__build_corresponding_dom(obj_dom, node);
+        }else {
+          domfoot_key_arr.push(obj_dom);
+        }
       }
 
-      this.info_section_html = str_html;
-    }
+      //now the foot
+      str_html = str_html + '<div id="control_foot">';
+      for (var i = 0; i < domfoot_key_arr.length; i++) {
+        var obj_dom = domfoot_key_arr[i];
+        str_html = str_html + this.__build_corresponding_dom(obj_dom, node);
+      }
+      str_html = str_html + '</div>';
 
+      return str_html;
+    }
     __build_corresponding_dom(obj_dom_type, node){
       var str_html= "";
       switch (obj_dom_type.type) {
@@ -108,7 +119,7 @@ class vwbata {
                     <div class="input-group-prepend">
                       <label class="input-group-text">`+obj_dom_type.title+`</label>
                     </div>
-                    <select class="val-box custom-select">`+str_options+`</select>
+                    <select class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
               </div>
               `;
         break;
@@ -118,10 +129,13 @@ class vwbata {
             <div class="input-group-prepend">
               <label class="input-group-text">`+obj_dom_type.title+`</label>
             </div>
-            <input class="val-box" value="`+node[obj_dom_type.value]+`" type="text">
+            <input class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
           </div>
           `;
         break;
+        case 'light_button':
+          str_html = str_html + '<span><button type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
+          break;
       }
 
       return str_html;
