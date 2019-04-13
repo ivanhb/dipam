@@ -3,19 +3,29 @@ class vwbata {
 
     DOMTYPE = {
       'graphName': {'type':'input_box', 'title': 'Graph name', 'value':'name'},
+      'edgeName': {'type':'input_box', 'title': 'Edge name', 'value':'id'},
       'dataName': {'type':'input_box', 'title': 'Data name', 'value':'name'},
       'toolName': {'type':'input_box', 'title': 'Tool name', 'value':'name'},
       'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
       'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'', 'event':{'onclick':"[[DIAGRAM]].editelem([[id]])"}},
-      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'', 'event':{'onclick':"[[DIAGRAM]].removeelem([[id]])"}}
+      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
+                'event':{'onclick':"[[DIAGRAM]].removeelem([[id]]);[[INTERFACE]].after_removing();"}}
     }
 
     OVERVIEW_SECTION = "graphName-editElem";
-    INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-editElem-removeElem"};
+    INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-editElem-removeElem", edge: "edgeName-removeElem"};
 
     info_section_html = "";
     overview_section_html = "";
     eventdom = {};
+
+    __set__info_section_html(param){
+      this.info_section_html = param;
+    }
+
+    __set__overview_section_html(param){
+      this.overview_section_html = param;
+    }
 
     constructor(config_file, diagram_instance,interface_instance) {
         this.DIAGRAM_INSTANCE = diagram_instance;
@@ -68,10 +78,10 @@ class vwbata {
       this.overview_section_html = this._build_section(dom_key, node_general);
     }
 
-    build_info(node) {
+    build_info(elem) {
       //first decide what doms should be visualized (defined in DOMTYPE)
-      var dom_key = this.INFO_SECTION[node.type];
-      this.info_section_html = this._build_section(dom_key, node);
+      var dom_key = this.INFO_SECTION[elem.type];
+      this.info_section_html = this._build_section(dom_key, elem);
     }
 
     _build_section(dom_key, node){
@@ -195,9 +205,19 @@ class vwbata {
       this.click_info_nav();
     }
 
+    click_on_edge(edge){
+      this.build_info(edge);
+      this.click_info_nav();
+    }
+
     click_info_nav() {
       this.switch_nav('nav_info');
       this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
+    }
+
+    after_removing(){
+      this.__set__info_section_html("");
+      this.click_overview_nav();
     }
 
     click_overview_nav() {

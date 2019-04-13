@@ -18,9 +18,9 @@ class diagram {
     ];
 
     this.ALL_EDGES = [
-      { data: {id: 'e-0001', source: 'd-0001', target: 't-0001' } },
-      { data: {id: 'e-0002', source: 'd-0001', target: 't-0003' } },
-      { data: {id: 'e-0003',source: 't-0002', target: 't-0003' } }
+      { data: {type: 'edge', id: 'e-0001', source: 'd-0001', target: 't-0001' } },
+      { data: {type: 'edge', id: 'e-0002', source: 'd-0001', target: 't-0003' } },
+      { data: {type: 'edge', id: 'e-0003',source: 't-0002', target: 't-0003' } }
     ];
 
     this.cy = cytoscape({
@@ -208,6 +208,7 @@ class diagram {
   removeelem(elem_id){
     var corresponding_elem = this._search_for_elem(elem_id);
     console.log(corresponding_elem);
+    this.cy.remove("#"+corresponding_elem.data.id);
   }
 
   _search_for_elem(elem_id){

@@ -11,7 +11,6 @@ var diagram_instance = new diagram("cy", config, "VWBATA");
 var cy = diagram_instance.get_diagram_obj();
 window.cy = cy;
 
-
 //******************************************//
 //**********Events Definer *****************//
 //******************************************//
@@ -36,6 +35,13 @@ function node_onclick_handle(){
       var node = this._private.data;
       console.log(node);
       vw_interface.click_on_node(node);
+  });
+
+  //edges on click handler
+  cy.edges().on('click', function(e){
+      var edge = this._private.data;
+      console.log(edge);
+      vw_interface.click_on_edge(edge);
   });
 }
 
