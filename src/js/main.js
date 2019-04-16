@@ -19,21 +19,22 @@ window.cy = cy;
 var eh = cy.edgehandles();
 
 vw_interface.__get__add_data_container().setAttribute("onclick",
-            "diagram_instance.add_node('data');node_onclick_handle();");
+            "diagram_instance.add_node('data');elem_onclick_handle();");
 vw_interface.__get__add_tool_container().setAttribute("onclick",
-            "diagram_instance.add_node('tool');node_onclick_handle();");
+            "diagram_instance.add_node('tool');elem_onclick_handle();");
 
 
 
 //nodes on click handler
-node_onclick_handle();
+elem_onclick_handle();
 
 //define all events handling functions
-function node_onclick_handle(){
+function elem_onclick_handle(){
   //nodes on click handler
   cy.nodes().on('click', function(e){
       var node = this._private.data;
       console.log(node);
+      diagram_instance.click_elem_style(this,'node');
       vw_interface.click_on_node(node);
   });
 
@@ -41,6 +42,7 @@ function node_onclick_handle(){
   cy.edges().on('click', function(e){
       var edge = this._private.data;
       console.log(edge);
+      diagram_instance.click_elem_style(this,'edge');
       vw_interface.click_on_edge(edge);
   });
 }

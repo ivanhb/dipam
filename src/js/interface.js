@@ -7,10 +7,10 @@ class vwbata {
       'dataName': {'type':'input_box', 'title': 'Data name', 'value':'name'},
       'toolName': {'type':'input_box', 'title': 'Tool name', 'value':'name'},
       'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
-      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'', 'event':{'onclick':"[[DIAGRAM]].editelem([[id]])"}},
+      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[DIAGRAM]].editelem([[id]]);[[INTERFACE]].after_editing();"}},
       'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
                 'event':{'onclick':"[[DIAGRAM]].removeelem([[id]]);[[INTERFACE]].after_removing();"}}
-    }
+    };
 
     OVERVIEW_SECTION = "graphName-editElem";
     INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-editElem-removeElem", edge: "edgeName-removeElem"};
@@ -185,7 +185,7 @@ class vwbata {
           `;
         break;
         case 'light_button':
-          str_html = str_html + '<span><button '+str_html_event+' id="'+obj_dom_type.id+'" type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
+          str_html = str_html + '<span class="foot-dom"><button '+str_html_event+' id="'+obj_dom_type.id+'" type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
           break;
       }
 
@@ -220,6 +220,57 @@ class vwbata {
       this.click_overview_nav();
     }
 
+    after_editing(){
+      this._switch_edit_doms();
+      //add two buttons
+      this._cancel_save_btns();
+    }
+    _switch_edit_doms(){
+      var current_flag = false;
+      var arr_doms_toedit = document.getElementsByClassName('val-box');
+      for (var i = 0; i < arr_doms_toedit.length; i++) {
+        if (i == 0) {
+           current_flag = arr_doms_toedit[i].disabled;
+        }
+        arr_doms_toedit[i].disabled = !current_flag;
+      }
+      var newflag = "editon";
+      if (!current_flag == true) {
+        newflag = "editoff";
+      }
+      document.getElementById('editElem').setAttribute('value',newflag);
+    }
+
+    _cancel_save_btns(){
+      var editdom = document.getElementById('editElem');
+      var original_inner_html = editdom.innerHTML;
+      editdom.style.visibility = 'hidden';
+
+      var edit_value = editdom.getAttribute('value');
+      if (edit_value == 'editon') {
+        var two_buttons_dom = `<span id="edit_buttons" class="foot-dom">
+                               <span><button id='edit_cancel' onclick='`+this.INTERFACE_INSTANCE+`.after_editing();' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
+                               <span><button id='edit_save' type='button' class='btn btn-default edit-switch'>Save</button></span>
+                               </span>`;
+        editdom.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.innerHTML;
+      }else {
+        //remove the edit buttons
+        if (document.getElementById('edit_buttons') != undefined) {
+          document.getElementById('edit_buttons').remove();
+        }
+
+        //check in which section I was
+        if (this.active_nav() == 'overview'){
+          this.click_overview_nav();
+        }else if (this.active_nav() == 'info') {
+          this.click_info_nav();
+        }
+        editdom.style.visibility = 'visible';
+      }
+    }
+
+
+
     click_overview_nav() {
       this.switch_nav('nav_overview');
       this.CONTROL_CONTAINER.innerHTML = this.overview_section_html;
@@ -234,6 +285,15 @@ class vwbata {
           document.getElementsByClassName('nav-btn')[i].className = "nav-btn";
         }
       }
+    }
+
+    active_nav(){
+      for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
+        if (document.getElementsByClassName('nav-btn')[i].className == "nav-btn active") {
+          return document.getElementsByClassName('nav-btn')[i].id.replace("nav_","").replace("a_","");
+        }
+      }
+      return -1;
     }
 
     apply_regex(regex,str){

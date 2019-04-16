@@ -23,6 +23,7 @@ body {
   height: 130px;
   top: 390px;
   border-right: dotted 4px #917442;
+  z-index: -1;
 }
 
 
@@ -30,16 +31,29 @@ body {
   padding-top: 20%;
   margin: 0 auto;
   border-bottom: solid 2px black;
-  text-align:center;
   width: 80%;
+  text-align: center;
 }
 #control_foot *{
   font-size: 103%;
 }
-#control_foot *:hover{
+#control_foot .foot-dom button:hover{
  color: #82683b;
 }
 
+#control_foot .foot-dom button#edit_cancel:hover{
+ color: red;
+}
+#control_foot .foot-dom button#edit_save:hover{
+ color: green;
+}
+
+.foot-dom{
+  width: 350px;
+}
+.edit-switch{
+  margin-bottom: 30px;
+}
 
 #cy {
   border-top: solid 2px #917442;
@@ -54,6 +68,12 @@ body {
   right: 0;
   z-index: 999;
   background-color: #fff9ef;
+}
+.node-style{
+  border: transparent;
+}
+.node-style-click{
+  background-color: black;
 }
 
 #control_nav {

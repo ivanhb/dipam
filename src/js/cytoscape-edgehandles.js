@@ -518,15 +518,13 @@ function makeEdges() {
     added = added.merge(interNode).merge(source2inter).merge(inter2target);
   } else {
     // flat
-    var source2target = cy.add(getEleJson({
-      group: 'edges',
-      data: {
-        source: source.id(),
-        target: target.id()
-      }
-    }, options.edgeParams(source, target, 0), classes));
+		var edge_obj = diagram_instance.gen_edge(source.id(),target.id());
+		var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
+		diagram_instance.add_edge(edge_obj);
 
     added = added.merge(source2target);
+
+		elem_onclick_handle();
   }
 
   if (preview) {
