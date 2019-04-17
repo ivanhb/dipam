@@ -7,6 +7,8 @@ class diagram {
   EDGE_COLOR = {'edge':'gray'};
   EDGE_ONCLICK_COLOR = '#663500';
 
+  COMPATIBLE_STYLE = {true: {'opacity': '1'}, false:{'opacity': '0.3'}};
+
   constructor(container_id, config, diagram_name) {
     this.CONFIG = config;
 
@@ -235,10 +237,16 @@ class diagram {
     d_node.data(target_elem.data);
     //update its style too
     this.update_style(d_node, target_elem.data.type, target_elem.data.value);
+    //check_also_new compatibility
+    this.check_node_compatibility(target_elem.data);
+
     return target_elem;
   }
+
   update_style(elems, elem_type, type){
     try {
+      set_compatibility(selector= null, active = true)
+
       if (elem_type == "node") {
         elems.cy.nodes(elem_type+'[type="'+type+'"]').style(this.STYLE[elem_type][type]);
       }else if (elem_type == "edge") {
@@ -333,13 +341,11 @@ class diagram {
   check_node_compatibility(node){
 
     var all_diagram_nodes = this.cy.nodes();
-    //first make all transparent
-    all_diagram_nodes.style({'opacity': '0.3'});
-    this.cy.nodes().active(false);
 
+    //first make all transparent
+    this.set_compatibility(null,false);
     //activate selected node
-    this.cy.nodes("node[id='"+node.id+"']").style({'opacity': '1'});
-    this.cy.nodes("node[id='"+node.id+"']").active(false);
+    this.set_compatibility("node[id='"+node.id+"']", true);
 
     //first check if the giving node have a specific output or is 'data' node type
     var output_sel_node = this.CONFIG[node.type][node.value].output;
@@ -350,32 +356,45 @@ class diagram {
         output_sel_node = node.value;
       }
 
+      console.log(all_diagram_nodes);
       //enable the compatible ones
       var compatible_nodes = [];
       for (var i = 0; i < all_diagram_nodes.length; i++) {
 
         var d_node = all_diagram_nodes[i];
-        var d_node_value = d_node._private.data.value;
         var d_node_type = d_node._private.data.type;
-        var compatible_input = this.CONFIG[d_node_type][d_node_value].compatible_input;
 
-        if (compatible_input != undefined) {
-          console.log(compatible_input,output_sel_node);
-          for (var j = 0; j < compatible_input.length; j++) {
-            if(output_sel_node.indexOf(compatible_input[j]) != -1){
-              //activate again the node
-              d_node.style({'opacity': '1'});
-              d_node.active(true);
+        if ((d_node_type == 'tool') || (d_node_type == 'data')) {
+          var d_node_value = d_node._private.data.value;
+          var d_node_id = d_node._private.data.id;
+
+          var compatible_input = this.CONFIG[d_node_type][d_node_value].compatible_input;
+
+          if (compatible_input != undefined) {
+            console.log(compatible_input,output_sel_node);
+            for (var j = 0; j < compatible_input.length; j++) {
+              if(output_sel_node.indexOf(compatible_input[j]) != -1){
+                //activate again the node
+                this.set_compatibility("node[id='"+d_node_id+"']",true);
+              }
             }
           }
         }
-
       }
     }else {
       //is a terminal node
     }
 
 
+  }
+
+  set_compatibility(selector= null, active = true){
+    var target_element = this.cy.nodes();
+    if (selector != null) {
+      target_element = this.cy.nodes(selector);
+    }
+    target_element.style(this.COMPATIBLE_STYLE[active]);
+    target_element.active(active);
   }
 
   gen_id(type){
