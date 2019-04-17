@@ -1,6 +1,9 @@
 
 
-//create an instance of the interface
+//create an instance of the interface, it takes:
+// The configuration file
+// The string name of the diagram instance (which it will be created later)
+// The string name of the interface instance (the variable name)
 var vw_interface = new vwbata(config, "diagram_instance", "vw_interface");
 
 //init the interface
@@ -11,9 +14,12 @@ var diagram_instance = new diagram("cy", config, "VWBATA");
 var cy = diagram_instance.get_diagram_obj();
 window.cy = cy;
 
-//******************************************//
-//**********Events Definer *****************//
-//******************************************//
+
+
+
+//************************************************************//
+//********* First Define the Events handlers *****************//
+//************************************************************//
 
 //add the edges event handler
 var eh = cy.edgehandles();
@@ -35,6 +41,7 @@ function elem_onclick_handle(){
       var node = this._private.data;
       console.log(node);
       diagram_instance.click_elem_style(node,'node');
+      diagram_instance.check_node_compatibility(node);
       vw_interface.click_on_node(node);
   });
 

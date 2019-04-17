@@ -23,11 +23,11 @@ var config = {
             "param": ["p0"],
             "compatible_input": ["d1"]
         },
-        "t-filter-name": {
+        "t-filter-names": {
             "label": "Filter names",
             "function": "filter_names",
             "compatible_input": ["d0"],
-            "output": ["d0"]
+            "output": ["d1"]
         }
   },
   "param": {

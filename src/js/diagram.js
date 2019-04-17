@@ -29,6 +29,16 @@ class diagram {
       { data: {type: 'edge', id: 'e-0003',source: 't-0002', target: 't-0003' } }
     ];
 
+    this.STYLE = {
+      node: {
+        tool: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool},
+        data: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data},
+      },
+      edge:{
+        edge: {'line-color': this.EDGE_COLOR.edge}
+      }
+    }
+
     this.cy = cytoscape({
               container: this.DIAGRAM_CONTAINER,
 
@@ -116,8 +126,8 @@ class diagram {
               }
     });
 
-    this.cy.nodes('node[type="tool"]').style({'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool});
-    this.cy.nodes('node[type="data"]').style({'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data});
+    this.cy.nodes('node[type="tool"]').style(this.STYLE.node.tool);
+    this.cy.nodes('node[type="data"]').style(this.STYLE.node.data);
 
     console.log(this.cy.nodes());
   }
@@ -220,8 +230,23 @@ class diagram {
         target_elem.data[k_data] = data[k_data];
       }
     }
-    this.cy.getElementById(target_elem.data.id).data(target_elem.data);
+
+    var d_node = this.cy.getElementById(target_elem.data.id);
+    d_node.data(target_elem.data);
+    //update its style too
+    this.update_style(d_node, target_elem.data.type, target_elem.data.value);
     return target_elem;
+  }
+  update_style(elems, elem_type, type){
+    try {
+      if (elem_type == "node") {
+        elems.cy.nodes(elem_type+'[type="'+type+'"]').style(this.STYLE[elem_type][type]);
+      }else if (elem_type == "edge") {
+        elems.cy.edges(elem_type+'[type="'+type+'"]').style(this.STYLE[elem_type][type]);
+      }
+    } catch (e) {
+      return -1;
+    }
   }
 
   removeelem(elem_id){
@@ -275,6 +300,7 @@ class diagram {
 
     return -1;
   }
+
   click_elem_style(elem,type){
 
     //first color all nodes
@@ -303,6 +329,55 @@ class diagram {
       //elem.style({'background-color': this.EDGE_ONCLICK_COLOR});
     }
   }
+
+  check_node_compatibility(node){
+
+    var all_diagram_nodes = this.cy.nodes();
+    //first make all transparent
+    all_diagram_nodes.style({'opacity': '0.3'});
+    this.cy.nodes().active(false);
+
+    //activate selected node
+    this.cy.nodes("node[id='"+node.id+"']").style({'opacity': '1'});
+    this.cy.nodes("node[id='"+node.id+"']").active(false);
+
+    //first check if the giving node have a specific output or is 'data' node type
+    var output_sel_node = this.CONFIG[node.type][node.value].output;
+    if ((output_sel_node != undefined) || (node.type == 'data')) {
+
+      //in case is a 'data' node the output_data is itself
+      if (node.type == 'data') {
+        output_sel_node = node.value;
+      }
+
+      //enable the compatible ones
+      var compatible_nodes = [];
+      for (var i = 0; i < all_diagram_nodes.length; i++) {
+
+        var d_node = all_diagram_nodes[i];
+        var d_node_value = d_node._private.data.value;
+        var d_node_type = d_node._private.data.type;
+        var compatible_input = this.CONFIG[d_node_type][d_node_value].compatible_input;
+
+        if (compatible_input != undefined) {
+          console.log(compatible_input,output_sel_node);
+          for (var j = 0; j < compatible_input.length; j++) {
+            if(output_sel_node.indexOf(compatible_input[j]) != -1){
+              //activate again the node
+              d_node.style({'opacity': '1'});
+              d_node.active(true);
+            }
+          }
+        }
+
+      }
+    }else {
+      //is a terminal node
+    }
+
+
+  }
+
   gen_id(type){
 
       var str_prefix = "";
