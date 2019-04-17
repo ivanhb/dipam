@@ -34,7 +34,7 @@ function elem_onclick_handle(){
   cy.nodes().on('click', function(e){
       var node = this._private.data;
       console.log(node);
-      diagram_instance.click_elem_style(this,'node');
+      diagram_instance.click_elem_style(node,'node');
       vw_interface.click_on_node(node);
   });
 
@@ -42,7 +42,7 @@ function elem_onclick_handle(){
   cy.edges().on('click', function(e){
       var edge = this._private.data;
       console.log(edge);
-      diagram_instance.click_elem_style(this,'edge');
+      diagram_instance.click_elem_style(edge,'edge');
       vw_interface.click_on_edge(edge);
   });
 }

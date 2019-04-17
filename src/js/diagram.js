@@ -15,10 +15,12 @@ class diagram {
     this.DIAGRAM_GENERAL = {data: {id: 'diagram-01', name: diagram_name, type: 'general'}};
 
     this.ALL_NODES = [
-      { style: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data}, data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
-      { style: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool}, data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 't-filter-names' } },
-      { style: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool}, data: { id: 't-0002', name: 'Topic modeling (t2)', type: 'tool', value: 't-topic-lda' } },
-      { style: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool}, data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 't-chart-bar' } }
+      //style: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data},
+      { data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
+      // style: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool},
+      { data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 't-filter-names' } },
+      { data: { id: 't-0002', name: 'Topic modeling (t2)', type: 'tool', value: 't-topic-lda' } },
+      { data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 't-chart-bar' } }
     ];
 
     this.ALL_EDGES = [
@@ -113,6 +115,11 @@ class diagram {
                 edges: this.ALL_EDGES
               }
     });
+
+    this.cy.nodes('node[type="tool"]').style({'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool});
+    this.cy.nodes('node[type="data"]').style({'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data});
+
+    console.log(this.cy.nodes());
   }
 
   get_diagram_gen_node(){
@@ -268,7 +275,6 @@ class diagram {
 
     return -1;
   }
-
   click_elem_style(elem,type){
 
     //first color all nodes
@@ -277,7 +283,7 @@ class diagram {
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
       var org_bg_color = base_color[elem_obj._private.data.type];
-      elem_obj.style({'background-color': org_bg_color});
+      this.cy.nodes('node[id="'+elem_obj._private.data.id+'"]').style({'background-color': org_bg_color})
     }
 
     arr_elems = this.cy.edges();
@@ -285,17 +291,18 @@ class diagram {
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
       var org_bg_color = base_color[elem_obj._private.data.type];
-      elem_obj.style({'background-color': org_bg_color});
+      this.cy.edges('edge[id="'+elem_obj._private.data.id+'"]').style({'line-color': org_bg_color, 'target-arrow-color': org_bg_color});
     }
-
 
     if (type == 'node') {
-      elem.style({'background-color': this.NODE_ONCLICK_COLOR});
+      this.cy.nodes('node[id="'+elem.id+'"]').style({'background-color': this.NODE_ONCLICK_COLOR});
+      //elem.style({'background-color': this.NODE_ONCLICK_COLOR});
     }else if (type == 'edge') {
-      elem.style({'background-color': this.EDGE_ONCLICK_COLOR});
+      this.cy.edges('edge[id="'+elem.id+'"]').style({'line-color': this.EDGE_ONCLICK_COLOR, 'target-arrow-color': this.EDGE_ONCLICK_COLOR});
+      console.log(this.cy.edges());
+      //elem.style({'background-color': this.EDGE_ONCLICK_COLOR});
     }
   }
-
   gen_id(type){
 
       var str_prefix = "";
