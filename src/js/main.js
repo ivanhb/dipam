@@ -51,5 +51,5 @@ function elem_onclick_handle(){
 //******************************************//
 //********** First Operations **************//
 //******************************************//
-vw_interface.build_overview(diagram_instance.get_diagram_gen_node());
+vw_interface.build_overview(diagram_instance.get_diagram_gen_node().data);
 vw_interface.click_overview_nav();

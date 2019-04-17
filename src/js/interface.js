@@ -2,12 +2,12 @@
 class vwbata {
 
     DOMTYPE = {
-      'graphName': {'type':'input_box', 'title': 'Graph name', 'value':'name'},
-      'edgeName': {'type':'input_box', 'title': 'Edge name', 'value':'id'},
-      'dataName': {'type':'input_box', 'title': 'Data name', 'value':'name'},
-      'toolName': {'type':'input_box', 'title': 'Tool name', 'value':'name'},
-      'toolType': {'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
-      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[DIAGRAM]].editelem([[id]]);[[INTERFACE]].after_editing();"}},
+      'graphName': {'data_id': 'name','type':'input_box', 'title': 'Graph name', 'value':'name'},
+      'edgeName': {'data_id': 'name', 'type':'input_box', 'title': 'Edge name', 'value':'id'},
+      'dataName': {'data_id': 'name', 'type':'input_box', 'title': 'Data name', 'value':'name'},
+      'toolName': {'data_id': 'name', 'type':'input_box', 'title': 'Tool name', 'value':'name'},
+      'toolType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
+      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[INTERFACE]].after_editing();"}},
       'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
                 'event':{'onclick':"[[DIAGRAM]].removeelem([[id]]);[[INTERFACE]].after_removing();"}}
     };
@@ -170,7 +170,7 @@ class vwbata {
                     <div class="input-group-prepend">
                       <label class="input-group-text">`+obj_dom_type.title+`</label>
                     </div>
-                    <select `+str_html_event+` id="`+obj_dom_type.id+`" class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
+                    <select data_elem_id="`+node.id+`"`+str_html_event+` id="`+obj_dom_type.id+`" class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
               </div>
               `;
         break;
@@ -180,12 +180,18 @@ class vwbata {
             <div class="input-group-prepend">
               <label class="input-group-text">`+obj_dom_type.title+`</label>
             </div>
-            <input `+str_html_event+` id="`+obj_dom_type.id+`" class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
+            <input data_elem_id="`+node.id+`" `+str_html_event+` id="`+obj_dom_type.id+`" class="val-box `+obj_dom_type.type+`" value="`+node[obj_dom_type.value]+`" temp_value="`+node[obj_dom_type.value]+`" type="text" disabled></input>
           </div>
           `;
+
+          $(document).on('keyup', 'input', function(){
+              document.getElementById(this.id).setAttribute('temp_value',$(this).val());
+          });
+
+
         break;
         case 'light_button':
-          str_html = str_html + '<span class="foot-dom"><button '+str_html_event+' id="'+obj_dom_type.id+'" type="button" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
+          str_html = str_html + '<span class="foot-dom"><button '+str_html_event+' id="'+obj_dom_type.id+'" type="button" data_elem_id="'+node.id+'" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
           break;
       }
 
@@ -220,11 +226,11 @@ class vwbata {
       this.click_overview_nav();
     }
 
-    after_editing(){
+    after_editing(action = null){
       this._switch_edit_doms();
-      //add two buttons
-      this._cancel_save_btns();
+      return this._cancel_save_btns(action);
     }
+
     _switch_edit_doms(){
       var current_flag = false;
       var arr_doms_toedit = document.getElementsByClassName('val-box');
@@ -241,34 +247,102 @@ class vwbata {
       document.getElementById('editElem').setAttribute('value',newflag);
     }
 
-    _cancel_save_btns(){
+    _cancel_save_btns(action = null){
+      var res = 1;
       var editdom = document.getElementById('editElem');
+      var data_elem_id = editdom.getAttribute('data_elem_id');
       var original_inner_html = editdom.innerHTML;
       editdom.style.visibility = 'hidden';
 
       var edit_value = editdom.getAttribute('value');
       if (edit_value == 'editon') {
         var two_buttons_dom = `<span id="edit_buttons" class="foot-dom">
-                               <span><button id='edit_cancel' onclick='`+this.INTERFACE_INSTANCE+`.after_editing();' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
-                               <span><button id='edit_save' type='button' class='btn btn-default edit-switch'>Save</button></span>
+                               <span><button id='edit_cancel' onclick='`+this.INTERFACE_INSTANCE+`.after_editing("cancel");' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
+                               <span>
+                               <button id='edit_save'
+                                        onclick='`+this.INTERFACE_INSTANCE+`.reload_control_section(`+this.DIAGRAM_INSTANCE+`.update_elem("`+data_elem_id+`",`+this.INTERFACE_INSTANCE+`.after_editing("save")));'`
+                                        +`type='button' class='btn btn-default edit-switch'>Save</button></span>
                                </span>`;
         editdom.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.innerHTML;
       }else {
+
         //remove the edit buttons
         if (document.getElementById('edit_buttons') != undefined) {
           document.getElementById('edit_buttons').remove();
         }
 
-        //check in which section I was
-        if (this.active_nav() == 'overview'){
-          this.click_overview_nav();
-        }else if (this.active_nav() == 'info') {
-          this.click_info_nav();
-        }
+        //finish editing the doms
+        //editdom.setAttribute('value','editoff');
+
         editdom.style.visibility = 'visible';
+
+        //do the corresponding function corresponding to the choice/action made
+        switch (action) {
+          case 'cancel':
+            editdom.setAttribute('value','editoff');
+            this.reload_control_section();
+            break;
+          case 'save':
+            editdom.setAttribute('value','editoff');
+            res = this._save();
+            break;
+          default:
+        }
+      }
+      return res;
+    }
+
+    reload_control_section(new_elem = null){
+
+      var active_nav = this.active_nav();
+
+      //check in which section I was
+      if (active_nav == 'overview'){
+        //in case the overview attributes have been updated/edited
+        if (new_elem != null) {
+          this.build_overview(new_elem.data);
+        }
+        document.getElementById('nav_overview_a').click();
+        //this.click_overview_nav();
+      }else if (active_nav == 'info') {
+        //in case an element (node/edge) have been updated/edited
+        if (new_elem != null) {
+          this.build_info(new_elem.data);
+        }
+        document.getElementById('nav_info_a').click();
+        //this.click_info_nav();
       }
     }
 
+    _save() {
+      var arr_modified_doms = document.getElementsByClassName('val-box');
+
+      var res_value = {};
+      for (var i = 0; i < arr_modified_doms.length; i++) {
+        var obj_dom = arr_modified_doms[i];
+        var dom_value_type = this.DOMTYPE[obj_dom.id].type;
+        var dom_data_target = this.DOMTYPE[obj_dom.id].data_id;
+
+        switch (dom_value_type) {
+            case 'dropdown':
+              var arr_options = obj_dom.childNodes;
+              for (var j = 0; j < arr_options.length; j++) {
+                if(arr_options[j].selected){
+                  res_value[dom_data_target] = arr_options[j].getAttribute('value');
+                  break;
+                }
+              }
+            break;
+            case 'input_box':
+              var new_val = obj_dom.getAttribute('temp_value');
+              obj_dom.setAttribute('value',new_val);
+              res_value[dom_data_target] = new_val;
+            break;
+          default:
+        }
+      }
+      return res_value;
+    }
 
 
     click_overview_nav() {

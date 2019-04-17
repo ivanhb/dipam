@@ -12,7 +12,7 @@ class diagram {
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
 
-    this.DIAGRAM_GENERAL = {id: 'diagram-01', name: diagram_name, type: 'general'};
+    this.DIAGRAM_GENERAL = {data: {id: 'diagram-01', name: diagram_name, type: 'general'}};
 
     this.ALL_NODES = [
       { style: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data}, data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
@@ -206,10 +206,15 @@ class diagram {
     edge_obj.data.target = target_id;
     return JSON.parse(JSON.stringify(edge_obj));
   }
-
-  editelem(elem_id){
-    var corresponding_elem = this._search_for_elem(elem_id);
-    console.log(corresponding_elem);
+  update_elem(id,data){
+    var target_elem = this._search_for_elem(id);
+    for (var k_data in data) {
+      if (target_elem.data.hasOwnProperty(k_data)) {
+        target_elem.data[k_data] = data[k_data];
+      }
+    }
+    this.cy.getElementById(target_elem.data.id).data(target_elem.data);
+    return target_elem;
   }
 
   removeelem(elem_id){
@@ -225,7 +230,7 @@ class diagram {
 
   _search_for_elem(elem_id){
     //check if is the DIAGRAM_GENERAL
-    if (this.DIAGRAM_GENERAL.id == elem_id) {
+    if (this.DIAGRAM_GENERAL.data.id == elem_id) {
       return this.DIAGRAM_GENERAL;
     }
 
@@ -271,7 +276,6 @@ class diagram {
     var base_color = this.NODE_COLOR;
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
-      console.log(base_color[elem_obj._private.data.type]);
       var org_bg_color = base_color[elem_obj._private.data.type];
       elem_obj.style({'background-color': org_bg_color});
     }
