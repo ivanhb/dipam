@@ -214,6 +214,11 @@ class diagram {
 
   add_edge(edge_obj){
     this.ALL_EDGES.push(edge_obj);
+
+    var flag_compatible = this.is_compatible(this._search_for_elem(edge_obj.data.source), this._search_for_elem(edge_obj.data.target));
+    if (!flag_compatible) {
+      this.removeelem(edge_obj.data.id);
+    }
   }
   gen_edge(source_id,target_id){
     var edge_obj = { data: { id: '', name: '', source:'', target:'', type: 'edge', value: '' }, group: 'edges'};
@@ -519,6 +524,19 @@ class diagram {
       }
     }
     return res;
+  }
+
+  //is compatible
+  is_compatible(source_node, target_node){
+    //check if the edge is compatible
+    var compatible_input = this.get_compatible_input(target_node);
+    var output = this.get_output(source_node);
+    for (var i = 0; i < output.length; i++) {
+      if(compatible_input.indexOf(output[i]) != -1){
+        return true;
+      }
+    }
+    return false;
   }
 
 }
