@@ -1,3 +1,3 @@
-## VWBATA: a Visual Workflow Builder for Automatic Textual Analysis
+## DIPAM: a Dashboard Interface for Python-based Applications Mashup 
 
-Web-based application for mashing up automatic text analysis tools to create execution workflows by means of an intuitive Web interface. An application linked to the [CATARSI Project](https://centri.unibo.it/dharc/en/research/projects-at-dh-arc#catarsi)
+A Web-based application for mashing up Python-based Applications. Created for mashing up automatic text analysis tools and create a customizable visual workflow. This application is linked to the [CATARSI Project](https://centri.unibo.it/dharc/en/research/projects-at-dh-arc#catarsi)
