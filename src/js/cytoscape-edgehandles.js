@@ -518,13 +518,16 @@ function makeEdges() {
     added = added.merge(interNode).merge(source2inter).merge(inter2target);
   } else {
     // flat
-		var edge_obj = diagram_instance.gen_edge(source.id(),target.id());
-		var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
-		diagram_instance.add_edge(edge_obj);
+		console.log(target.active());
+		if (target.active()) {
+			var edge_obj = diagram_instance.gen_edge_data(source.id(),target.id());
+			var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
+			diagram_instance.after_add_edge(edge_obj.data);
 
-    added = added.merge(source2target);
+	    added = added.merge(source2target);
 
-		elem_onclick_handle();
+			elem_onclick_handle();
+		}
   }
 
   if (preview) {

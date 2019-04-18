@@ -7,7 +7,7 @@ class diagram {
   EDGE_COLOR = {'edge':'gray'};
   EDGE_ONCLICK_COLOR = '#663500';
 
-  COMPATIBLE_STYLE = {true: {'opacity': '1'}, false:{'opacity': '0.3'}};
+  COMPATIBLE_STYLE = {true: {'opacity': '1', 'overlay-opacity': '0'}, false:{'opacity': '0.3', 'overlay-opacity': '0'}};
 
   constructor(container_id, config, diagram_name) {
     this.CONFIG = config;
@@ -128,65 +128,39 @@ class diagram {
               }
     });
 
-    this.cy.nodes('node[type="tool"]').style(this.STYLE.node.tool);
-    this.cy.nodes('node[type="data"]').style(this.STYLE.node.data);
+    this.get_nodes('tool').style(this.STYLE.node.tool);
+    this.get_nodes('data').style(this.STYLE.node.data);
   }
 
-  get_diagram_gen_node(){
+
+  get_diagram(){
     return this.DIAGRAM_GENERAL;
   }
-
-  get_tools(){
-    var ret_arr = [];
-    for (var k in this.ALL_NODES) {
-      if (this.ALL_NODES.hasOwnProperty(k)) {
-          if(this.ALL_NODES[k].data.type == 'tool'){
-            ret_arr.push(this.ALL_NODES[k]);
-          }
-      }
-    }
-    return ret_arr;
-  }
-
-  get_data(){
-    var ret_arr = [];
-    for (var k in this.ALL_NODES) {
-      if (this.ALL_NODES.hasOwnProperty(k)) {
-          if(this.ALL_NODES[k].data.type == 'data'){
-            ret_arr.push(this.ALL_NODES[k]);
-          }
-      }
-    }
-    return ret_arr;
-  }
-
-  get_edges(){
-    var ret_arr = [];
-    for (var k in this.ALL_EDGES) {
-      if (this.ALL_EDGES.hasOwnProperty(k)) {
-          if(this.ALL_EDGES[k].data.type == 'edge'){
-            ret_arr.push(this.ALL_EDGES[k]);
-          }
-      }
-    }
-    return ret_arr;
-  }
-
   get_diagram_obj() {
     return this.cy;
+  }
+  get_nodes(type = null){
+    if (type != null) {
+      return this.cy.nodes('[type = "'+type+'"]');
+    }
+    return this.cy.nodes('[type = "data"]').union(this.cy.nodes('[type = "tool"]'));
+  }
+  get_edges(){
+    return this.cy.edges();
   }
 
 
   add_node(type) {
-    var node_n = this.gen_node(type);
+    var node_n = this.gen_node_data(type);
     //var data_node = {'data': JSON.parse(JSON.stringify(node_n.data))};
     //this.ALL_NODES.push(JSON.parse(JSON.stringify(node_n)));
     this.ALL_NODES.push(node_n);
 
     node_n.group = 'nodes';
     this.cy.add(node_n);
+    console.log(this.cy.nodes());
   }
-  gen_node(n_type) {
+  gen_node_data(n_type) {
     var node_obj = {
       style: null,
       position: { x: 0, y: 0},
@@ -212,15 +186,15 @@ class diagram {
     return node_obj;
   }
 
-  add_edge(edge_obj){
-    this.ALL_EDGES.push(edge_obj);
-
-    var flag_compatible = this.is_compatible(this._search_for_elem(edge_obj.data.source), this._search_for_elem(edge_obj.data.target));
+  after_add_edge(edge_data){
+    console.log(edge_data);
+    var flag_compatible = this.is_compatible(this.cy.nodes("node[id='"+edge_data.source+"']")[0], this.cy.nodes("node[id='"+edge_data.target+"']")[0]);
     if (!flag_compatible) {
-      this.removeelem(edge_obj.data.id);
+      this.cy.remove(edge_data.id);
     }
+    return edge_data;
   }
-  gen_edge(source_id,target_id){
+  gen_edge_data(source_id,target_id){
     var edge_obj = { data: { id: '', name: '', source:'', target:'', type: 'edge', value: '' }, group: 'edges'};
     edge_obj.data.id = this.gen_id('edge');
     edge_obj.data.name = this.gen_id('edge');
@@ -255,18 +229,18 @@ class diagram {
     // (3) Its style in the cy diagram
     this.update_style(d_node, target_elem.data.type, target_elem.data.value);
 
-    // (4) The realtime correlated items (Remove edges in case not suitable anymore)
-    this.check_connected_edges(target_elem);
+    // (4) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
+    this.check_node_compatibility(d_node, true);
 
     // (5) The real time compatible elements of the cy diagram
-    this.check_node_compatibility(target_elem.data);
+    this.check_node_compatibility(d_node);
 
     return target_elem;
   }
 
   update_style(elems, elem_type, type){
     try {
-      set_compatibility(selector= null, active = true)
+      this.activate_nodes(null,true);
 
       if (elem_type == "node") {
         elems.cy.nodes(elem_type+'[type="'+type+'"]').style(this.STYLE[elem_type][type]);
@@ -278,15 +252,8 @@ class diagram {
     }
   }
 
-  removeelem(elem_id){
-    var corresponding_elem = this._search_for_elem(elem_id);
-    console.log(corresponding_elem);
-    switch (corresponding_elem.data.type) {
-          case 'tool': this.ALL_NODES.splice(this.index_of_elem(elem_id),1); break;
-          case 'data': this.ALL_NODES.splice(this.index_of_elem(elem_id),1); break;
-          case 'edge': this.ALL_EDGES.splice(this.index_of_elem(elem_id),1); break;
-    }
-    this.cy.remove("#"+corresponding_elem.data.id);
+  remove_elem(elem_id){
+    this.cy.remove("#"+elem_id);
   }
 
   _search_for_elem(elem_id){
@@ -330,7 +297,9 @@ class diagram {
     return -1;
   }
 
-  click_elem_style(elem,type){
+  click_elem_style(node,type){
+
+    var elem = node._private.data;
 
     //first color all nodes
     var arr_elems = this.cy.nodes();
@@ -359,119 +328,96 @@ class diagram {
     }
   }
 
-  check_connected_edges(node){
 
-    //var connected_edges = node.connectedEdges());
-    //connected_edges[i].connectedNodes();
-    //var connected_nodes = a.neighborhood();
+  //adapt the node compatibility status regarding it's neighborhood nodes
+  //returns the neighborhood nodes
+  check_node_compatibility(node, neighborhood = false){
 
-    var sel_node_conf_obj = this.CONFIG[node.data.type][node.data.value];
-
-    var edges_to_remove = [];
-
-    //the outcoming edges
-    var outcoming_edges = cy.edges('[source = "'+node.data.id+'"]');
-    for (var i = 0; i < outcoming_edges.length; i++) {
-      var c_node = outcoming_edges[i].target();
-      var c_node_compatible_input = this.get_compatible_input(this._search_for_elem(c_node._private.data.id));
-      var sel_node_output = this.get_output(node);
-      console.log(c_node_compatible_input, sel_node_output);
-      for (var j = 0; j < c_node_compatible_input.length; j++) {
-        if (sel_node_output.indexOf(c_node_compatible_input[j]) == -1){
-          edges_to_remove.push(outcoming_edges[i]);
-        }
-      }
-    }
-
-    //the incoming edges
-    var incoming_edges = cy.edges('[target = "'+node.data.id+'"]');
-    for (var i = 0; i < incoming_edges.length; i++) {
-      var c_node = incoming_edges[i].source();
-      var c_node_output = this.get_output(this._search_for_elem(c_node._private.data.id));
-      var sel_node_compatible_input = this.get_compatible_input(node);
-      for (var j = 0; j < c_node_output.length; j++) {
-        if (sel_node_compatible_input.indexOf(c_node_output[j]) == -1 ){
-          edges_to_remove.push(incoming_edges[i]);
-        }
-      }
-    }
-
-    for (var i = 0; i < edges_to_remove.length; i++) {
-      this.cy.remove(edges_to_remove[i]);
-    }
-
-    return edges_to_remove;
-  }
-
-  check_node_compatibility(node){
-
-    var all_diagram_nodes = this.cy.nodes();
+    var node_id = node._private.data.id;
 
     //first make all transparent
-    this.set_compatibility(null,false);
+    this.activate_nodes(null,false);
     //activate selected node
-    this.set_compatibility("node[id='"+node.id+"']", true);
+    this.activate_nodes("node[id='"+node_id+"']", true);
+    //get the nodes i must check
+    var nodes_to_check = {
+      'all_nodes': this.cy.nodes('[type = "data"]').union(this.cy.nodes('[type = "tool"]')).difference(this.cy.nodes("node[id='"+node_id+"']")),
+      'target_nodes': this.cy.edges('[source = "'+node_id+'"]').target(),
+      'source_nodes': this.cy.edges('[target = "'+node_id+'"]').source()
+    };
+    console.log(nodes_to_check.all_nodes);
 
-    //first check if the giving node have a specific output or is 'data' node type
-    var output_sel_node = this.CONFIG[node.type][node.value].output;
-    if ((output_sel_node != undefined) || (node.type == 'data')) {
+    //in case we want to check only the neighborhood nodes (the connected nodes)
+    if (neighborhood) {
+      nodes_to_check.all_nodes = [];
+    } else {
+      nodes_to_check.target_nodes = [];
+      nodes_to_check.source_nodes = [];
+    }
 
-      //in case is a 'data' node the output_data is itself
-      if (node.type == 'data') {
-        output_sel_node = node.value;
-      }
-
-      //enable the compatible ones
-      var compatible_nodes = [];
-      for (var i = 0; i < all_diagram_nodes.length; i++) {
-
-        var d_node = all_diagram_nodes[i];
-        var d_node_type = d_node._private.data.type;
-
-        if ((d_node_type == 'tool') || (d_node_type == 'data')) {
-          var d_node_value = d_node._private.data.value;
-          var d_node_id = d_node._private.data.id;
-
-          var compatible_input = this.CONFIG[d_node_type][d_node_value].compatible_input;
-
-          if (compatible_input != undefined) {
-            for (var j = 0; j < compatible_input.length; j++) {
-              if(output_sel_node.indexOf(compatible_input[j]) != -1){
-                //activate again the node
-                this.set_compatibility("node[id='"+d_node_id+"']",true);
-              }
+    for (var k_nodes in nodes_to_check) {
+      if (nodes_to_check[k_nodes] != undefined) {
+        for (var i = 0; i < nodes_to_check[k_nodes].length; i++) {
+          var node_to_check_obj = nodes_to_check[k_nodes][i];
+          var node_to_check_obj_id = node_to_check_obj._private.data.id;
+          var flag_compatible = false;
+          if (k_nodes == 'target_nodes') {
+            flag_compatible = this.is_compatible(node, node_to_check_obj);
+            if (!(flag_compatible)){
+              this.cy.remove(this.cy.edges('edge[source="'+node_id+'"]').edges('edge[target="'+node_to_check_obj_id+'"]') );
             }
           }
+          else if (k_nodes == 'source_nodes') {
+            flag_compatible = this.is_compatible(node_to_check_obj, node);
+            if (!(flag_compatible)){
+              this.cy.remove(this.cy.edges('edge[source="'+node_id+'"]').edges('edge[target="'+node_to_check_obj_id+'"]') );
+            }
+          }
+          else if (k_nodes == 'all_nodes') {
+            flag_compatible = this.is_compatible(node, node_to_check_obj);
+          }
+          console.log(flag_compatible);
+          this.activate_nodes("node[id='"+node_to_check_obj_id+"']",flag_compatible);
+
         }
       }
-    }else {
-      //is a terminal node
     }
+
+    return nodes_to_check;
   }
 
-  set_compatibility(selector= null, active = true){
+  //activate/deactivate the diagram nodes. a subset could be defined through <selector>
+  //returns the activated/deactivated nodes
+  activate_nodes(selector= null, active = true){
     var target_element = this.cy.nodes();
     if (selector != null) {
       target_element = this.cy.nodes(selector);
     }
-    target_element.style(this.COMPATIBLE_STYLE[active]);
-    target_element.active(active);
+    for (var i = 0; i < target_element.length; i++) {
+
+      target_element[i].style(this.COMPATIBLE_STYLE[active]);
+      target_element[i]._private.active = active;
+    }
+    return target_element;
   }
 
+  //Generate an ID for a giving type of element
+  //type: tool | data | edge
+  //returns an ID with t- | d- | e- followed by a 4-digit. e.g: t-0012
   gen_id(type){
 
       var str_prefix = "";
       var num_id = null;
       var arr_elems = null;
       switch (type) {
-            case 'tool': str_prefix = "t-"; arr_elems= this.get_tools(); break;
-            case 'data': str_prefix = "d-"; arr_elems= this.get_data(); break;
+            case 'tool': str_prefix = "t-"; arr_elems= this.get_nodes('tool'); break;
+            case 'data': str_prefix = "d-"; arr_elems= this.get_nodes('data'); break;
             case 'edge': str_prefix = "e-"; arr_elems= this.get_edges(); break;
       }
 
       var ids_taken = [];
       for (var i = 0; i < arr_elems.length; i++) {
-          ids_taken.push(parseInt(arr_elems[i].data.id.substring(2)));
+          ids_taken.push(parseInt(arr_elems[i]._private.data.id.substring(2)));
       }
 
       var num_id = 1;
@@ -492,10 +438,11 @@ class diagram {
   }
 
   //takes a class node
+  //returns an array of all the output data IDs
   get_output(node){
     var res = [];
-    var node_type = node.data.type;
-    var node_value = node.data.value;
+    var node_type = node._private.data.type;
+    var node_value = node._private.data.value;
     if (node_type == 'data') {
       res.push(node_value);
     }else {
@@ -511,10 +458,11 @@ class diagram {
   }
 
   //takes a class node
+  //returns an array of all the compatible-input data IDs
   get_compatible_input(node){
     var res = [];
-    var node_type = node.data.type;
-    var node_value = node.data.value;
+    var node_type = node._private.data.type;
+    var node_value = node._private.data.value;
     if (node_type != 'data') {
       var node_conf_obj = this.CONFIG[node_type][node_value];
       if (node_conf_obj != undefined) {
@@ -527,6 +475,7 @@ class diagram {
   }
 
   //is compatible
+  //returns true if the output of <source_node> is acceptable (compatible) for the <target_node>
   is_compatible(source_node, target_node){
     //check if the edge is compatible
     var compatible_input = this.get_compatible_input(target_node);

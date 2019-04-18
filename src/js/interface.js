@@ -9,7 +9,7 @@ class vwbata {
       'toolType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
       'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[INTERFACE]].after_editing();"}},
       'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
-                'event':{'onclick':"[[DIAGRAM]].removeelem([[id]]);[[INTERFACE]].after_removing();"}}
+                'event':{'onclick':"[[DIAGRAM]].remove_elem([[id]]);[[INTERFACE]].after_removing();"}}
     };
 
     OVERVIEW_SECTION = "graphName-editElem";

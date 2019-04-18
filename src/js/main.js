@@ -12,6 +12,7 @@ vw_interface.init_nav();
 //init the diagram
 var diagram_instance = new diagram("cy", config, "VWBATA");
 var cy = diagram_instance.get_diagram_obj();
+
 window.cy = cy;
 
 
@@ -38,19 +39,19 @@ elem_onclick_handle();
 function elem_onclick_handle(){
   //nodes on click handler
   cy.nodes().on('click', function(e){
-      var node = this._private.data;
-      console.log(node);
-      diagram_instance.click_elem_style(node,'node');
-      diagram_instance.check_node_compatibility(node);
-      vw_interface.click_on_node(node);
+      console.log(this);
+      diagram_instance.click_elem_style(this,'node');
+      diagram_instance.check_node_compatibility(this);
+      //vw_interface.click_on_node(this._private.data);
+      console.log(cy.nodes());
   });
 
   //edges on click handler
   cy.edges().on('click', function(e){
-      var edge = this._private.data;
       console.log(edge);
-      diagram_instance.click_elem_style(edge,'edge');
-      vw_interface.click_on_edge(edge);
+      diagram_instance.click_elem_style(this,'edge');
+      vw_interface.click_on_edge(this._private.data);
+      console.log(cy.edges());
   });
 }
 
@@ -58,5 +59,5 @@ function elem_onclick_handle(){
 //******************************************//
 //********** First Operations **************//
 //******************************************//
-vw_interface.build_overview(diagram_instance.get_diagram_gen_node().data);
+vw_interface.build_overview(diagram_instance.get_diagram().data);
 vw_interface.click_overview_nav();
