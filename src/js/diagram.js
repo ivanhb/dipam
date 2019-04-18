@@ -4,7 +4,7 @@ class diagram {
   NODE_SHAPE = {'tool': 'diamond', 'data': 'round-rectangle'};
   NODE_ONCLICK_COLOR = '#663500';
 
-  EDGE_COLOR = {'edge':'gray'};
+  EDGE_COLOR = {'edge':'#bfbfbf'};
   EDGE_ONCLICK_COLOR = '#663500';
 
   COMPATIBLE_STYLE = {true: {'opacity': '1', 'overlay-opacity': '0'}, false:{'opacity': '0.3', 'overlay-opacity': '0'}};
@@ -17,9 +17,7 @@ class diagram {
     this.DIAGRAM_GENERAL = {data: {id: 'diagram-01', name: diagram_name, type: 'general'}};
 
     this.ALL_NODES = [
-      //style: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data},
       { data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
-      // style: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool},
       { data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 't-filter-names' } },
       { data: { id: 't-0002', name: 'Topic modeling (t2)', type: 'tool', value: 't-topic-lda' } },
       { data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 't-chart-bar' } }
@@ -27,7 +25,7 @@ class diagram {
 
     this.ALL_EDGES = [
       { data: {type: 'edge', id: 'e-0001', source: 'd-0001', target: 't-0001' } },
-      { data: {type: 'edge', id: 'e-0002', source: 'd-0001', target: 't-0003' } },
+      { data: {type: 'edge', id: 'e-0002', source: 't-0001', target: 't-0002' } },
       { data: {type: 'edge', id: 'e-0003',source: 't-0002', target: 't-0003' } }
     ];
 
@@ -130,14 +128,14 @@ class diagram {
 
     this.get_nodes('tool').style(this.STYLE.node.tool);
     this.get_nodes('data').style(this.STYLE.node.data);
+    this.get_edges().style(this.STYLE.edge.edge);
   }
 
-
-  get_diagram(){
-    return this.DIAGRAM_GENERAL;
-  }
   get_diagram_obj() {
     return this.cy;
+  }
+  get_diagram(){
+    return this.DIAGRAM_GENERAL;
   }
   get_nodes(type = null){
     if (type != null) {
@@ -148,7 +146,6 @@ class diagram {
   get_edges(){
     return this.cy.edges();
   }
-
 
   add_node(type) {
     var node_n = this.gen_node_data(type);
@@ -252,8 +249,10 @@ class diagram {
     }
   }
 
+  //Remove an element by taking its id:<elem_id> from the diagram
+  //returns the removed element
   remove_elem(elem_id){
-    this.cy.remove("#"+elem_id);
+    return this.cy.remove("#"+elem_id);
   }
 
   _search_for_elem(elem_id){
@@ -279,55 +278,33 @@ class diagram {
     return -1;
   }
 
-  index_of_elem(elem_id){
-    //check ALL_NODES
-    for (var i = 0; i < this.ALL_NODES.length; i++) {
-      if(this.ALL_NODES[i].data.id == elem_id){
-        return i;
-      }
-    }
 
-    //check ALL_EDGES
-    for (var i = 0; i < this.ALL_EDGES.length; i++) {
-      if(this.ALL_EDGES[i].data.id == elem_id){
-        return i;
-      }
-    }
+  //adapt the style of the clicked element:<elem> of type:<type>
+  click_elem_style(elem,type){
 
-    return -1;
-  }
-
-  click_elem_style(node,type){
-
-    var elem = node._private.data;
+    elem = elem._private.data;
 
     //first color all nodes
     var arr_elems = this.cy.nodes();
-    var base_color = this.NODE_COLOR;
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
-      var org_bg_color = base_color[elem_obj._private.data.type];
+      var org_bg_color = this.NODE_COLOR[elem_obj._private.data.type];
       this.cy.nodes('node[id="'+elem_obj._private.data.id+'"]').style({'background-color': org_bg_color})
     }
 
     arr_elems = this.cy.edges();
-    base_color = this.EDGE_COLOR;
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
-      var org_bg_color = base_color[elem_obj._private.data.type];
+      var org_bg_color = this.EDGE_COLOR[elem_obj._private.data.type];
       this.cy.edges('edge[id="'+elem_obj._private.data.id+'"]').style({'line-color': org_bg_color, 'target-arrow-color': org_bg_color});
     }
 
     if (type == 'node') {
       this.cy.nodes('node[id="'+elem.id+'"]').style({'background-color': this.NODE_ONCLICK_COLOR});
-      //elem.style({'background-color': this.NODE_ONCLICK_COLOR});
     }else if (type == 'edge') {
       this.cy.edges('edge[id="'+elem.id+'"]').style({'line-color': this.EDGE_ONCLICK_COLOR, 'target-arrow-color': this.EDGE_ONCLICK_COLOR});
-      console.log(this.cy.edges());
-      //elem.style({'background-color': this.EDGE_ONCLICK_COLOR});
     }
   }
-
 
   //adapt the node compatibility status regarding it's neighborhood nodes
   //returns the neighborhood nodes
@@ -336,9 +313,9 @@ class diagram {
     var node_id = node._private.data.id;
 
     //first make all transparent
-    this.activate_nodes(null,false);
+    this.activate_nodes(null,false, true);
     //activate selected node
-    this.activate_nodes("node[id='"+node_id+"']", true);
+    this.activate_nodes("node[id='"+node_id+"']", true, true);
     //get the nodes i must check
     var nodes_to_check = {
       'all_nodes': this.cy.nodes('[type = "data"]').union(this.cy.nodes('[type = "tool"]')).difference(this.cy.nodes("node[id='"+node_id+"']")),
@@ -376,9 +353,7 @@ class diagram {
           else if (k_nodes == 'all_nodes') {
             flag_compatible = this.is_compatible(node, node_to_check_obj);
           }
-          console.log(flag_compatible);
-          this.activate_nodes("node[id='"+node_to_check_obj_id+"']",flag_compatible);
-
+          this.activate_nodes("node[id='"+node_to_check_obj_id+"']",flag_compatible, flag_compatible);
         }
       }
     }
@@ -388,17 +363,22 @@ class diagram {
 
   //activate/deactivate the diagram nodes. a subset could be defined through <selector>
   //returns the activated/deactivated nodes
-  activate_nodes(selector= null, active = true){
+  activate_nodes(selector= null, active = true, flag_interaction= true){
     var target_element = this.cy.nodes();
     if (selector != null) {
       target_element = this.cy.nodes(selector);
     }
     for (var i = 0; i < target_element.length; i++) {
-
       target_element[i].style(this.COMPATIBLE_STYLE[active]);
       target_element[i]._private.active = active;
+      //this.set_node_interaction(target_element[i], 'selectable', flag_interaction);
     }
     return target_element;
+  }
+
+  //set selectable, draggable values
+  set_node_interaction(elem, type, flag){
+      elem._private[type] = flag;
   }
 
   //Generate an ID for a giving type of element

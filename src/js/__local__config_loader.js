@@ -27,7 +27,7 @@ var config = {
             "label": "Filter names",
             "function": "filter_names",
             "compatible_input": ["d0"],
-            "output": ["d1"]
+            "output": ["d0"]
         }
   },
   "param": {

@@ -517,9 +517,18 @@ function makeEdges() {
 
     added = added.merge(interNode).merge(source2inter).merge(inter2target);
   } else {
-    // flat
-		console.log(target.active());
-		if (target.active()) {
+
+		//check if the source is the current selected node
+		var all_nodes = diagram_instance.get_nodes();
+		var selected_node = null;
+		for (var i = 0; i < all_nodes.length; i++) {
+			if(all_nodes[i]._private.selected == true){
+				selected_node = all_nodes[i];
+				break;
+			}
+		}
+
+		if ((target.active()) && ((selected_node._private.data.id == source._private.data.id) || (selected_node == null))) {
 			var edge_obj = diagram_instance.gen_edge_data(source.id(),target.id());
 			var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
 			diagram_instance.after_add_edge(edge_obj.data);
@@ -527,6 +536,8 @@ function makeEdges() {
 	    added = added.merge(source2target);
 
 			elem_onclick_handle();
+		}else {
+			console.log("Cannot create an Edge starting from a source different from the selected node.");
 		}
   }
 
