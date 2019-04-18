@@ -130,8 +130,6 @@ class diagram {
 
     this.cy.nodes('node[type="tool"]').style(this.STYLE.node.tool);
     this.cy.nodes('node[type="data"]').style(this.STYLE.node.data);
-
-    console.log(this.cy.nodes());
   }
 
   get_diagram_gen_node(){
@@ -225,7 +223,17 @@ class diagram {
     edge_obj.data.target = target_id;
     return JSON.parse(JSON.stringify(edge_obj));
   }
+
+
+  //Update an element
+  // (1) Its data in this Class
+  // (2) Its data in the cy diagram
+  // (3) Its style in the cy diagram
+  // (4) The realtime correlated items (Remove edges in case not suitable anymore)
+  // (5) The real time compatible elements of the cy diagram
   update_elem(id,data){
+
+    // (1) Its data in this Class
     var target_elem = this._search_for_elem(id);
     for (var k_data in data) {
       if (target_elem.data.hasOwnProperty(k_data)) {
@@ -233,11 +241,19 @@ class diagram {
       }
     }
 
+    // (2 ... 5) now all the cy correlated data
     var d_node = this.cy.getElementById(target_elem.data.id);
+
+    // (2) Its data in the cy diagram
     d_node.data(target_elem.data);
-    //update its style too
+
+    // (3) Its style in the cy diagram
     this.update_style(d_node, target_elem.data.type, target_elem.data.value);
-    //check_also_new compatibility
+
+    // (4) The realtime correlated items (Remove edges in case not suitable anymore)
+    this.check_connected_edges(target_elem);
+
+    // (5) The real time compatible elements of the cy diagram
     this.check_node_compatibility(target_elem.data);
 
     return target_elem;
@@ -338,6 +354,50 @@ class diagram {
     }
   }
 
+  check_connected_edges(node){
+
+    //var connected_edges = node.connectedEdges());
+    //connected_edges[i].connectedNodes();
+    //var connected_nodes = a.neighborhood();
+
+    var sel_node_conf_obj = this.CONFIG[node.data.type][node.data.value];
+
+    var edges_to_remove = [];
+
+    //the outcoming edges
+    var outcoming_edges = cy.edges('[source = "'+node.data.id+'"]');
+    for (var i = 0; i < outcoming_edges.length; i++) {
+      var c_node = outcoming_edges[i].target();
+      var c_node_compatible_input = this.get_compatible_input(this._search_for_elem(c_node._private.data.id));
+      var sel_node_output = this.get_output(node);
+      console.log(c_node_compatible_input, sel_node_output);
+      for (var j = 0; j < c_node_compatible_input.length; j++) {
+        if (sel_node_output.indexOf(c_node_compatible_input[j]) == -1){
+          edges_to_remove.push(outcoming_edges[i]);
+        }
+      }
+    }
+
+    //the incoming edges
+    var incoming_edges = cy.edges('[target = "'+node.data.id+'"]');
+    for (var i = 0; i < incoming_edges.length; i++) {
+      var c_node = incoming_edges[i].source();
+      var c_node_output = this.get_output(this._search_for_elem(c_node._private.data.id));
+      var sel_node_compatible_input = this.get_compatible_input(node);
+      for (var j = 0; j < c_node_output.length; j++) {
+        if (sel_node_compatible_input.indexOf(c_node_output[j]) == -1 ){
+          edges_to_remove.push(incoming_edges[i]);
+        }
+      }
+    }
+
+    for (var i = 0; i < edges_to_remove.length; i++) {
+      this.cy.remove(edges_to_remove[i]);
+    }
+
+    return edges_to_remove;
+  }
+
   check_node_compatibility(node){
 
     var all_diagram_nodes = this.cy.nodes();
@@ -356,7 +416,6 @@ class diagram {
         output_sel_node = node.value;
       }
 
-      console.log(all_diagram_nodes);
       //enable the compatible ones
       var compatible_nodes = [];
       for (var i = 0; i < all_diagram_nodes.length; i++) {
@@ -371,7 +430,6 @@ class diagram {
           var compatible_input = this.CONFIG[d_node_type][d_node_value].compatible_input;
 
           if (compatible_input != undefined) {
-            console.log(compatible_input,output_sel_node);
             for (var j = 0; j < compatible_input.length; j++) {
               if(output_sel_node.indexOf(compatible_input[j]) != -1){
                 //activate again the node
@@ -384,8 +442,6 @@ class diagram {
     }else {
       //is a terminal node
     }
-
-
   }
 
   set_compatibility(selector= null, active = true){
@@ -429,4 +485,40 @@ class diagram {
       }
       return str_prefix+str_zeros+num_id;
   }
+
+  //takes a class node
+  get_output(node){
+    var res = [];
+    var node_type = node.data.type;
+    var node_value = node.data.value;
+    if (node_type == 'data') {
+      res.push(node_value);
+    }else {
+      var node_conf_obj = this.CONFIG[node_type][node_value];
+      if (node_conf_obj != undefined) {
+        if (node_conf_obj.output != undefined) {
+          res = node_conf_obj.output;
+        }
+      }
+    }
+
+    return res;
+  }
+
+  //takes a class node
+  get_compatible_input(node){
+    var res = [];
+    var node_type = node.data.type;
+    var node_value = node.data.value;
+    if (node_type != 'data') {
+      var node_conf_obj = this.CONFIG[node_type][node_value];
+      if (node_conf_obj != undefined) {
+        if (node_conf_obj.compatible_input != undefined) {
+          res = node_conf_obj.compatible_input;
+        }
+      }
+    }
+    return res;
+  }
+
 }
