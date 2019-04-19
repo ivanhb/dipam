@@ -43,7 +43,6 @@ function elem_onclick_handle(){
       diagram_instance.click_elem_style(this,'node');
       diagram_instance.check_node_compatibility(this);
       vw_interface.click_on_node(this._private.data);
-      console.log(cy.nodes());
   });
 
   //edges on click handler
@@ -51,7 +50,6 @@ function elem_onclick_handle(){
       console.log(this);
       diagram_instance.click_elem_style(this,'edge');
       vw_interface.click_on_edge(this._private.data);
-      console.log(cy.edges());
   });
 }
 

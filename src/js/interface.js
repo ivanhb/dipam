@@ -293,8 +293,7 @@ class vwbata {
     }
 
     reload_control_section(new_elem = null){
-      new_elem = new_elem._private;
-      console.log(new_elem);
+
       var active_nav = this.active_nav();
 
       //check in which section I was
@@ -308,6 +307,7 @@ class vwbata {
       }else if (active_nav == 'info') {
         //in case an element (node/edge) have been updated/edited
         if (new_elem != null) {
+          new_elem = new_elem._private;
           this.build_info(new_elem.data);
         }
         document.getElementById('nav_info_a').click();

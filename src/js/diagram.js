@@ -1,29 +1,41 @@
 
 class diagram {
-  NODE_COLOR = {'tool': 'orange', 'data': '#74beda'};
-  NODE_SHAPE = {'tool': 'diamond', 'data': 'round-rectangle'};
-  NODE_ONCLICK_COLOR = '#663500';
 
-  EDGE_COLOR = {'edge':'#bfbfbf'};
-  EDGE_ONCLICK_COLOR = '#663500';
+  DIAGRAM_DATA = {
+      //these attributes must be contained always
+      id: null, name: null, type: null
+  };
 
-  COMPATIBLE_STYLE = {true: {'opacity': '1', 'overlay-opacity': '0'}, false:{'opacity': '0.3', 'overlay-opacity': '0'}};
+  NODE_DATA = {
+      //these attributes must be contained always
+      id: null, name: null, type: null, value: null
+      //Add other NEW-Attribute
+  };
+
+  EDGE_DATA ={
+      //these attributes must be contained always
+      id: null, name: null, type: null, value: null, source: null, target:null
+      //Add other NEW-Attribute
+  };
 
   constructor(container_id, config, diagram_name) {
     this.CONFIG = config;
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
 
-    this.DIAGRAM_GENERAL = {data: {id: 'diagram-01', name: diagram_name, type: 'general'}};
+    this.DIAGRAM_GENERAL = {data: this.DIAGRAM_DATA};
+    this.DIAGRAM_GENERAL.data.id = 'diagram-01';
+    this.DIAGRAM_GENERAL.data.name = diagram_name;
+    this.DIAGRAM_GENERAL.data.type = 'diagram';
 
-    this.ALL_NODES = [
+    this.INIT_NODES = [
       { data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
       { data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 't-filter-names' } },
       { data: { id: 't-0002', name: 'Topic modeling (t2)', type: 'tool', value: 't-topic-lda' } },
       { data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 't-chart-bar' } }
     ];
 
-    this.ALL_EDGES = [
+    this.INIT_EDGES = [
       { data: {type: 'edge', id: 'e-0001', source: 'd-0001', target: 't-0001' } },
       { data: {type: 'edge', id: 'e-0002', source: 't-0001', target: 't-0002' } },
       { data: {type: 'edge', id: 'e-0003',source: 't-0002', target: 't-0003' } }
@@ -31,13 +43,28 @@ class diagram {
 
     this.STYLE = {
       node: {
-        tool: {'shape': this.NODE_SHAPE.tool,'background-color': this.NODE_COLOR.tool},
-        data: {'shape': this.NODE_SHAPE.data,'background-color': this.NODE_COLOR.data},
+        tool: {'shape': 'diamond','background-color': 'orange'},
+        data: {'shape': 'round-rectangle','background-color': '#74beda'},
       },
       edge:{
-        edge: {'line-color': this.EDGE_COLOR.edge}
+        edge: {'line-color': '#bfbfbf', 'target-arrow-color': '#bfbfbf'}
       }
-    }
+    };
+
+    this.ONCLICK_STYLE = {
+      node: {
+        tool: {'background-color': '#663500'},
+        data: {'background-color': '#663500'},
+      },
+      edge:{
+        edge: {'line-color': '#663500', 'target-arrow-color': '#663500'}
+      }
+    };
+
+    this.COMPATIBLE_STYLE = {
+          true: {'opacity': '1', 'overlay-opacity': '0'},
+          false:{'opacity': '0.3', 'overlay-opacity': '0'}
+    };
 
     this.cy = cytoscape({
               container: this.DIAGRAM_CONTAINER,
@@ -66,16 +93,18 @@ class diagram {
 
                 // some style for the extension
 
+
                 {
                   selector: '.eh-handle',
                   style: {
                     'background-color': 'red',
-                    'width': 12,
-                    'height': 12,
+                    'width': 15,
+                    'height': 15,
                     'shape': 'ellipse',
                     'overlay-opacity': 0,
-                    'border-width': 12, // makes the handle easier to hit
-                    'border-opacity': 0
+                    'border-width': 10, // makes the handle easier to hit
+                    'border-opacity': 0,
+                    'opacity': 0.6,
                   }
                 },
 
@@ -121,10 +150,19 @@ class diagram {
               ],
 
               elements: {
-                nodes: this.ALL_NODES,
-                edges: this.ALL_EDGES
+                nodes: this.INIT_NODES,
+                edges: this.INIT_EDGES
               }
     });
+
+    /*
+    this.cy.on('ehshow', (event, sourceNode) => {
+        if (sourceNode._private.selected == false) {
+          this.cy.edgehandles().disable();
+          //this.cy.edgehandles().hide();
+        }
+    });
+    */
 
     this.get_nodes('tool').style(this.STYLE.node.tool);
     this.get_nodes('data').style(this.STYLE.node.data);
@@ -154,20 +192,17 @@ class diagram {
   }
   gen_node_data(n_type) {
     var node_obj = {
-      style: null,
+      style: this.STYLE.node[n_type],
       position: { x: 0, y: 0},
-      data: { id: '', name: '', type: n_type, value: '' }
+      data: this.NODE_DATA
     };
-
-    //generate style
-    node_obj.style = {'background-color': this.NODE_COLOR[n_type], 'shape': this.NODE_SHAPE[n_type]};
 
     //generate position (NOTE: width and height are not correct)
     var info_box = this.DIAGRAM_CONTAINER.getBoundingClientRect();
     node_obj.position.x = info_box.x;
     node_obj.position.y = info_box.y + info_box.height/2;
 
-    //generate data
+    //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {
       if (Object.keys(this.CONFIG[n_type]).length > 0){
           node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
@@ -179,7 +214,6 @@ class diagram {
   }
 
   after_add_edge(edge_data){
-    console.log(edge_data);
     var flag_compatible = this.is_compatible(this.cy.nodes("node[id='"+edge_data.source+"']")[0], this.cy.nodes("node[id='"+edge_data.target+"']")[0]);
     //check also if there is another same edge
     if (!flag_compatible) {
@@ -188,8 +222,9 @@ class diagram {
     return edge_data;
   }
   gen_edge_data(source_id,target_id){
-    var edge_obj = { data: { id: '', name: '', source:'', target:'', type: 'edge', value: '' }, group: 'edges'};
+    var edge_obj = { data: this.EDGE_DATA, group: 'edges'};
     edge_obj.data.id = this.gen_id('edge');
+    edge_obj.data.type = 'edge';
     edge_obj.data.name = this.gen_id('edge');
     edge_obj.data.source = source_id;
     edge_obj.data.target = target_id;
@@ -203,6 +238,16 @@ class diagram {
   // (3) The realtime correlated items (Remove edges in case not suitable anymore)
   // (4) The real time compatible elements of the cy diagram
   update_elem(id,data){
+
+    //first check if it's the Diagram
+    if (id == this.DIAGRAM_GENERAL.data.id) {
+      for (var k_data in data) {
+        if (this.DIAGRAM_GENERAL.data.hasOwnProperty(k_data)) {
+          this.DIAGRAM_GENERAL.data[k_data] = data[k_data];
+        }
+      }
+      return this.DIAGRAM_GENERAL;
+    }
 
     var d_node = this.cy.getElementById(id);
 
@@ -255,21 +300,19 @@ class diagram {
     var arr_elems = this.cy.nodes();
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
-      var org_bg_color = this.NODE_COLOR[elem_obj._private.data.type];
-      this.cy.nodes('node[id="'+elem_obj._private.data.id+'"]').style({'background-color': org_bg_color})
+      this.cy.nodes('node[id="'+elem_obj._private.data.id+'"]').style(this.STYLE.node[elem_obj._private.data.type]);
     }
 
     arr_elems = this.cy.edges();
     for (var i = 0; i < arr_elems.length; i++) {
       var elem_obj = arr_elems[i];
-      var org_bg_color = this.EDGE_COLOR[elem_obj._private.data.type];
-      this.cy.edges('edge[id="'+elem_obj._private.data.id+'"]').style({'line-color': org_bg_color, 'target-arrow-color': org_bg_color});
+      this.cy.edges('edge[id="'+elem_obj._private.data.id+'"]').style(this.STYLE.edge[elem_obj._private.data.type]);
     }
 
     if (type == 'node') {
-      this.cy.nodes('node[id="'+elem.id+'"]').style({'background-color': this.NODE_ONCLICK_COLOR});
+      this.cy.nodes('node[id="'+elem.id+'"]').style(this.ONCLICK_STYLE.node[elem.type]);
     }else if (type == 'edge') {
-      this.cy.edges('edge[id="'+elem.id+'"]').style({'line-color': this.EDGE_ONCLICK_COLOR, 'target-arrow-color': this.EDGE_ONCLICK_COLOR});
+      this.cy.edges('edge[id="'+elem.id+'"]').style(this.ONCLICK_STYLE.edge[elem.type]);
     }
   }
 
