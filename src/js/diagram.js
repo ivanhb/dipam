@@ -139,9 +139,9 @@ class diagram {
   }
   get_nodes(type = null){
     if (type != null) {
-      return this.cy.nodes('[type = "'+type+'"]');
+      return this.cy.nodes('node[type = "'+type+'"]');
     }
-    return this.cy.nodes('[type = "data"]').union(this.cy.nodes('[type = "tool"]'));
+    return this.cy.nodes('node[type = "data"]').union(this.cy.nodes('node[type = "tool"]'));
   }
   get_edges(){
     return this.cy.edges();
@@ -149,13 +149,8 @@ class diagram {
 
   add_node(type) {
     var node_n = this.gen_node_data(type);
-    //var data_node = {'data': JSON.parse(JSON.stringify(node_n.data))};
-    //this.ALL_NODES.push(JSON.parse(JSON.stringify(node_n)));
-    this.ALL_NODES.push(node_n);
-
     node_n.group = 'nodes';
     this.cy.add(node_n);
-    console.log(this.cy.nodes());
   }
   gen_node_data(n_type) {
     var node_obj = {
@@ -186,6 +181,7 @@ class diagram {
   after_add_edge(edge_data){
     console.log(edge_data);
     var flag_compatible = this.is_compatible(this.cy.nodes("node[id='"+edge_data.source+"']")[0], this.cy.nodes("node[id='"+edge_data.target+"']")[0]);
+    //check also if there is another same edge
     if (!flag_compatible) {
       this.cy.remove(edge_data.id);
     }
@@ -202,51 +198,46 @@ class diagram {
 
 
   //Update an element
-  // (1) Its data in this Class
-  // (2) Its data in the cy diagram
-  // (3) Its style in the cy diagram
-  // (4) The realtime correlated items (Remove edges in case not suitable anymore)
-  // (5) The real time compatible elements of the cy diagram
+  // (1) Its data in the cy diagram
+  // (2) Its style in the cy diagram
+  // (3) The realtime correlated items (Remove edges in case not suitable anymore)
+  // (4) The real time compatible elements of the cy diagram
   update_elem(id,data){
 
-    // (1) Its data in this Class
-    var target_elem = this._search_for_elem(id);
+    var d_node = this.cy.getElementById(id);
+
+    // (1) update it's data first
     for (var k_data in data) {
-      if (target_elem.data.hasOwnProperty(k_data)) {
-        target_elem.data[k_data] = data[k_data];
+      if (d_node._private.data.hasOwnProperty(k_data)) {
+        d_node._private.data[k_data] = data[k_data];
       }
     }
 
-    // (2 ... 5) now all the cy correlated data
-    var d_node = this.cy.getElementById(target_elem.data.id);
+    // (2) Its style in the cy diagram
+    console.log(this.adapt_style(d_node));
 
-    // (2) Its data in the cy diagram
-    d_node.data(target_elem.data);
-
-    // (3) Its style in the cy diagram
-    this.update_style(d_node, target_elem.data.type, target_elem.data.value);
-
-    // (4) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
+    // (3) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
     this.check_node_compatibility(d_node, true);
 
-    // (5) The real time compatible elements of the cy diagram
+    // (4) The real time compatible elements of the cy diagram
     this.check_node_compatibility(d_node);
 
-    return target_elem;
+    //update diagram
+    cy.style().update();
+
+    return d_node;
   }
 
-  update_style(elems, elem_type, type){
-    try {
-      this.activate_nodes(null,true);
-
-      if (elem_type == "node") {
-        elems.cy.nodes(elem_type+'[type="'+type+'"]').style(this.STYLE[elem_type][type]);
-      }else if (elem_type == "edge") {
-        elems.cy.edges(elem_type+'[type="'+type+'"]').style(this.STYLE[elem_type][type]);
-      }
-    } catch (e) {
-      return -1;
+  //adapt the style to an element:<elem>
+  //returns the new style of the element
+  adapt_style(elem){
+    var elem_type = 'node';
+    if(elem.isEdge()){
+      elem_type = 'edge';
     }
+    var elem_style = this.STYLE[elem_type][elem._private.data.type];
+    elem.style(elem_style);
+    return elem_style;
   }
 
   //Remove an element by taking its id:<elem_id> from the diagram
@@ -254,30 +245,6 @@ class diagram {
   remove_elem(elem_id){
     return this.cy.remove("#"+elem_id);
   }
-
-  _search_for_elem(elem_id){
-    //check if is the DIAGRAM_GENERAL
-    if (this.DIAGRAM_GENERAL.data.id == elem_id) {
-      return this.DIAGRAM_GENERAL;
-    }
-
-    //check ALL_NODES
-    for (var i = 0; i < this.ALL_NODES.length; i++) {
-      if(this.ALL_NODES[i].data.id == elem_id){
-        return this.ALL_NODES[i];
-      }
-    }
-
-    //check ALL_EDGES
-    for (var i = 0; i < this.ALL_EDGES.length; i++) {
-      if(this.ALL_EDGES[i].data.id == elem_id){
-        return this.ALL_EDGES[i];
-      }
-    }
-
-    return -1;
-  }
-
 
   //adapt the style of the clicked element:<elem> of type:<type>
   click_elem_style(elem,type){
@@ -322,7 +289,6 @@ class diagram {
       'target_nodes': this.cy.edges('[source = "'+node_id+'"]').target(),
       'source_nodes': this.cy.edges('[target = "'+node_id+'"]').source()
     };
-    console.log(nodes_to_check.all_nodes);
 
     //in case we want to check only the neighborhood nodes (the connected nodes)
     if (neighborhood) {

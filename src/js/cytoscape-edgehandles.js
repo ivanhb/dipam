@@ -529,13 +529,18 @@ function makeEdges() {
 		}
 
 		if ((target.active()) && ((selected_node._private.data.id == source._private.data.id) || (selected_node == null))) {
-			var edge_obj = diagram_instance.gen_edge_data(source.id(),target.id());
-			var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
-			diagram_instance.after_add_edge(edge_obj.data);
+			var another_edge = this.cy.edges('edge[source="'+source.id()+'"]').intersection(this.cy.edges('edge[target="'+target.id()+'"]'));
+	    if (another_edge.length <= 0){
+				var edge_obj = diagram_instance.gen_edge_data(source.id(),target.id());
+				var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
+				diagram_instance.after_add_edge(edge_obj.data);
 
-	    added = added.merge(source2target);
+		    added = added.merge(source2target);
 
-			elem_onclick_handle();
+				elem_onclick_handle();
+	    }else {
+	    	console.log("You already have another edge between these two nodes !!");
+	    }
 		}else {
 			console.log("Cannot create an Edge starting from a source different from the selected node.");
 		}

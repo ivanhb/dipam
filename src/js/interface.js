@@ -293,7 +293,8 @@ class vwbata {
     }
 
     reload_control_section(new_elem = null){
-
+      new_elem = new_elem._private;
+      console.log(new_elem);
       var active_nav = this.active_nav();
 
       //check in which section I was

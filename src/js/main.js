@@ -10,7 +10,7 @@ var vw_interface = new vwbata(config, "diagram_instance", "vw_interface");
 vw_interface.init_nav();
 
 //init the diagram
-var diagram_instance = new diagram("cy", config, "VWBATA");
+var diagram_instance = new diagram("cy", config, "Dipam for Catarsi");
 var cy = diagram_instance.get_diagram_obj();
 
 window.cy = cy;
