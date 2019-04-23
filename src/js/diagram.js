@@ -488,6 +488,7 @@ class diagram {
     var paths = {};
     var path_queue = [];
     var completed_paths = [];
+    var index_intersections = [];
 
     //get all nodes
     var all_nodes = this.get_nodes();
@@ -503,86 +504,95 @@ class diagram {
         }
       }
     }
-    console.log(paths);
 
     //while we still have paths to analyze keep going
-    while (path_queue.length != 0) {
+    while (path_queue.length > 0) {
+      console.log("Queue path is: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
       //remove first elem, NOT the last
       var path_id = path_queue.shift();
-      var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
-      console.log(path_ela_res);
+      var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths, index_intersections);
+      if (completed_paths.indexOf(path_id) == -1) {
+        //we are done with this path
+        completed_paths.push(path_id);
+      }
     }
 
-    function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths) {
+    console.log(paths);
+
+    function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths, index_intersections) {
       var a_path_obj = paths[a_path_id];
       var last_node = a_path_obj.nodes[a_path_obj.nodes.length-1];
       var outgoing_edges = objinstance.outgoing_edges(last_node);
       var incoming_edges = objinstance.incoming_edges(last_node);
 
+      //STOP IF:
+
+      //(1) It is a leaf
       if (objinstance.is_leaf(last_node)) {
-        //we are done with this path
-        completed_paths.push(a_path_id);
-        //stop here the recursive execution
-        return {paths: paths, path_queue: path_queue, completed_paths: completed_paths};
-      }else if (incoming_edges.length > 1){
+        return a_path_obj;
+      }
 
-        if (!(objinstance.is_leaf(last_node))) {
-          //check first if other incomings edges have arrived
+      //(2) It has other incomings and is not an intersection point
+      if (index_intersections.indexOf(a_path_id) == -1) {
+        if (incoming_edges.length > 1){
+          console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
+          console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids);
+          //check if all other incomings edges have arrived
+          var total_incomings = incoming_edges.length;
           var arrived_paths_ids = __arrived_paths(last_node);
-          if((incoming_edges.length - 1) == arrived_paths_ids.length){
-            //merge the paths <arrived_paths_ids>
-            arrived_paths_ids.push(a_path_id);
-            console.log(a_path_id, arrived_paths_ids);
+
+          if(total_incomings - 1 == arrived_paths_ids.length){
+            console.log('Merging ... :');
+            arrived_paths_ids.push(a_path_id)
             var new_id = __merge_paths(arrived_paths_ids);
+            paths[new_id] = {nodes: [last_node]};
             path_queue.push(new_id);
+            index_intersections.push(new_id);
           }
+          return a_path_obj;
         }
+      }
 
-        //we are done with this path
-        completed_paths.push(a_path_id);
-        //stop here the recursive execution
-        return {paths: paths, path_queue: path_queue, completed_paths: completed_paths};
-
-      }else if (outgoing_edges.length > 1) {
-
+      //(3) Should split it
+      if (outgoing_edges.length > 1) {
         //split and add them to path_queue
         var new_ids = __split_path(outgoing_edges.length);
         for (var i = 0; i < new_ids.length; i++) {
           path_queue.push(new_ids[i]);
+          paths[new_id] = {nodes: [last_node]};
         }
-
-        //we are done with this path
-        completed_paths.push(a_path_id);
-        //stop here the recursive execution
-        return {paths: paths, path_queue: path_queue, completed_paths: completed_paths};
+        return a_path_obj;
       }
 
 
-      //else keep calling recursively the function on the one and only edge
-      var target_node = outgoing_edges[0].target()[0];
-      a_path_obj.nodes.push(target_node);
-      return _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths);
 
+      //else keep calling recursively the function on the one and only edge
+      if (outgoing_edges.length > 0) {
+        var target_node = outgoing_edges[0].target()[0];
+        a_path_obj.nodes.push(target_node);
+      }
+
+      return _elaborate_path(objinstance, path_id, paths, path_queue, completed_paths, index_intersections);
+
+      //inner functions
       function __split_path(num){
         var arr_ids = [];
         for (var i = 0; i < num; i++) {
           //parseInt(a_path_id.substring(2))
-          var new_id = a_path_id+"-"+str(num);
+          var new_id = "["+a_path_id+"."+str(num)+"]";
           arr_ids.push(new_id);
-          paths[new_id] = {nodes: [last_node]};
         }
         return arr_ids;
       }
       function __merge_paths(paths_ids_arr) {
         var num_id = "";
         for (var i = 0; i < paths_ids_arr.length; i++) {
-          num_id = num_id + "-" + paths_ids_arr[i].substring(2);
+          num_id = num_id + "," + paths_ids_arr[i].substring(2);
         }
-        var new_id = "p" + num_id;
-        paths[new_id] = {nodes: [last_node]};
+        num_id = num_id.substring(1);
+        var new_id = "p-"+"["+num_id+"]";
         return new_id;
       }
-
       function __arrived_paths(node){
         var arr_ids = [];
           for (var i = 0; i < completed_paths.length; i++) {
@@ -601,7 +611,7 @@ class diagram {
   // returns a new id in the format: p-1
   gen_path_id(paths){
     var new_path_id = Object.keys(paths).length;
-    return 'p-'+new_path_id;
+    return 'p-'+'['+new_path_id+']';
   }
 
 
