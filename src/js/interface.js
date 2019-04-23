@@ -37,6 +37,7 @@ class vwbata {
         this.CONTROL_CONTAINER = document.getElementById('control_body');
         this.ADD_TOOL = document.getElementById('add_tool');
         this.ADD_DATA = document.getElementById('add_data');
+        this.RUN_WORKFLOW = document.getElementById('btn_run_workflow');
 
         //Construct the DOM types
         if (config_file.hasOwnProperty('tool')) {
@@ -60,6 +61,10 @@ class vwbata {
 
     __get__add_data_container(){
       return this.ADD_DATA;
+    }
+
+    __get__run_workflow_container(){
+      return this.RUN_WORKFLOW;
     }
 
     get_tools() {

@@ -189,6 +189,7 @@ class diagram {
     var node_n = this.gen_node_data(type);
     node_n.group = 'nodes';
     this.cy.add(node_n);
+    console.log(this.get_nodes());
   }
   gen_node_data(n_type) {
     var node_obj = {
@@ -208,6 +209,7 @@ class diagram {
           node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
           node_obj.data.id = this.gen_id(n_type);
           node_obj.data.name = this.gen_id(n_type);
+          node_obj.data.type = n_type;
       }
     }
     return node_obj;
@@ -485,6 +487,7 @@ class diagram {
     //will contain all the paths of the diagram
     var paths = {};
     var path_queue = [];
+    var completed_paths = [];
 
     //get all nodes
     var all_nodes = this.get_nodes();
@@ -492,103 +495,138 @@ class diagram {
     //get the roots first
     for (var i = 0; i < all_nodes.length; i++) {
       if(this.is_root(all_nodes[i])){
-        var new_id = this.gen_path_id(paths);
-        paths[new_id] = {'input': all_nodes[i],'nodes': [all_nodes[i]]};
-        path_queue.push(new_id);
+        var root_outgoing_edges = this.outgoing_edges(all_nodes[i]);
+        for (var j = 0; j < root_outgoing_edges.length; j++) {
+          var new_id = this.gen_path_id(paths);
+          paths[new_id] = {nodes: [all_nodes[i]]};
+          path_queue.push(new_id);
+        }
       }
     }
+    console.log(paths);
 
     //while we still have paths to analyze keep going
     while (path_queue.length != 0) {
       //remove first elem, NOT the last
-      var a_path = path_queue.shift();
-      _elaborate_path(a_path);
+      var path_id = path_queue.shift();
+      var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
+      console.log(path_ela_res);
     }
 
-    function _elaborate_path(a_path_id) {
+    function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths) {
       var a_path_obj = paths[a_path_id];
       var last_node = a_path_obj.nodes[a_path_obj.nodes.length-1];
-      var outgoing_edges = this.outgoing_edges(last_node);
-      var incoming_edges = this.incoming_edges(last_node);
+      var outgoing_edges = objinstance.outgoing_edges(last_node);
+      var incoming_edges = objinstance.incoming_edges(last_node);
 
-      if (outgoing_edges.length > 1) {
-        //split and add them to path_queue
+      if (objinstance.is_leaf(last_node)) {
+        //we are done with this path
+        completed_paths.push(a_path_id);
         //stop here the recursive execution
+        return {paths: paths, path_queue: path_queue, completed_paths: completed_paths};
+      }else if (incoming_edges.length > 1){
+
+        if (!(objinstance.is_leaf(last_node))) {
+          //check first if other incomings edges have arrived
+          var arrived_paths_ids = __arrived_paths(last_node);
+          if((incoming_edges.length - 1) == arrived_paths_ids.length){
+            //merge the paths <arrived_paths_ids>
+            arrived_paths_ids.push(a_path_id);
+            console.log(a_path_id, arrived_paths_ids);
+            var new_id = __merge_paths(arrived_paths_ids);
+            path_queue.push(new_id);
+          }
+        }
+
+        //we are done with this path
+        completed_paths.push(a_path_id);
+        //stop here the recursive execution
+        return {paths: paths, path_queue: path_queue, completed_paths: completed_paths};
+
+      }else if (outgoing_edges.length > 1) {
+
+        //split and add them to path_queue
         var new_ids = __split_path(outgoing_edges.length);
         for (var i = 0; i < new_ids.length; i++) {
           path_queue.push(new_ids[i]);
         }
+
+        //we are done with this path
+        completed_paths.push(a_path_id);
+        //stop here the recursive execution
+        return {paths: paths, path_queue: path_queue, completed_paths: completed_paths};
       }
 
-      if ((incoming_edges.length > 1) || this.is_leaf(last_node)){
-        //stop here the recursive execution
-        return a_path_obj;
-      }
 
       //else keep calling recursively the function on the one and only edge
-      var target_node = this.outgoing_edges(last_node)[0].target()[0];
+      var target_node = outgoing_edges[0].target()[0];
       a_path_obj.nodes.push(target_node);
-      _elaborate_path(a_path_obj);
+      return _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths);
 
       function __split_path(num){
         var arr_ids = [];
         for (var i = 0; i < num; i++) {
           //parseInt(a_path_id.substring(2))
-          var new_id = a_path_id+str(num);
+          var new_id = a_path_id+"-"+str(num);
           arr_ids.push(new_id);
-          paths[new_id] = {'input': last_node,'nodes': [last_node]};
+          paths[new_id] = {nodes: [last_node]};
         }
         return arr_ids;
       }
-    }
+      function __merge_paths(paths_ids_arr) {
+        var num_id = "";
+        for (var i = 0; i < paths_ids_arr.length; i++) {
+          num_id = num_id + "-" + paths_ids_arr[i].substring(2);
+        }
+        var new_id = "p" + num_id;
+        paths[new_id] = {nodes: [last_node]};
+        return new_id;
+      }
 
+      function __arrived_paths(node){
+        var arr_ids = [];
+          for (var i = 0; i < completed_paths.length; i++) {
+            if(paths[completed_paths[i]].nodes[a_path_obj.nodes.length-1]._private.data.id == node._private.data.id){
+              arr_ids.push(completed_paths[i]);
+            }
+          }
+        return arr_ids;
+      }
+
+    }
   }
 
 
   //generate an id for a new path. In case the path is born from another specify its father id in <start_point>
   // returns a new id in the format: p-1
-  gen_path_id(paths, type = null, num = 0){
-
+  gen_path_id(paths){
     var new_path_id = Object.keys(paths).length;
-    if (start_point != null) {
-      new_path_id = _keys_starting_with(paths,start_point)-1;
-    }
     return 'p-'+new_path_id;
-
-    function _keys_starting_with(object, pref = "p-"){
-      var num_keys = 0;
-      for (var k in object) {
-        if(k.startsWith(pref)){
-          num_keys++;
-        }
-      }
-      return num_keys;
-    }
   }
 
 
   //is the given node a crossbreed
   //returns true or false
   is_crossbreed(node){
-    return incoming_edges(node).length > 1;
+    return this.incoming_edges(node).length > 1;
   }
 
   //is the given node a root
   //returns true or false
   is_root(node){
-    return incoming_edges(node).length == 0;
+    return this.incoming_edges(node).length == 0;
   }
 
   //is the given node a leaf
   //returns true or false
   is_leaf(node){
-    return outgoing_edges(node).length == 0;
+    return this.outgoing_edges(node).length == 0;
   }
 
   //the ougoing edges of a given node
   // an array of edges or [] if empty
   outgoing_edges(node){
-    var outgoing_edges_arr = this.cy.edges('source["'+node._private.data.id+'"]');
+    var outgoing_edges_arr = this.cy.edges('edge[source = "'+node._private.data.id+'"]');
     if (outgoing_edges_arr.length == 0) {
       return [];
     }
@@ -598,7 +636,7 @@ class diagram {
   //the incoming edges of a given node
   // an array of edges or [] if empty
   incoming_edges(node){
-    var incoming_edges_arr = this.cy.edges('target["'+node._private.data.id+'"]');
+    var incoming_edges_arr = this.cy.edges('edge[target ="'+node._private.data.id+'"]');
     if (incoming_edges_arr.length == 0) {
       return [];
     }

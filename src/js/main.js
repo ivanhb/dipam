@@ -30,6 +30,9 @@ vw_interface.__get__add_data_container().setAttribute("onclick",
 vw_interface.__get__add_tool_container().setAttribute("onclick",
             "diagram_instance.add_node('tool');elem_onclick_handle();");
 
+vw_interface.__get__run_workflow_container().setAttribute("onclick",
+              "diagram_instance.build_workflow();");
+
 
 
 //nodes on click handler
@@ -59,3 +62,6 @@ function elem_onclick_handle(){
 //******************************************//
 vw_interface.build_overview(diagram_instance.get_diagram().data);
 vw_interface.click_overview_nav();
+
+
+diagram_instance.build_workflow();
