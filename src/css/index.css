@@ -69,6 +69,45 @@ body {
   z-index: 999;
   background-color: #fff9ef;
 }
+#cy_foot{
+  position: absolute;
+  width: 70%;
+  height: 60px;
+  float: left;
+  top: 530px;
+  left: 350px;
+}
+
+
+.timeline-block{
+  display:inline-block;
+  margin: 0 auto;
+  font-size: 20px;
+  vertical-align: middle;
+}
+.timeline-block + .timeline-block{
+  margin-left: 10px;
+}
+#timeline_container{
+  opacity: 0.4;
+}
+
+#workflow_timeline{
+  float: left;
+  height: 100%;
+}
+#btn_run_workflow{
+  vertical-align: middle;
+  font-size: 18px;
+  margin-right: 2%;
+  border: #917442 solid 2px;
+}
+
+#start_block{
+  height: 100%;
+  border: #917442 solid 2px;
+}
+
 .node-style{
   border: transparent;
 }
