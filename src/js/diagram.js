@@ -579,7 +579,7 @@ class diagram {
         var arr_ids = [];
         for (var i = 0; i < num; i++) {
           //parseInt(a_path_id.substring(2))
-          var new_id = "["+a_path_id+"."+str(num)+"]";
+          var new_id = "["+a_path_id+"."+i.toString()+"]";
           arr_ids.push(new_id);
         }
         return arr_ids;
