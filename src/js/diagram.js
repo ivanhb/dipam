@@ -513,7 +513,9 @@ class diagram {
 
     //while we still have paths to analyze keep going
     while (path_queue.length > 0) {
-      console.log("Queue path is: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
+      console.log("Queue: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
+      console.log("intersection merge: ",index_intersections_merge);
+      console.log("intersection split: ",index_intersections_split);
       //remove first elem, NOT the last
       var path_id = path_queue.shift();
       var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
@@ -544,15 +546,16 @@ class diagram {
       {
         if (incoming_edges.length > 1){
 
-          var inter_obj = index_intersections_merge[last_node_id];
+
           if (!(last_node_id in index_intersections_merge)) {
-            inter_obj = {
+            index_intersections_merge[last_node_id] = {
               'waiting': incoming_edges.length,
               'in_paths': [],
               'out_path': null,
             }
             var total_incomings = incoming_edges.length;
           }
+          var inter_obj = index_intersections_merge[last_node_id];
           inter_obj.waiting--;
           inter_obj.in_paths.push(a_path_id);
 
@@ -598,8 +601,13 @@ class diagram {
 
 
       //else keep calling recursively the function on the one and only edge
-      if (outgoing_edges.length > 0) {
-        var target_node = outgoing_edges[0].target()[0];
+      var target_node = null;
+      if (outgoing_edges.length == 1) {
+        target_node = outgoing_edges[0].target()[0];
+        a_path_obj.nodes.push(target_node);
+      }else if (outgoing_edges.length > 1) {
+        var index_of_path = index_intersections_split[last_node_id].out_paths.indexOf(a_path_id);
+        target_node = outgoing_edges[index_of_path].target()[0];
         a_path_obj.nodes.push(target_node);
       }
 
