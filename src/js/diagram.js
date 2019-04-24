@@ -488,7 +488,8 @@ class diagram {
     var paths = {};
     var path_queue = [];
     var completed_paths = [];
-    var index_intersections = [];
+    var index_intersections_merge = {};
+    var index_intersections_split = {};
 
     //get all nodes
     var all_nodes = this.get_nodes();
@@ -515,7 +516,7 @@ class diagram {
       console.log("Queue path is: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
       //remove first elem, NOT the last
       var path_id = path_queue.shift();
-      var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths, index_intersections);
+      var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
       if (completed_paths.indexOf(path_id) == -1) {
         //we are done with this path
         completed_paths.push(path_id);
@@ -524,9 +525,10 @@ class diagram {
 
     console.log(paths);
 
-    function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths, index_intersections) {
+    function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths) {
       var a_path_obj = paths[a_path_id];
       var last_node = a_path_obj.nodes[a_path_obj.nodes.length-1];
+      var last_node_id = last_node._private.data.id;
       var outgoing_edges = objinstance.outgoing_edges(last_node);
       var incoming_edges = objinstance.incoming_edges(last_node);
 
@@ -538,36 +540,56 @@ class diagram {
       }
 
       //(2) It has other incomings and is not an intersection point
-      if (index_intersections.indexOf(a_path_id) == -1) {
+      if ( (!(last_node_id in index_intersections_merge)) ||  (index_intersections_merge[last_node_id].out_path == null) )
+      {
         if (incoming_edges.length > 1){
-          //check if all other incomings edges have arrived
-          var total_incomings = incoming_edges.length;
-          var arrived_paths_ids = __arrived_paths(last_node);
 
-          console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
-          console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids.length);
+          var inter_obj = index_intersections_merge[last_node_id];
+          if (!(last_node_id in index_intersections_merge)) {
+            inter_obj = {
+              'waiting': incoming_edges.length,
+              'in_paths': [],
+              'out_path': null,
+            }
+            var total_incomings = incoming_edges.length;
+          }
+          inter_obj.waiting--;
+          inter_obj.in_paths.push(a_path_id);
 
-          if(total_incomings - 1 == arrived_paths_ids.length){
+          if (inter_obj.waiting == 0) {
             console.log('I will Merge ... :');
-            arrived_paths_ids.push(a_path_id)
-            var new_id = __merge_paths(arrived_paths_ids);
+            var new_id = __merge_paths(inter_obj.in_paths);
             paths[new_id] = {nodes: [last_node]};
             path_queue.push(new_id);
-            index_intersections.push(new_id);
+            inter_obj.out_path = new_id;
           }
+
           return a_path_obj;
+
+          //console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
+          //console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids.length);
         }
       }
 
       //(3) Should split it
-      if (index_intersections.indexOf(a_path_id) == -1) {
+      if ( (!(last_node_id in index_intersections_split)) )
+      {
         if (outgoing_edges.length > 1) {
+
+
+          if (!(last_node_id in index_intersections_split)) {
+            index_intersections_split[last_node_id] = {
+              'in_path': a_path_id,
+              'out_paths': [],
+            };
+          }
+
           //split and add them to path_queue
           var new_ids = __split_path(outgoing_edges.length, a_path_id);
           for (var i = 0; i < new_ids.length; i++) {
             paths[new_ids[i]] = {nodes: [last_node]};
             path_queue.push(new_ids[i]);
-            index_intersections.push(new_ids[i]);
+            index_intersections_split[last_node_id].out_paths.push(new_ids[i]);
           }
           return a_path_obj;
         }
@@ -581,7 +603,7 @@ class diagram {
         a_path_obj.nodes.push(target_node);
       }
 
-      return _elaborate_path(objinstance, path_id, paths, path_queue, completed_paths, index_intersections);
+      return _elaborate_path(objinstance, path_id, paths, path_queue, completed_paths);
 
       //inner functions
       function __split_path(num, origin_path_id){
