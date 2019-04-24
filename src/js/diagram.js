@@ -496,12 +496,17 @@ class diagram {
     //get the roots first
     for (var i = 0; i < all_nodes.length; i++) {
       if(this.is_root(all_nodes[i])){
-        var root_outgoing_edges = this.outgoing_edges(all_nodes[i]);
+        //var root_outgoing_edges = this.outgoing_edges(all_nodes[i]);
+        var new_id = this.gen_path_id(paths);
+        paths[new_id] = {nodes: [all_nodes[i]]};
+        path_queue.push(new_id);
+        /*
         for (var j = 0; j < root_outgoing_edges.length; j++) {
           var new_id = this.gen_path_id(paths);
           paths[new_id] = {nodes: [all_nodes[i]]};
           path_queue.push(new_id);
         }
+        */
       }
     }
 
@@ -535,14 +540,15 @@ class diagram {
       //(2) It has other incomings and is not an intersection point
       if (index_intersections.indexOf(a_path_id) == -1) {
         if (incoming_edges.length > 1){
-          console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
-          console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids);
           //check if all other incomings edges have arrived
           var total_incomings = incoming_edges.length;
           var arrived_paths_ids = __arrived_paths(last_node);
 
+          console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
+          console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids.length);
+
           if(total_incomings - 1 == arrived_paths_ids.length){
-            console.log('Merging ... :');
+            console.log('I will Merge ... :');
             arrived_paths_ids.push(a_path_id)
             var new_id = __merge_paths(arrived_paths_ids);
             paths[new_id] = {nodes: [last_node]};
@@ -554,14 +560,17 @@ class diagram {
       }
 
       //(3) Should split it
-      if (outgoing_edges.length > 1) {
-        //split and add them to path_queue
-        var new_ids = __split_path(outgoing_edges.length);
-        for (var i = 0; i < new_ids.length; i++) {
-          path_queue.push(new_ids[i]);
-          paths[new_id] = {nodes: [last_node]};
+      if (index_intersections.indexOf(a_path_id) == -1) {
+        if (outgoing_edges.length > 1) {
+          //split and add them to path_queue
+          var new_ids = __split_path(outgoing_edges.length, a_path_id);
+          for (var i = 0; i < new_ids.length; i++) {
+            paths[new_ids[i]] = {nodes: [last_node]};
+            path_queue.push(new_ids[i]);
+            index_intersections.push(new_ids[i]);
+          }
+          return a_path_obj;
         }
-        return a_path_obj;
       }
 
 
@@ -575,11 +584,11 @@ class diagram {
       return _elaborate_path(objinstance, path_id, paths, path_queue, completed_paths, index_intersections);
 
       //inner functions
-      function __split_path(num){
+      function __split_path(num, origin_path_id){
         var arr_ids = [];
         for (var i = 0; i < num; i++) {
           //parseInt(a_path_id.substring(2))
-          var new_id = "["+a_path_id+"."+i.toString()+"]";
+          var new_id = "p-["+origin_path_id.substring(2)+"/"+i.toString()+"]";
           arr_ids.push(new_id);
         }
         return arr_ids;
@@ -595,11 +604,12 @@ class diagram {
       }
       function __arrived_paths(node){
         var arr_ids = [];
-          for (var i = 0; i < completed_paths.length; i++) {
-            if(paths[completed_paths[i]].nodes[a_path_obj.nodes.length-1]._private.data.id == node._private.data.id){
+        for (var i = 0; i < completed_paths.length; i++) {
+            var path_nodes = paths[completed_paths[i]].nodes;
+            if(path_nodes[path_nodes.length - 1]._private.data.id == node._private.data.id){
               arr_ids.push(completed_paths[i]);
             }
-          }
+        }
         return arr_ids;
       }
 
