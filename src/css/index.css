@@ -101,6 +101,7 @@ body {
   font-size: 18px;
   margin-right: 2%;
   border: #917442 solid 2px;
+  width: 200px;
 }
 
 #start_block{
@@ -154,7 +155,7 @@ body {
 
 #diagram_editor{
   position: absolute;
-  width: 350px;
+  width: 320px;
   top: 20px;
   left: 30px;
   height: 75px;

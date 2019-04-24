@@ -34,10 +34,15 @@ class vwbata {
         //define the dom ids
         this.NAV_INFO = document.getElementById('nav_info_a');
         this.NAV_OVERVIEW = document.getElementById('nav_overview_a');
+        this.DIAGRAM_EDITOR_CONTAINER = document.getElementById('diagram_editor');
+        this.CONTROL_BTNS = document.getElementById('control_nav');
         this.CONTROL_CONTAINER = document.getElementById('control_body');
+        this.CY_CONTAINER = document.getElementById('cy');
         this.ADD_TOOL = document.getElementById('add_tool');
         this.ADD_DATA = document.getElementById('add_data');
         this.RUN_WORKFLOW = document.getElementById('btn_run_workflow');
+
+
 
         //Construct the DOM types
         if (config_file.hasOwnProperty('tool')) {
@@ -393,5 +398,41 @@ class vwbata {
           }
     }
     return param;
+  }
+
+  click_run_workflow(){
+
+    if (this.RUN_WORKFLOW.value == 'run') {
+      _disable_divs(this,false);
+      this.RUN_WORKFLOW.value = 'stop';
+      this.RUN_WORKFLOW.innerHTML = "Stop process";
+    }else {
+      _disable_divs(this,true);
+      this.RUN_WORKFLOW.value = 'run';
+      this.RUN_WORKFLOW.innerHTML = "Run workflow";
+    }
+
+    function _disable_divs(instance,enable=false){
+      var p_event = 'none';
+      var opacity_val = '0.6';
+      if (enable) {
+        p_event = '';
+        opacity_val = '';
+      }
+
+      instance.CY_CONTAINER.style["pointer-events"] = p_event;
+      instance.CY_CONTAINER.style["opacity"] = opacity_val;
+
+      instance.DIAGRAM_EDITOR_CONTAINER.style["pointer-events"] = p_event;
+      instance.DIAGRAM_EDITOR_CONTAINER.style["opacity"] = opacity_val;
+
+      instance.CONTROL_BTNS.style["pointer-events"] = p_event;
+      instance.CONTROL_BTNS.style["opacity"] = opacity_val;
+
+      instance.CONTROL_CONTAINER.style["pointer-events"] = p_event;
+      instance.CONTROL_CONTAINER.style["opacity"] = opacity_val;
+    }
+
+    //pointer-events:none;
   }
 }

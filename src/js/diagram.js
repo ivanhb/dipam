@@ -516,8 +516,6 @@ class diagram {
     //while we still have paths to analyze keep going
     while (path_queue.length > 0) {
       console.log("Queue: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
-      console.log("intersection merge: ",index_intersections_merge);
-      console.log("intersection split: ",index_intersections_split);
       //remove first elem, NOT the last
       var path_id = path_queue.shift();
       var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
@@ -527,7 +525,9 @@ class diagram {
       }
     }
 
-    console.log(paths);
+    console.log(this.normalize_path(paths));
+    console.log("intersection merge: ",index_intersections_merge);
+    console.log("intersection split: ",index_intersections_split);
 
     function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths) {
       var a_path_obj = paths[a_path_id];
@@ -695,5 +695,16 @@ class diagram {
     return incoming_edges_arr;
   }
 
+  //normalize the workflow path
+  normalize_path(paths_obj){
+    var normalize_paths = {};
+    for (var k_path in paths_obj) {
+      normalize_paths[k_path] = {nodes:[]};
+      for (var i = 0; i < paths_obj[k_path].nodes.length; i++) {
+        normalize_paths[k_path].nodes.push(paths_obj[k_path].nodes[i].id());
+      }
+    }
+    return normalize_paths;
+  }
 
 }
