@@ -189,13 +189,13 @@ class diagram {
     var node_n = this.gen_node_data(type);
     node_n.group = 'nodes';
     this.cy.add(node_n);
-    console.log(this.get_nodes());
+    //console.log(this.get_nodes(type));
   }
   gen_node_data(n_type) {
     var node_obj = {
       style: this.STYLE.node[n_type],
       position: { x: 0, y: 0},
-      data: this.NODE_DATA
+      data: JSON.parse(JSON.stringify(this.NODE_DATA))
     };
 
     //generate position (NOTE: width and height are not correct)
@@ -206,12 +206,14 @@ class diagram {
     //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {
       if (Object.keys(this.CONFIG[n_type]).length > 0){
+          var new_id = this.gen_id(n_type);
           node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
-          node_obj.data.id = this.gen_id(n_type);
-          node_obj.data.name = this.gen_id(n_type);
+          node_obj.data.id = new_id;
+          node_obj.data.name = new_id;
           node_obj.data.type = n_type;
       }
     }
+    console.log(node_obj);
     return node_obj;
   }
 
@@ -224,7 +226,7 @@ class diagram {
     return edge_data;
   }
   gen_edge_data(source_id,target_id){
-    var edge_obj = { data: this.EDGE_DATA, group: 'edges'};
+    var edge_obj = { data: JSON.parse(JSON.stringify(this.EDGE_DATA)) , group: 'edges'};
     edge_obj.data.id = this.gen_id('edge');
     edge_obj.data.type = 'edge';
     edge_obj.data.name = this.gen_id('edge');
