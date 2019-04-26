@@ -434,7 +434,7 @@ class vwbata {
     }
   }
 
-
+  //Executes all the workflow
   handle_workflow(status, param){
     if (status == 'run') {
       console.log(param);
@@ -453,80 +453,81 @@ class vwbata {
       }
 
       for (var p_id in paths_res) {
-        console.log("Processing:", p_id);
+        console.log("Processing: ", p_id);
         _process_path(p_id);
       }
-
 
       var last_path = paths_res[Object.keys(paths_res)[Object.keys(paths_res).length -1]];
       console.log("\n The final result is: "+last_path.result[0]);
 
-      function _process_path(path_id){
-        var nodes_to_process = paths_res[path_id].nodes_to_process;
+    }else if (status == 'stop') {
+      //Stop the execution and abort all the running functions"
+      console.log("Stop the execution and abort all the running functions");
+    }
 
-        if (nodes_to_process.length > 0) {
-          var node_id = nodes_to_process.shift();
+    function _process_path(path_id){
+      var nodes_to_process = paths_res[path_id].nodes_to_process;
 
-          //the last node to process
-          if (nodes_to_process.length == 0) {
+      if (nodes_to_process.length > 0) {
+        var node_id = nodes_to_process.shift();
 
-            //check if it is a merging intersection node
-            if (node_id in param.merge_intersections_nodes){
-              var intersection_node = param.merge_intersections_nodes[node_id];
-              //check if i am processing the merging path
-              if (intersection_node.out_path != path_id) {
-                //give my result to the merging path
-                paths_res[intersection_node.out_path].result.push(paths_res[path_id].result[0]);
-                return _process_path(path_id);
-              }
-            }
-          }
+        //the last node to process
+        if (nodes_to_process.length == 0) {
 
-          ////merge the results in one if  i am the path of the merging node
+          //check if it is a merging intersection node
           if (node_id in param.merge_intersections_nodes){
             var intersection_node = param.merge_intersections_nodes[node_id];
             //check if i am processing the merging path
-            if (intersection_node.out_path == path_id) {
-              var merge_results = paths_res[path_id].result[0];
-              for (var i = 1; i < paths_res[path_id].result.length; i++) {
-                merge_results = merge_results +","+ paths_res[path_id].result[i];
-              }
-              paths_res[path_id].result = ["["+merge_results+"]"];
+            if (intersection_node.out_path != path_id) {
+              //give my result to the merging path
+              paths_res[intersection_node.out_path].result.push(paths_res[path_id].result[0]);
+              return _process_path(path_id);
             }
           }
-
-          //process the node by giving the current result to the node as input
-          console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
-          //This case is possible only for 'Data' nodes
-          //the server need to populate this properly
-          if (paths_res[path_id].result.length == 0) {
-            paths_res[path_id].result.push("["+node_id+":data]");
-          }else {
-            paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
-          }
-
-
-          //check if it is a splitting intersection node
-          if (node_id in param.split_intersections_nodes){
-            var intersection_node = param.split_intersections_nodes[node_id];
-            //check if i am processing the splitting path
-            if (intersection_node.in_path == path_id) {
-              for (var i = 0; i < intersection_node.out_paths.length; i++) {
-                var out_path_id = intersection_node.out_paths[i];
-                paths_res[out_path_id].result.push(paths_res[path_id].result[0]);
-              }
-            }
-            //else i am a splitted path and i got the results already
-          }
-
-          return _process_path(path_id);
         }
 
-        paths_res[path_id].status = 'done';
-        return paths_res[path_id];
+        ////merge the results in one if  i am the path of the merging node
+        if (node_id in param.merge_intersections_nodes){
+          var intersection_node = param.merge_intersections_nodes[node_id];
+          //check if i am processing the merging path
+          if (intersection_node.out_path == path_id) {
+            var merge_results = paths_res[path_id].result[0];
+            for (var i = 1; i < paths_res[path_id].result.length; i++) {
+              merge_results = merge_results +","+ paths_res[path_id].result[i];
+            }
+            paths_res[path_id].result = ["["+merge_results+"]"];
+          }
+        }
+
+        //process the node by giving the current result to the node as input
+        console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
+        //This case is possible only for 'Data' nodes
+        //the server need to populate this properly
+        if (paths_res[path_id].result.length == 0) {
+          paths_res[path_id].result.push("["+node_id+":data]");
+        }else {
+          paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
+        }
+
+
+        //check if it is a splitting intersection node
+        if (node_id in param.split_intersections_nodes){
+          var intersection_node = param.split_intersections_nodes[node_id];
+          //check if i am processing the splitting path
+          if (intersection_node.in_path == path_id) {
+            for (var i = 0; i < intersection_node.out_paths.length; i++) {
+              var out_path_id = intersection_node.out_paths[i];
+              paths_res[out_path_id].result.push(paths_res[path_id].result[0]);
+            }
+          }
+          //else i am a splitted path and i got the results already
+        }
+
+        return _process_path(path_id);
       }
+
+      paths_res[path_id].status = 'done';
+      return paths_res[path_id];
     }
-
-
   }
 }

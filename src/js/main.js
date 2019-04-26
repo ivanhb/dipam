@@ -24,6 +24,11 @@ window.cy = cy;
 
 //add the edges event handler
 var eh = cy.edgehandles();
+this.cy.on('ehshow', (event, sourceNode) => {
+      if (sourceNode._private.selected == false) {
+        eh.hide();
+      }
+});
 
 vw_interface.__get__add_data_container().setAttribute("onclick",
             "diagram_instance.add_node('data');elem_onclick_handle();");
