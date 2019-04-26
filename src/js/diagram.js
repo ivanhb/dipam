@@ -536,10 +536,6 @@ class diagram {
 
       //STOP IF:
 
-      //(1) It is a leaf
-      if (objinstance.is_leaf(last_node)) {
-        return a_path_obj;
-      }
 
       //(2) It has other incomings and is not an intersection point
       if ( (!(last_node_id in index_intersections_merge)) ||  (index_intersections_merge[last_node_id].out_path == null) )
@@ -572,6 +568,11 @@ class diagram {
           //console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
           //console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids.length);
         }
+      }
+
+      //(1) It is a leaf
+      if (objinstance.is_leaf(last_node)) {
+        return a_path_obj;
       }
 
       //(3) Should split it

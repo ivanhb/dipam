@@ -487,8 +487,8 @@ class vwbata {
             var intersection_node = param.merge_intersections_nodes[node_id];
             //check if i am processing the merging path
             if (intersection_node.out_path == path_id) {
-              var merge_results = "";
-              for (var i = 0; i < paths_res[path_id].result.length; i++) {
+              var merge_results = paths_res[path_id].result[0];
+              for (var i = 1; i < paths_res[path_id].result.length; i++) {
                 merge_results = merge_results +","+ paths_res[path_id].result[i];
               }
               paths_res[path_id].result = ["["+merge_results+"]"];
