@@ -503,19 +503,12 @@ class diagram {
         var new_id = this.gen_path_id(paths);
         paths[new_id] = {nodes: [all_nodes[i]]};
         path_queue.push(new_id);
-        /*
-        for (var j = 0; j < root_outgoing_edges.length; j++) {
-          var new_id = this.gen_path_id(paths);
-          paths[new_id] = {nodes: [all_nodes[i]]};
-          path_queue.push(new_id);
-        }
-        */
       }
     }
 
     //while we still have paths to analyze keep going
     while (path_queue.length > 0) {
-      console.log("Queue: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
+      //console.log("Queue: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
       //remove first elem, NOT the last
       var path_id = path_queue.shift();
       var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
@@ -525,9 +518,14 @@ class diagram {
       }
     }
 
-    console.log(this.normalize_path(paths));
-    console.log("intersection merge: ",index_intersections_merge);
-    console.log("intersection split: ",index_intersections_split);
+    return {
+      paths: this.normalize_path(paths),
+      queue: completed_paths,
+      merge_intersections_nodes: index_intersections_merge,
+      split_intersections_nodes: index_intersections_split
+    };
+    //console.log("intersection merge: ",index_intersections_merge);
+    //console.log("intersection split: ",index_intersections_split);
 
     function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths) {
       var a_path_obj = paths[a_path_id];
@@ -562,7 +560,7 @@ class diagram {
           inter_obj.in_paths.push(a_path_id);
 
           if (inter_obj.waiting == 0) {
-            console.log('I will Merge ... :');
+            //console.log('I will Merge ... :');
             var new_id = __merge_paths(inter_obj.in_paths);
             paths[new_id] = {nodes: [last_node]};
             path_queue.push(new_id);
@@ -699,9 +697,9 @@ class diagram {
   normalize_path(paths_obj){
     var normalize_paths = {};
     for (var k_path in paths_obj) {
-      normalize_paths[k_path] = {nodes:[]};
+      normalize_paths[k_path] = {nodes_ids:[]};
       for (var i = 0; i < paths_obj[k_path].nodes.length; i++) {
-        normalize_paths[k_path].nodes.push(paths_obj[k_path].nodes[i].id());
+        normalize_paths[k_path].nodes_ids.push(paths_obj[k_path].nodes[i].id());
       }
     }
     return normalize_paths;

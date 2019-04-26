@@ -402,13 +402,13 @@ class vwbata {
 
   click_run_workflow(){
 
-    if (this.RUN_WORKFLOW.value == 'run') {
+    if (this.RUN_WORKFLOW.value == 'stop') {
       _disable_divs(this,false);
-      this.RUN_WORKFLOW.value = 'stop';
+      this.RUN_WORKFLOW.value = 'run';
       this.RUN_WORKFLOW.innerHTML = "Stop process";
     }else {
       _disable_divs(this,true);
-      this.RUN_WORKFLOW.value = 'run';
+      this.RUN_WORKFLOW.value = 'stop';
       this.RUN_WORKFLOW.innerHTML = "Run workflow";
     }
 
@@ -432,7 +432,160 @@ class vwbata {
       instance.CONTROL_CONTAINER.style["pointer-events"] = p_event;
       instance.CONTROL_CONTAINER.style["opacity"] = opacity_val;
     }
+  }
 
-    //pointer-events:none;
+
+  handle_workflow(status, param){
+    if (status == 'run') {
+      console.log(param);
+
+      var paths_res = {};
+      var process_queue = JSON.parse(JSON.stringify(param.queue));
+
+      for (var i = 0; i < param.queue.length; i++) {
+        var p_id = param.queue[i];
+        var p_obj = param.paths[p_id];
+        paths_res[p_id] = {
+            status:'processing',
+            nodes_to_process: JSON.parse(JSON.stringify(p_obj.nodes_ids)),
+            result: []
+        };
+      }
+
+      for (var p_id in paths_res) {
+        console.log("Processing:", p_id);
+        _process_path(p_id);
+      }
+
+
+      var last_path = paths_res[Object.keys(paths_res)[Object.keys(paths_res).length -1]];
+      console.log("\n The final result is: "+last_path.result[0]);
+
+      function _process_path(path_id){
+        var nodes_to_process = paths_res[path_id].nodes_to_process;
+
+        if (nodes_to_process.length > 0) {
+          var node_id = nodes_to_process.shift();
+
+          //the last node to process
+          if (nodes_to_process.length == 0) {
+
+            //check if it is a merging intersection node
+            if (node_id in param.merge_intersections_nodes){
+              var intersection_node = param.merge_intersections_nodes[node_id];
+              //check if i am processing the merging path
+              if (intersection_node.out_path != path_id) {
+                //give my result to the merging path
+                paths_res[intersection_node.out_path].result.push(paths_res[path_id].result[0]);
+                return _process_path(path_id);
+              }
+            }
+
+            //check if it is a splitting intersection node
+            else if (node_id in param.split_intersections_nodes){
+              var intersection_node = param.split_intersections_nodes[node_id];
+              //check if i am processing the splitting path
+              if (intersection_node.in_path == path_id) {
+                for (var i = 0; i < intersection_node.out_paths.length; i++) {
+                  var out_path_id = intersection_node.out_paths[i];
+                  paths_res[out_path_id].result.push(paths_res[path_id].result[0]);
+                }
+              }
+              //else i am a splitted path and i got the results already
+            }
+          }
+
+          ////merge the results in one if  i am the path of the merging node
+          if (node_id in param.merge_intersections_nodes){
+            var intersection_node = param.merge_intersections_nodes[node_id];
+            //check if i am processing the merging path
+            if (intersection_node.out_path == path_id) {
+              var merge_results = "";
+              console.log(paths_res[path_id].result);
+              for (var i = 0; i < paths_res[path_id].result.length; i++) {
+                merge_results = merge_results + paths_res[path_id].result[i];
+              }
+              paths_res[path_id].result = ["["+merge_results+"]"];
+            }
+          }
+
+          //process the node by giving the current result to the node as input
+          console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
+          //This case is possible only for 'Data' nodes
+          //the server need to populate this properly
+          if (paths_res[path_id].result.length == 0) {
+            paths_res[path_id].result.push("["+node_id+":data]");
+          }else {
+            paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
+          }
+
+          return _process_path(path_id);
+        }
+
+        paths_res[path_id].status = 'done';
+        return paths_res[path_id];
+      }
+
+
+      function _process_node(path_id, node_id) {
+
+        var execute_flag = true;
+        //if i am executing the last node
+        if (paths_res[path_id].nodes_to_process == 1) {
+          paths_res[path_id].status = 'done';
+        }
+
+        //check if splitting node,
+        //then i need to retrieve the result of the original path in case it has been already processed
+        if (node_id in param.split_intersections_nodes){
+          //get the original path which have splitted into more paths
+          var original_path_id = param.split_intersections_nodes[node_id].in_path;
+          if (!(original_path_id in paths_res)){
+            paths_res[p_id].result = paths_res[original_path_id].result;
+          }else {
+            execute_flag = false;
+          }
+        }
+
+        //check if merging node
+        //then i need to wait fot all the other paths results
+        if (node_id in param.merge_intersections_nodes){
+          //check if all the other paths have results
+          var intersection_node = param.merge_intersections_nodes[node_id];
+          for (var j = 0; j < intersection_node.in_paths.length; j++) {
+            var in_path_id = intersection_node.in_paths[j];
+            if ((!(in_path_id in paths_res)) || ((in_path_id in paths_res) && (paths_res[in_path_id].status == 'processing'))) {
+              execute_flag= false;
+              break;
+            }else {
+              paths_res[path_id].result[in_path_id] = paths_res[in_path_id].result;
+              //TODO and merge this result with the new result of the other path
+
+            }
+          }
+        }
+
+        //else is a normal path node, I process it regularly
+        if (execute_flag) {
+          //here we should process the node using processing_result as input
+          console.log("Processing node:", node_id);
+          //insert in paths_res[p_id].result  the result of this step
+          //paths_res[p_id].status = 'done';
+        }else {
+          process_queue.push(path_id);
+          return paths_res[path_id];
+        }
+
+        //Recursive call
+        if (nodes_to_process.length == 0) {
+          return paths_res[path_id];
+        }else {
+            return _process_node(path_id, nodes_to_process.shift());
+        }
+      }
+
+    }
+
+
   }
 }

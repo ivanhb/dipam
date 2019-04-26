@@ -31,7 +31,7 @@ vw_interface.__get__add_tool_container().setAttribute("onclick",
             "diagram_instance.add_node('tool');elem_onclick_handle();");
 
 vw_interface.__get__run_workflow_container().setAttribute("onclick",
-              "vw_interface.click_run_workflow();diagram_instance.build_workflow();");
+              "vw_interface.click_run_workflow();vw_interface.handle_workflow(this.value,diagram_instance.build_workflow());");
 
 
 
