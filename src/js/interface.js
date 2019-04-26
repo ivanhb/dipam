@@ -480,19 +480,6 @@ class vwbata {
                 return _process_path(path_id);
               }
             }
-
-            //check if it is a splitting intersection node
-            else if (node_id in param.split_intersections_nodes){
-              var intersection_node = param.split_intersections_nodes[node_id];
-              //check if i am processing the splitting path
-              if (intersection_node.in_path == path_id) {
-                for (var i = 0; i < intersection_node.out_paths.length; i++) {
-                  var out_path_id = intersection_node.out_paths[i];
-                  paths_res[out_path_id].result.push(paths_res[path_id].result[0]);
-                }
-              }
-              //else i am a splitted path and i got the results already
-            }
           }
 
           ////merge the results in one if  i am the path of the merging node
@@ -501,9 +488,8 @@ class vwbata {
             //check if i am processing the merging path
             if (intersection_node.out_path == path_id) {
               var merge_results = "";
-              console.log(paths_res[path_id].result);
               for (var i = 0; i < paths_res[path_id].result.length; i++) {
-                merge_results = merge_results + paths_res[path_id].result[i];
+                merge_results = merge_results +","+ paths_res[path_id].result[i];
               }
               paths_res[path_id].result = ["["+merge_results+"]"];
             }
@@ -517,6 +503,20 @@ class vwbata {
             paths_res[path_id].result.push("["+node_id+":data]");
           }else {
             paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
+          }
+
+
+          //check if it is a splitting intersection node
+          if (node_id in param.split_intersections_nodes){
+            var intersection_node = param.split_intersections_nodes[node_id];
+            //check if i am processing the splitting path
+            if (intersection_node.in_path == path_id) {
+              for (var i = 0; i < intersection_node.out_paths.length; i++) {
+                var out_path_id = intersection_node.out_paths[i];
+                paths_res[out_path_id].result.push(paths_res[path_id].result[0]);
+              }
+            }
+            //else i am a splitted path and i got the results already
           }
 
           return _process_path(path_id);
