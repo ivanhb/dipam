@@ -84,11 +84,24 @@ body {
   margin: 0 auto;
   font-size: 20px;
   vertical-align: middle;
+  margin-left:10px;
 }
+.timeline-block-inner{
+  display:inline-block;
+  width:20px;
+  height:40px;
+  vertical-align: middle;
+  background-color: #917442;
+  margin-right:2px;
+}
+#timeline_container{
+  display:inline-block;
+}
+
 .timeline-block + .timeline-block{
   margin-left: 10px;
 }
-#timeline_container{
+#timeline_text{
   opacity: 0.4;
 }
 
@@ -143,14 +156,14 @@ body {
 
 }
 
-#control_body .input-group + .input-group{
-  top: 25px;
+.input-group + .input-group{
+  padding-top: 25px;
 }
 
 .input-group{
   font-size:120%;
   left: 50px;
-  width: 300px;
+  width: 400px;
 }
 
 #diagram_editor{
@@ -170,4 +183,9 @@ body {
 }
 #diagram_editor_nav li button{
   font-size:140%;
+}
+
+.dropdown{
+  max-width: 250px;
+  min-width: 200px;
 }

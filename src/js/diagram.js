@@ -1,24 +1,26 @@
 
 class diagram {
 
-  DIAGRAM_DATA = {
-      //these attributes must be contained always
-      id: null, name: null, type: null
-  };
-
-  NODE_DATA = {
-      //these attributes must be contained always
-      id: null, name: null, type: null, value: null
-      //Add other NEW-Attribute
-  };
-
-  EDGE_DATA ={
-      //these attributes must be contained always
-      id: null, name: null, type: null, value: null, source: null, target:null
-      //Add other NEW-Attribute
-  };
 
   constructor(container_id, config, diagram_name) {
+
+    this.DIAGRAM_DATA = {
+        //these attributes must be contained always
+        id: null, name: null, type: null
+    };
+
+    this.NODE_DATA = {
+        //these attributes must be contained always
+        id: null, name: null, type: null, value: null
+        //Add other NEW-Attribute
+    };
+
+    this.EDGE_DATA ={
+        //these attributes must be contained always
+        id: null, name: null, type: null, value: null, source: null, target:null
+        //Add other NEW-Attribute
+    };
+
     this.CONFIG = config;
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
@@ -154,13 +156,28 @@ class diagram {
                 edges: this.INIT_EDGES
               }
     });
+    var cy_undo_redo = this.cy.undoRedo(
+        {
+              isDebug: true, // Debug mode for console messages
+              actions: {},// actions to be added
+              undoableDrag: false, // Whether dragging nodes are undoable can be a function as well
+              stackSizeLimit: undefined, // Size limit of undo stack, note that the size of redo stack cannot exceed size of undo stack
+              ready: function () { // callback when undo-redo is ready
 
-    /*
-    this.cy.on('ehshow', (event, sourceNode) => {
-        if (sourceNode._private.selected == false) {
-          this.cy.edgehandles().disable();
-          //this.cy.edgehandles().hide();
+              }
         }
+    );
+    this.cy_undo_redo = cy_undo_redo;
+
+    //in case we want undo redo when clicking on keys CTRL-Z
+    /*
+    document.addEventListener("keydown", function (e) {
+          if (e.ctrlKey && e.target.nodeName === 'BODY') {
+            if (e.which === 90)
+                cy_undo_redo.undo();
+            else if (e.which === 89)
+                cy_undo_redo.redo();
+          }
     });
     */
 
@@ -171,6 +188,9 @@ class diagram {
 
   get_diagram_obj() {
     return this.cy;
+  }
+  get_undo_redo() {
+    return this.cy_undo_redo;
   }
   get_diagram(){
     return this.DIAGRAM_GENERAL;
@@ -189,7 +209,7 @@ class diagram {
     var node_n = this.gen_node_data(type);
     node_n.group = 'nodes';
     this.cy.add(node_n);
-    //console.log(this.get_nodes(type));
+    this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
   }
   gen_node_data(n_type) {
     var node_obj = {
@@ -222,7 +242,11 @@ class diagram {
     //check also if there is another same edge
     if (!flag_compatible) {
       this.cy.remove(edge_data.id);
+    }else {
+      //if flag_compatible add it to log file
+      this.cy_undo_redo.do("add", this.cy.$("#"+edge_data.id));
     }
+
     return edge_data;
   }
   gen_edge_data(source_id,target_id){
@@ -292,6 +316,7 @@ class diagram {
   //Remove an element by taking its id:<elem_id> from the diagram
   //returns the removed element
   remove_elem(elem_id){
+    this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
     return this.cy.remove("#"+elem_id);
   }
 

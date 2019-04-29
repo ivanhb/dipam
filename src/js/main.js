@@ -35,8 +35,17 @@ vw_interface.__get__add_data_container().setAttribute("onclick",
 vw_interface.__get__add_tool_container().setAttribute("onclick",
             "diagram_instance.add_node('tool');elem_onclick_handle();");
 
-vw_interface.__get__run_workflow_container().setAttribute("onclick",
-              "vw_interface.click_run_workflow();vw_interface.handle_workflow(this.value,diagram_instance.build_workflow());");
+
+
+//vw_interface.__get__run_workflow_container().setAttribute("onclick","vw_interface.click_run_workflow();vw_interface.handle_workflow(this.value,diagram_instance.build_workflow());");
+$('#btn_run_workflow').on({
+    click: function(e) {
+          e.preventDefault();
+          vw_interface.click_run_workflow();
+          var status = this.value;
+          setTimeout(function(){ vw_interface.handle_workflow(status,diagram_instance.build_workflow()); }, 2000);
+    }
+});
 
 
 

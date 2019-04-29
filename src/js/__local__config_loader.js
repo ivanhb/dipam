@@ -1,11 +1,11 @@
 var config = {
   "data": {
         "d0":{
-            "label": "File/s in .txt format",
+            "label": "Table",
             "type": "txt",
         },
         "d1":{
-            "label": "Topic model .csv file (each row is a different topic)",
+            "label": "Text file",
             "type": "csv",
         },
   },

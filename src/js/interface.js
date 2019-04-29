@@ -1,33 +1,33 @@
 
 class vwbata {
 
-    DOMTYPE = {
-      'graphName': {'data_id': 'name','type':'input_box', 'title': 'Graph name', 'value':'name'},
-      'edgeName': {'data_id': 'name', 'type':'input_box', 'title': 'Edge name', 'value':'id'},
-      'dataName': {'data_id': 'name', 'type':'input_box', 'title': 'Data name', 'value':'name'},
-      'toolName': {'data_id': 'name', 'type':'input_box', 'title': 'Tool name', 'value':'name'},
-      'toolType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
-      'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[INTERFACE]].after_editing();"}},
-      'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
-                'event':{'onclick':"[[DIAGRAM]].remove_elem([[id]]);[[INTERFACE]].after_removing();"}}
-    };
-
-    OVERVIEW_SECTION = "graphName-editElem";
-    INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-editElem-removeElem", edge: "edgeName-removeElem"};
-
-    info_section_html = "";
-    overview_section_html = "";
-    eventdom = {};
-
-    __set__info_section_html(param){
-      this.info_section_html = param;
-    }
-
-    __set__overview_section_html(param){
-      this.overview_section_html = param;
-    }
-
     constructor(config_file, diagram_instance,interface_instance) {
+        this.DOMTYPE = {
+          'graphName': {'data_id': 'name','type':'input_box', 'title': 'Graph name', 'value':'name'},
+          'edgeName': {'data_id': 'name', 'type':'input_box', 'title': 'Edge name', 'value':'id'},
+          'dataName': {'data_id': 'name', 'type':'input_box', 'title': 'Data name', 'value':'name'},
+          'toolName': {'data_id': 'name', 'type':'input_box', 'title': 'Tool name', 'value':'name'},
+          'filePath': {'data_id': 'name', 'type':'input_file', 'title': 'File', 'value':'name'},
+          'dataType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Data type', 'value':[],'label':[]},
+          'toolType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
+          'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[INTERFACE]].after_editing();"}},
+          'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
+                    'event':{'onclick':"[[DIAGRAM]].remove_elem([[id]]);[[INTERFACE]].after_removing();"}}
+        };
+
+        this.OVERVIEW_SECTION = "graphName-editElem";
+        this.INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-dataType-filePath-editElem-removeElem", edge: "edgeName-removeElem"};
+
+        this.info_section_html = "";
+        this.overview_section_html = "";
+        this.eventdom = {};
+        this.workflow = null;
+        //history definition
+        this.history = {};
+        this.MAX_HISTORY = 5;
+        this.history_index = 0;
+
+
         this.DIAGRAM_INSTANCE = diagram_instance;
         this.INTERFACE_INSTANCE = interface_instance;
 
@@ -41,7 +41,9 @@ class vwbata {
         this.ADD_TOOL = document.getElementById('add_tool');
         this.ADD_DATA = document.getElementById('add_data');
         this.RUN_WORKFLOW = document.getElementById('btn_run_workflow');
-
+        this.TIMELINE_CONTAINER = document.getElementById('timeline_container');
+        this.START_BLOCK = document.getElementById('start_block');
+        this.TIMELINE_TEXT = document.getElementById('timeline_text');
 
 
         //Construct the DOM types
@@ -51,8 +53,22 @@ class vwbata {
             this.DOMTYPE.toolType.label.push(config_file.tool[k_tool].label);
           }
         }
+        if (config_file.hasOwnProperty('data')) {
+          for (var k_data in config_file.data) {
+            this.DOMTYPE.dataType.value.push(k_data);
+            this.DOMTYPE.dataType.label.push(config_file.data[k_data].label);
+          }
+        }
 
         //this.build_overview();
+    }
+
+    __set__info_section_html(param){
+      this.info_section_html = param;
+    }
+
+    __set__overview_section_html(param){
+      this.overview_section_html = param;
     }
 
     init_nav() {
@@ -183,6 +199,14 @@ class vwbata {
                     <select data_elem_id="`+node.id+`"`+str_html_event+` id="`+obj_dom_type.id+`" class="val-box custom-select `+obj_dom_type.type+`" disabled>`+str_options+`</select>
               </div>
               `;
+        break;
+        case 'input_file':
+          str_html = str_html + `
+          <div class="input-group">
+            <label class="input-group-text">`+obj_dom_type.title+`</label>
+            <input data_elem_id="`+node.id+`" id="`+obj_dom_type.id+`" type="file" name="myFile" value="" />
+          </div>
+          `;
         break;
         case 'input_box':
           str_html = str_html + `
@@ -431,6 +455,9 @@ class vwbata {
 
       instance.CONTROL_CONTAINER.style["pointer-events"] = p_event;
       instance.CONTROL_CONTAINER.style["opacity"] = opacity_val;
+
+      instance.TIMELINE_CONTAINER.innerHTML = "";
+      instance.TIMELINE_TEXT.innerHTML = "Workflow timeline ...";
     }
   }
 
@@ -438,6 +465,7 @@ class vwbata {
   handle_workflow(status, param){
     if (status == 'run') {
       console.log(param);
+      this.workflow = JSON.parse(JSON.stringify(param));
 
       var paths_res = {};
       var process_queue = JSON.parse(JSON.stringify(param.queue));
@@ -454,7 +482,7 @@ class vwbata {
 
       for (var p_id in paths_res) {
         console.log("Processing: ", p_id);
-        _process_path(p_id);
+        _process_path(p_id, this);
       }
 
       var last_path = paths_res[Object.keys(paths_res)[Object.keys(paths_res).length -1]];
@@ -465,7 +493,7 @@ class vwbata {
       console.log("Stop the execution and abort all the running functions");
     }
 
-    function _process_path(path_id){
+    function _process_path(path_id, instance){
       var nodes_to_process = paths_res[path_id].nodes_to_process;
 
       if (nodes_to_process.length > 0) {
@@ -481,7 +509,8 @@ class vwbata {
             if (intersection_node.out_path != path_id) {
               //give my result to the merging path
               paths_res[intersection_node.out_path].result.push(paths_res[path_id].result[0]);
-              return _process_path(path_id);
+              //setTimeout(function(){ return _process_path(path_id,instance);}, 400);
+              return _process_path(path_id,instance);
             }
           }
         }
@@ -501,16 +530,18 @@ class vwbata {
 
         //process the node by giving the current result to the node as input
         console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
+        instance.add_timeline_block(node_id);
         //This case is possible only for 'Data' nodes
         //the server need to populate this properly
         if (paths_res[path_id].result.length == 0) {
           paths_res[path_id].result.push("["+node_id+":data]");
         }else {
+          //else process regularly the node
           paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
+          //change this with the corresponding server call
         }
 
-
-        //check if it is a splitting intersection node
+        //check if it is a splitting intersection node, right afer i have executed the current node
         if (node_id in param.split_intersections_nodes){
           var intersection_node = param.split_intersections_nodes[node_id];
           //check if i am processing the splitting path
@@ -522,12 +553,45 @@ class vwbata {
           }
           //else i am a splitted path and i got the results already
         }
+        //setTimeout(function(){ return _process_path(path_id,instance);}, 400);
+        return _process_path(path_id,instance);
 
-        return _process_path(path_id);
       }
 
       paths_res[path_id].status = 'done';
       return paths_res[path_id];
     }
   }
+
+  //add a html block to timeline and update percentage
+  add_timeline_block(node){
+    //document.getElementById('timeline_text') = document.getElementById('timeline_text') + " - ";
+    console.log("Add Block !");
+    this.TIMELINE_TEXT.innerHTML = "Workflow Done";
+    this.TIMELINE_CONTAINER.innerHTML = this.TIMELINE_CONTAINER.innerHTML + "<div class='timeline-block-inner'></div>";
+  }
+
+
+  //History handle
+  //add a new status to the history
+  add_status_to_history(){
+
+    if (this.history_index == this.MAX_HISTORY - 1) {
+      this.history.shift();
+    }
+
+    this.history.splice(
+      this.history_index,
+      this.history.length,
+      JSON.parse(JSON.stringify(this.DIAGRAM_INSTANCE.get_diagram_obj()))
+    );
+    this.history_index = this.history.length + 1;
+    return this.history[history_index-1];
+  }
+
+  redo(){
+
+  }
+
+
 }
