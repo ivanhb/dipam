@@ -37,6 +37,8 @@ $('#add_data').on({
     diagram_instance.add_node('data');
     elem_onclick_handle();
     vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+    diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+    editdom = document.getElementById('editElem').click();
   }
 });
 
@@ -45,6 +47,8 @@ $('#add_tool').on({
     diagram_instance.add_node('tool');
     elem_onclick_handle();
     vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+    diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+    editdom = document.getElementById('editElem').click();
   }
 });
 
