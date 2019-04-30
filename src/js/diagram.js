@@ -210,6 +210,16 @@ class diagram {
     var info_box = this.DIAGRAM_CONTAINER.getBoundingClientRect();
     node_obj.position.x = info_box.x;
     node_obj.position.y = info_box.y + info_box.height/2;
+    for (var i = 0; i < this.cy.nodes().length; i++) {
+      var a_node_added = this.cy.nodes()[i];
+      if((a_node_added.position('x') == node_obj.position.x) && (a_node_added.position('y') == node_obj.position.y)){
+        node_obj.position.y = node_obj.position.y + a_node_added.height();
+        i = 0;
+      }
+    }
+
+
+    //in case there is another node there
 
     //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {

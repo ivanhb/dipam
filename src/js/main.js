@@ -30,12 +30,23 @@ this.cy.on('ehshow', (event, sourceNode) => {
       }
 });
 
-vw_interface.__get__add_data_container().setAttribute("onclick",
-            "diagram_instance.add_node('data');elem_onclick_handle(); vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty())");
-vw_interface.__get__add_tool_container().setAttribute("onclick",
-            "diagram_instance.add_node('tool');elem_onclick_handle(); vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty())");
 
 
+$('#add_data').on({
+  click: function(e) {
+    diagram_instance.add_node('data');
+    elem_onclick_handle();
+    vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+  }
+});
+
+$('#add_tool').on({
+  click: function(e) {
+    diagram_instance.add_node('tool');
+    elem_onclick_handle();
+    vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+  }
+});
 
 //vw_interface.__get__run_workflow_container().setAttribute("onclick","vw_interface.click_run_workflow();vw_interface.handle_workflow(this.value,diagram_instance.build_workflow());");
 $('#btn_run_workflow').on({
