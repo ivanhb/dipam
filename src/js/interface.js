@@ -12,8 +12,10 @@ class vwbata {
           'toolType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
           'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[INTERFACE]].after_editing();"}},
           'removeElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Remove element', 'value':'',
-                    'event':{'onclick':"[[DIAGRAM]].remove_elem([[id]]);[[INTERFACE]].after_removing();"}}
+                    'event':{'onclick':"[[DIAGRAM]].remove_elem([[id]]);[[INTERFACE]].after_removing();[[INTERFACE]].show_undo_redo([[DIAGRAM]].get_undo_redo().isUndoStackEmpty(),[[DIAGRAM]].get_undo_redo().isRedoStackEmpty());"}}
         };
+
+        //"[[INTERFACE]].show_undo_redo([[DIAGRAM]].get_undo_redo().isUndoStackEmpty(),[[DIAGRAM]].get_undo_redo().isRedoStackEmpty());"
 
         this.OVERVIEW_SECTION = "graphName-editElem";
         this.INFO_SECTION = { tool: "toolName-toolType-editElem-removeElem", data:"dataName-dataType-filePath-editElem-removeElem", edge: "edgeName-removeElem"};
@@ -22,11 +24,6 @@ class vwbata {
         this.overview_section_html = "";
         this.eventdom = {};
         this.workflow = null;
-        //history definition
-        this.history = {};
-        this.MAX_HISTORY = 5;
-        this.history_index = 0;
-
 
         this.DIAGRAM_INSTANCE = diagram_instance;
         this.INTERFACE_INSTANCE = interface_instance;
@@ -44,6 +41,8 @@ class vwbata {
         this.TIMELINE_CONTAINER = document.getElementById('timeline_container');
         this.START_BLOCK = document.getElementById('start_block');
         this.TIMELINE_TEXT = document.getElementById('timeline_text');
+        this.UNDO_BTN = document.getElementById('undo_btn');
+        this.REDO_BTN = document.getElementById('redo_btn');
 
 
         //Construct the DOM types
@@ -71,9 +70,20 @@ class vwbata {
       this.overview_section_html = param;
     }
 
+    init_interface_events(){
+      this.init_nav();
+      this.init_undo_redo();
+    }
+
     init_nav() {
       this.NAV_OVERVIEW.setAttribute("href", "javascript:vw_interface.click_overview_nav()");
       this.NAV_INFO.setAttribute("href", "javascript:vw_interface.click_info_nav()");
+    }
+
+    init_undo_redo() {
+      var str_html_btns = this.INTERFACE_INSTANCE+".show_undo_redo("+this.DIAGRAM_INSTANCE+".get_undo_redo().isUndoStackEmpty(),"+this.DIAGRAM_INSTANCE+".get_undo_redo().isRedoStackEmpty())";
+      this.UNDO_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".cy_undo_redo.undo(); "+str_html_btns);
+      this.REDO_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".cy_undo_redo.redo(); "+str_html_btns);
     }
 
     __get__add_tool_container(){
@@ -146,25 +156,37 @@ class vwbata {
       for (var k_event_type in obj_dom.event) {
         var event_func = obj_dom.event[k_event_type];
 
-        var arr_regex = [/\[\[(DIAGRAM)\]\]/g,/\[\[(INTERFACE)\]\]/g,/\[\[(.*)\]\]/g]
+        //var arr_regex = [/\[\[(DIAGRAM)\]\]/gi,/\[\[(INTERFACE)\]\]/gi,/\[\[(.*)\]\]/gi];
         var str = event_func;
-        for (var i = 0; i < arr_regex.length; i++) {
-          var param = this.apply_regex(arr_regex[i],str);
-          if (param != null) {
-                str = str.replace("[["+param+"]]","");
-                var replacer = "";
-                if (param == "DIAGRAM") {
-                  replacer = this.DIAGRAM_INSTANCE;
-                }else if (param == "INTERFACE") {
-                  replacer = this.INTERFACE_INSTANCE;
-                }else{
-                  replacer = "'"+node[param]+"'";
-                }
-                res_dom.event[k_event_type] = res_dom.event[k_event_type].replace("[["+param+"]]",replacer);
+
+        var founds = __apply_regex(/\[\[(.{2,12})\]\]/gi,str);
+        for (var i = 0; i < founds.length; i++) {
+            //str = str.replace("[["+founds[i]+"]]","");
+            var replacer = "";
+            switch (founds[i]) {
+              case 'DIAGRAM':
+                replacer = this.DIAGRAM_INSTANCE;
+                break;
+              case 'INTERFACE':
+                replacer = this.INTERFACE_INSTANCE;
+                break;
+              default:
+                replacer = "'"+node[founds[i]]+"'";
             }
+            res_dom.event[k_event_type] = res_dom.event[k_event_type].replace("[["+founds[i]+"]]",replacer);
         }
       }
+
       return res_dom;
+
+      function __apply_regex(regex,str){
+          var m;
+          var founds = [];
+          while ((m = regex.exec(str)) !== null) {
+            founds.push(m[1])
+          }
+          return founds;
+      }
     }
     __build_corresponding_dom(obj_dom_type, node){
       var str_html= "";
@@ -405,25 +427,6 @@ class vwbata {
       return -1;
     }
 
-    apply_regex(regex,str){
-      let m;
-      var param = null;
-      while ((m = regex.exec(str)) !== null) {
-          if (m.index === regex.lastIndex) {
-              regex.lastIndex++;
-          }
-          // The result can be accessed through the `m`-variable.
-          m.forEach((match, groupIndex) => {
-              param = m[groupIndex];
-          });
-
-          if (param != null) {
-            break;
-          }
-    }
-    return param;
-  }
-
   click_run_workflow(){
 
     if (this.RUN_WORKFLOW.value == 'stop') {
@@ -571,27 +574,23 @@ class vwbata {
     this.TIMELINE_CONTAINER.innerHTML = this.TIMELINE_CONTAINER.innerHTML + "<div class='timeline-block-inner'></div>";
   }
 
+  show_undo_redo(undo_empty, redo_empty){
+    this.show_undo(!undo_empty);
+    this.show_redo(!redo_empty);
+  }
 
-  //History handle
-  //add a new status to the history
-  add_status_to_history(){
-
-    if (this.history_index == this.MAX_HISTORY - 1) {
-      this.history.shift();
+  show_undo(flag= true){
+    this.UNDO_BTN.style.visibility = 'visible';
+    if (!(flag)) {
+      this.UNDO_BTN.style.visibility = 'hidden';
     }
-
-    this.history.splice(
-      this.history_index,
-      this.history.length,
-      JSON.parse(JSON.stringify(this.DIAGRAM_INSTANCE.get_diagram_obj()))
-    );
-    this.history_index = this.history.length + 1;
-    return this.history[history_index-1];
   }
 
-  redo(){
-
+  show_redo(flag= true){
+    this.REDO_BTN.style.visibility = 'visible';
+    if (!(flag)) {
+      this.REDO_BTN.style.visibility = 'hidden';
+    }
   }
-
 
 }

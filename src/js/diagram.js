@@ -169,18 +169,6 @@ class diagram {
     );
     this.cy_undo_redo = cy_undo_redo;
 
-    //in case we want undo redo when clicking on keys CTRL-Z
-    /*
-    document.addEventListener("keydown", function (e) {
-          if (e.ctrlKey && e.target.nodeName === 'BODY') {
-            if (e.which === 90)
-                cy_undo_redo.undo();
-            else if (e.which === 89)
-                cy_undo_redo.redo();
-          }
-    });
-    */
-
     this.get_nodes('tool').style(this.STYLE.node.tool);
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);

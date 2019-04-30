@@ -7,7 +7,7 @@
 var vw_interface = new vwbata(config, "diagram_instance", "vw_interface");
 
 //init the interface
-vw_interface.init_nav();
+vw_interface.init_interface_events();
 
 //init the diagram
 var diagram_instance = new diagram("cy", config, "Dipam for Catarsi");
@@ -31,9 +31,9 @@ this.cy.on('ehshow', (event, sourceNode) => {
 });
 
 vw_interface.__get__add_data_container().setAttribute("onclick",
-            "diagram_instance.add_node('data');elem_onclick_handle();");
+            "diagram_instance.add_node('data');elem_onclick_handle(); vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty())");
 vw_interface.__get__add_tool_container().setAttribute("onclick",
-            "diagram_instance.add_node('tool');elem_onclick_handle();");
+            "diagram_instance.add_node('tool');elem_onclick_handle(); vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty())");
 
 
 
@@ -46,7 +46,6 @@ $('#btn_run_workflow').on({
           setTimeout(function(){ vw_interface.handle_workflow(status,diagram_instance.build_workflow()); }, 2000);
     }
 });
-
 
 
 //nodes on click handler

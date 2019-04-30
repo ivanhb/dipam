@@ -185,6 +185,33 @@ body {
   font-size:140%;
 }
 
+#diagram_undo_redo{
+  position: absolute;
+  width:165px;
+  left: 310px;
+  padding-left: 0px;
+  padding-right: 0px;
+  top: 0px;
+  z-index: 1000;
+  background-color: #fff9ef;
+}
+#diagram_undo_redo li {
+  display:inline-block;
+}
+#redo_btn{
+  margin-left: 20px;
+}
+#diagram_undo_redo li a{
+  font-size:150%;
+  color: #82683b;
+  visibility: hidden;
+}
+#diagram_undo_redo > .active > a,
+#diagram_undo_redo > .active > a:hover,
+#diagram_undo_redo > .active > a:focus {
+  border-bottom: solid 2px #82683b;
+}
+
 .dropdown{
   max-width: 250px;
   min-width: 200px;
