@@ -43,6 +43,8 @@ class vwbata {
         this.TIMELINE_TEXT = document.getElementById('timeline_text');
         this.UNDO_BTN = document.getElementById('undo_btn');
         this.REDO_BTN = document.getElementById('redo_btn');
+        this.ZOOMIN_BTN = document.getElementById('zoom_in_btn');
+        this.ZOOMOUT_BTN = document.getElementById('zoom_out_btn');
 
 
         //Construct the DOM types
@@ -73,6 +75,7 @@ class vwbata {
     init_interface_events(){
       this.init_nav();
       this.init_undo_redo();
+      this.init_zoom();
     }
 
     init_nav() {
@@ -84,6 +87,12 @@ class vwbata {
       var str_html_btns = this.INTERFACE_INSTANCE+".show_undo_redo("+this.DIAGRAM_INSTANCE+".get_undo_redo().isUndoStackEmpty(),"+this.DIAGRAM_INSTANCE+".get_undo_redo().isRedoStackEmpty())";
       this.UNDO_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".cy_undo_redo.undo(); "+str_html_btns);
       this.REDO_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".cy_undo_redo.redo(); "+str_html_btns);
+    }
+
+    init_zoom() {
+      var param_str = this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom()";
+      this.ZOOMIN_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom("+param_str+" + 0.1)");
+      this.ZOOMOUT_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom("+param_str+" - 0.1)");
     }
 
     __get__add_tool_container(){

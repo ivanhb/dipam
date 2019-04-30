@@ -187,30 +187,49 @@ body {
 
 #diagram_undo_redo{
   position: absolute;
-  width:165px;
-  left: 310px;
-  padding-left: 0px;
+  width:30px;
+  left: 318px;
+  padding-left: 5px;
   padding-right: 0px;
-  top: 0px;
+  top: 100px;
   z-index: 1000;
-  background-color: #fff9ef;
+  background-color: #b08c4f;
+  border-radius: 0px 20px 20px 0px;
 }
-#diagram_undo_redo li {
-  display:inline-block;
-}
-#redo_btn{
-  margin-left: 20px;
-}
-#diagram_undo_redo li a{
+
+#diagram_undo_redo div a{
   font-size:150%;
-  color: #82683b;
+  color: white;
   visibility: hidden;
+}
+#diagram_undo_redo *{
+  padding-top: 10px;
 }
 #diagram_undo_redo > .active > a,
 #diagram_undo_redo > .active > a:hover,
 #diagram_undo_redo > .active > a:focus {
   border-bottom: solid 2px #82683b;
 }
+
+#diagram_zoom{
+  position: absolute;
+  width:30px;
+  left: 350px;
+  padding-left: 5px;
+  padding-right: 0px;
+  top: 300px;
+  z-index: 1000;
+  background-color: #b08c4f;
+  font-size:180%;
+  border-radius: 0px 20px 20px 0px;
+  color: white;
+}
+#diagram_zoom *{
+  margin: 0 auto;
+  color:white;
+}
+
+
 
 .dropdown{
   max-width: 250px;
