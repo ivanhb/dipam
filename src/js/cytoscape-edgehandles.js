@@ -533,11 +533,13 @@ function makeEdges() {
 	    if (another_edge.length <= 0){
 				var edge_obj = diagram_instance.gen_edge_data(source.id(),target.id());
 				var source2target = cy.add(getEleJson(edge_obj , options.edgeParams(source, target, 0), classes));
-				diagram_instance.after_add_edge(edge_obj.data);
+				var after_add = diagram_instance.after_add_edge(edge_obj.data);
 
-		    added = added.merge(source2target);
-
-				elem_onclick_handle();
+				if (after_add != -1) {
+					vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+					added = added.merge(source2target);
+					elem_onclick_handle();
+				}
 	    }else {
 	    	console.log("You already have another edge between these two nodes !!");
 	    }

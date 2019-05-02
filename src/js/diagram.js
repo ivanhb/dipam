@@ -237,9 +237,14 @@ class diagram {
 
   after_add_edge(edge_data){
     var flag_compatible = this.is_compatible(this.cy.nodes("node[id='"+edge_data.source+"']")[0], this.cy.nodes("node[id='"+edge_data.target+"']")[0]);
+
+    var flag_is_cycle = false;
+    //this.is_cycle([this.cy.nodes("node[id='"+edge_data.source+"']")[0]], this.cy.nodes("node[id='"+edge_data.source+"']")[0]);
+
     //check also if there is another same edge
-    if (!flag_compatible) {
+    if ((!flag_compatible) || flag_is_cycle)  {
       this.cy.remove(edge_data.id);
+      return -1;
     }else {
       //if flag_compatible add it to log file
       this.cy_undo_redo.do("add", this.cy.$("#"+edge_data.id));
@@ -728,5 +733,26 @@ class diagram {
     }
     return normalize_paths;
   }
+
+  //is cycle starting from node N
+  is_cycle(arr_nodes, origin){
+
+    for (var i = 0; i < arr_nodes.length; i++) {
+      var node = arr_nodes[i];
+      //check the target nodes of the selected node <node>
+      var out_nodes = this.cy.edges('edge[source="'+node._private.data.id+'"]').targets();
+      out_nodes = out_nodes.nodes('node[type = "data"]').union(out_nodes.nodes('node[type = "tool"]'));
+      if (out_nodes.length == 0) {
+        return __is_same_node(node, origin);
+      }else {
+        return this.is_cycle(out_nodes, origin);
+      }
+    }
+
+    function __is_same_node(n_a, n_b){
+      return (n_a._private.data.id == n_b._private.data.id);
+    }
+  }
+
 
 }
