@@ -580,11 +580,18 @@ class vwbata {
   }
 
   //add a html block to timeline and update percentage
-  add_timeline_block(node){
+  add_timeline_block(node_id){
     //document.getElementById('timeline_text') = document.getElementById('timeline_text') + " - ";
     console.log("Add Block !");
     this.TIMELINE_TEXT.innerHTML = "Workflow Done";
-    this.TIMELINE_CONTAINER.innerHTML = this.TIMELINE_CONTAINER.innerHTML + "<div class='timeline-block-inner'></div>";
+    var block_to_add = "<div class='timeline-block-inner' data-value='"+node_id+"'></div>";
+    var t_blocks = document.getElementsByClassName('timeline-block-inner');
+    for (var i = 0; i < t_blocks.length; i++) {
+      if(t_blocks[i].getAttribute('data-value') == node_id){
+        block_to_add = "";
+      }
+    }
+    this.TIMELINE_CONTAINER.innerHTML = this.TIMELINE_CONTAINER.innerHTML + block_to_add;
   }
 
   show_undo_redo(undo_empty, redo_empty){
