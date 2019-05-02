@@ -92,8 +92,8 @@ class vwbata {
 
     init_zoom() {
       var param_str = this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom()";
-      this.ZOOMIN_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom("+param_str+" + 0.1)");
-      this.ZOOMOUT_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom("+param_str+" - 0.1)");
+      this.ZOOMIN_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom("+param_str+")");
+      this.ZOOMOUT_BTN.setAttribute("href", "javascript:"+this.DIAGRAM_INSTANCE+".get_diagram_obj().zoom("+param_str+")");
     }
 
     __get__add_tool_container(){
@@ -472,7 +472,10 @@ class vwbata {
       instance.CONTROL_CONTAINER.style["pointer-events"] = p_event;
       instance.CONTROL_CONTAINER.style["opacity"] = opacity_val;
 
-      instance.TIMELINE_CONTAINER.innerHTML = "";
+      //instance.TIMELINE_CONTAINER.innerHTML = "";
+      if (enable) {
+        [...document.getElementsByClassName('timeline-block-inner')].map(n => n && n.remove());
+      }
       instance.TIMELINE_TEXT.innerHTML = "Workflow timeline ...";
     }
   }
@@ -545,15 +548,18 @@ class vwbata {
         }
 
         //process the node by giving the current result to the node as input
-        console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
-        instance.add_timeline_block(node_id);
+
         //This case is possible only for 'Data' nodes
         //the server need to populate this properly
         if (paths_res[path_id].result.length == 0) {
+          console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
           paths_res[path_id].result.push("["+node_id+":data]");
+          instance.add_timeline_block(node_id);
         }else {
           //else process regularly the node
+          console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
           paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
+          instance.add_timeline_block(node_id);
           //change this with the corresponding server call
         }
 
@@ -581,17 +587,26 @@ class vwbata {
 
   //add a html block to timeline and update percentage
   add_timeline_block(node_id){
-    //document.getElementById('timeline_text') = document.getElementById('timeline_text') + " - ";
     console.log("Add Block !");
     this.TIMELINE_TEXT.innerHTML = "Workflow Done";
-    var block_to_add = "<div class='timeline-block-inner' data-value='"+node_id+"'></div>";
-    var t_blocks = document.getElementsByClassName('timeline-block-inner');
-    for (var i = 0; i < t_blocks.length; i++) {
-      if(t_blocks[i].getAttribute('data-value') == node_id){
-        block_to_add = "";
+    var block_to_add = document.createElement("div");
+    block_to_add.setAttribute("class", "timeline-block-inner");
+    block_to_add.setAttribute("data-value", node_id);
+
+    var starting_block = this.START_BLOCK;
+    var found = false;
+    for (var i = 0; i < document.getElementsByClassName('timeline-block-inner').length; i++) {
+      if(document.getElementsByClassName('timeline-block-inner')[i].getAttribute('data-value') == node_id){
+        found = true;
       }
     }
-    this.TIMELINE_CONTAINER.innerHTML = this.TIMELINE_CONTAINER.innerHTML + block_to_add;
+    if (!found) {
+      _insert_after(block_to_add,this.START_BLOCK);
+    }
+
+    function _insert_after(newNode, referenceNode) {
+      referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+    }
   }
 
   show_undo_redo(undo_empty, redo_empty){
