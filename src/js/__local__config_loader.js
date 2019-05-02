@@ -21,8 +21,8 @@ var config = {
             "label": "Bar chart",
             "function": "bar_chart",
             "param": ["p0"],
-            "compatible_input": ["d1"],
-            "output": ["d0"]
+            "compatible_input": ["d1"]
+            //"output": ["d0"]
         },
         "t-filter-names": {
             "label": "Filter names",

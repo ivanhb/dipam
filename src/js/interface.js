@@ -43,6 +43,7 @@ class vwbata {
         this.TIMELINE_TEXT = document.getElementById('timeline_text');
         this.UNDO_BTN = document.getElementById('undo_btn');
         this.REDO_BTN = document.getElementById('redo_btn');
+        this.DIAGRAM_ZOOM_CONTAINER= document.getElementById('diagram_zoom');
         this.ZOOMIN_BTN = document.getElementById('zoom_in_btn');
         this.ZOOMOUT_BTN = document.getElementById('zoom_out_btn');
 
@@ -461,6 +462,9 @@ class vwbata {
 
       instance.DIAGRAM_EDITOR_CONTAINER.style["pointer-events"] = p_event;
       instance.DIAGRAM_EDITOR_CONTAINER.style["opacity"] = opacity_val;
+
+      instance.DIAGRAM_ZOOM_CONTAINER.style["pointer-events"] = p_event;
+      instance.DIAGRAM_ZOOM_CONTAINER.style["opacity"] = opacity_val;
 
       instance.CONTROL_BTNS.style["pointer-events"] = p_event;
       instance.CONTROL_BTNS.style["opacity"] = opacity_val;
