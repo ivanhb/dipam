@@ -17,5 +17,3 @@ class tool(object):
     #tools
     def lda(self, input_data, param = []):
         return input_data
-
-    
