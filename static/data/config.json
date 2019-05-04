@@ -1,13 +1,13 @@
 {
   "data": {
         "d0":{
-            "label": "File/s in .txt format",
-            "type": "txt",
+            "label": "Table",
+            "type": "txt"
         },
         "d1":{
-            "label": "Topic model .csv file (each row is a different topic)",
-            "type": "csv",
-        },
+            "label": "Text file",
+            "type": "csv"
+        }
   },
   "tool": {
         "t-topic-lda": {
@@ -34,7 +34,7 @@
     "p0":{
       "label": "Log scale",
       "value_label": ["True","False"],
-      "value": [true,false]
+      "value": [0,1]
     },
     "p1":{
       "label": "Topic number",

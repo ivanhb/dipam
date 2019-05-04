@@ -1,8 +1,8 @@
 
-class diagram {
+class dipam_diagram {
 
 
-  constructor(container_id, config, diagram_name) {
+  constructor(container_id, config_data, diagram_name, workflow={}) {
 
     this.DIAGRAM_DATA = {
         //these attributes must be contained always
@@ -30,18 +30,8 @@ class diagram {
     this.DIAGRAM_GENERAL.data.name = diagram_name;
     this.DIAGRAM_GENERAL.data.type = 'diagram';
 
-    this.INIT_NODES = [
-      { data: { id: 'd-0001', name: 'Textual data (d1)', type: 'data', value: 'd0' } },
-      { data: { id: 't-0001', name: 'Filter names (t1)', type: 'tool', value: 't-filter-names' } },
-      { data: { id: 't-0002', name: 'Topic modeling (t2)', type: 'tool', value: 't-topic-lda' } },
-      { data: { id: 't-0003', name: 'View bar chart (t3)', type: 'tool', value: 't-chart-bar' } }
-    ];
-
-    this.INIT_EDGES = [
-      { data: {type: 'edge', id: 'e-0001', source: 'd-0001', target: 't-0001' } },
-      { data: {type: 'edge', id: 'e-0002', source: 't-0001', target: 't-0002' } },
-      { data: {type: 'edge', id: 'e-0003',source: 't-0002', target: 't-0003' } }
-    ];
+    this.INIT_NODES = workflow.nodes;
+    this.INIT_EDGES = workflow.edges;
 
     this.STYLE = {
       node: {
@@ -173,6 +163,8 @@ class diagram {
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
   }
+
+
 
   get_diagram_obj() {
     return this.cy;

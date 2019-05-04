@@ -1,16 +1,20 @@
 
 
+workflow = JSON.parse(decode_json(workflow));
+config = JSON.parse(decode_json(config));
+
+
 //create an instance of the interface, it takes:
 // The configuration file
 // The string name of the diagram instance (which it will be created later)
 // The string name of the interface instance (the variable name)
-var vw_interface = new vwbata(config, "diagram_instance", "vw_interface");
+var vw_interface = new dipam_interface(config, "diagram_instance", "vw_interface");
 
 //init the interface
 vw_interface.init_interface_events();
 
 //init the diagram
-var diagram_instance = new diagram("cy", config, "Dipam for Catarsi");
+var diagram_instance = new dipam_diagram("cy", config, "Dipam for Catarsi", workflow);
 var cy = diagram_instance.get_diagram_obj();
 
 window.cy = cy;
@@ -62,6 +66,19 @@ $('#btn_run_workflow').on({
     }
 });
 
+$('#btn_save_workflow').on({
+    click: function(e) {
+      e.preventDefault();
+      vw_interface.click_save_workflow();
+    }
+});
+
+$('#btn_load_workflow').on({
+    click: function(e) {
+      e.preventDefault();
+      vw_interface.click_load_workflow();
+    }
+});
 
 //nodes on click handler
 elem_onclick_handle();
@@ -93,3 +110,14 @@ vw_interface.click_overview_nav();
 
 
 diagram_instance.build_workflow();
+
+
+function decode_json(text){
+  //var msg = decodeURIComponent(text.replace(/\+/g, '%20')+'');
+  var msg = text;
+  var parser = new DOMParser;
+  var dom = parser.parseFromString('<!doctype html><body>' + msg,'text/html');
+  msg = dom.body.textContent;
+  msg = msg.replace(/'/g, '"');
+  return msg;
+}

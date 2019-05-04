@@ -1,5 +1,5 @@
 
-class vwbata {
+class dipam_interface {
 
     constructor(config_file, diagram_instance,interface_instance) {
         this.DOMTYPE = {
@@ -437,6 +437,9 @@ class vwbata {
       return -1;
     }
 
+
+  click_save_workflow(){}
+  click_load_workflow(){}
   click_run_workflow(){
 
     if (this.RUN_WORKFLOW.value == 'stop') {

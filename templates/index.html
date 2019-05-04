@@ -7,7 +7,7 @@
 
     <link rel=stylesheet type=text/css href="{{ url_for('.static', filename='css/bootstrap.min.css') }}">
     <link rel=stylesheet type=text/css href="{{ url_for('.static', filename='css/index.css') }}">
-    
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
     <script src="{{ url_for('.static', filename='js/bootstrap.min.js') }}"></script>
     <script src="{{ url_for('.static', filename='cytoscape/dist/cytoscape.min.js') }}"></script>
@@ -47,6 +47,8 @@
     <div id="cy_foot">
       <div id="workflow_timeline">
         <button id="btn_run_workflow" type="button" value="stop" class="btn btn-default">Run workflow</button>
+        <button id="btn_save_workflow" type="button" value="save" class="btn btn-default">Save</button>
+        <button id="btn_load_workflow" type="button" value="load" class="btn btn-default">Load</button>
         <div id="start_block" class="timeline-block"></div>
         <div id="timeline_text" class="timeline-block">Workflow timeline ...</div>
         <div id="end_block" class="timeline-block"></div>
@@ -62,7 +64,11 @@
     <script src="{{ url_for('.static', filename='js/cytoscape-edgehandles.js') }}"></script>
     <script src="{{ url_for('.static', filename='js/cytoscape-undo-redo.js') }}"></script>
     <!-- The main script and the configuration loader-->
-    <script src="{{ url_for('.static', filename='js/__local__config_loader.js') }}"></script>
+    <!--<script src="{{ url_for('.static', filename='js/__remote__config_loader.js') }}"></script>-->
+    <script>
+    var config = "{{config}}";
+    var workflow = "{{workflow}}";
+    </script>
     <script src="{{ url_for('.static', filename='js/main.js') }}"></script>
 
   </body>

@@ -116,6 +116,9 @@ body {
   border: #917442 solid 2px;
   width: 200px;
 }
+#btn_save_workflow, #btn_load_workflow{
+  border: #917442 solid 1px;
+}
 
 #start_block{
   height: 100%;
