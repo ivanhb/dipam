@@ -438,7 +438,10 @@ class dipam_interface {
     }
 
 
-  click_save_workflow(){}
+  click_save_workflow(){
+    
+
+  }
   click_load_workflow(){}
   click_run_workflow(){
 

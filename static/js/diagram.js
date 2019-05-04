@@ -4,32 +4,15 @@ class dipam_diagram {
 
   constructor(container_id, config_data, diagram_name, workflow={}) {
 
-    this.DIAGRAM_DATA = {
-        //these attributes must be contained always
-        id: null, name: null, type: null
-    };
-
-    this.NODE_DATA = {
-        //these attributes must be contained always
-        id: null, name: null, type: null, value: null
-        //Add other NEW-Attribute
-    };
-
-    this.EDGE_DATA ={
-        //these attributes must be contained always
-        id: null, name: null, type: null, value: null, source: null, target:null
-        //Add other NEW-Attribute
-    };
+    this.DIAGRAM_DATA = workflow.diagram_data;
+    this.NODE_DATA = workflow.node_data;
+    this.EDGE_DATA = workflow.edge_data;
 
     this.CONFIG = config;
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
 
-    this.DIAGRAM_GENERAL = {data: this.DIAGRAM_DATA};
-    this.DIAGRAM_GENERAL.data.id = 'diagram-01';
-    this.DIAGRAM_GENERAL.data.name = diagram_name;
-    this.DIAGRAM_GENERAL.data.type = 'diagram';
-
+    this.DIAGRAM_GENERAL = workflow.diagram;
     this.INIT_NODES = workflow.nodes;
     this.INIT_EDGES = workflow.edges;
 
@@ -163,8 +146,6 @@ class dipam_diagram {
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
   }
-
-
 
   get_diagram_obj() {
     return this.cy;

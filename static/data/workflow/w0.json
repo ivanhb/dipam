@@ -1,4 +1,8 @@
 {
+  "diagram_data": {"id": "", "name": "", "type": ""},
+  "node_data": {"id": "", "name": "", "type": "", "value": ""},
+  "edge_data": {"id": "", "name": "", "type": "", "value": "", "source": "", "target":""},
+  "diagram": { "data": {"id": "diagram-0", "name": "DIPAM for Textual anlysis", "type": "diagram"}},
   "nodes": [
     { "data": { "id": "d-0001", "name": "Textual data (d1)", "type": "data", "value": "d0"} },
     { "data": { "id": "t-0001", "name": "Filter names (t1)", "type": "tool", "value": "t-filter-names" } },
