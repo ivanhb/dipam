@@ -167,6 +167,18 @@ class dipam_diagram {
     var out_nodes_normalized = out_nodes.nodes('node[type = "data"]').union(out_nodes.nodes('node[type = "tool"]'));
     return out_nodes_normalized;
   }
+  get_source_nodes(node){
+    var in_nodes = this.cy.edges('edge[target="'+node._private.data.id+'"]').sources();
+    var in_nodes_normalized = in_nodes.nodes('node[type = "data"]').union(in_nodes.nodes('node[type = "tool"]'));
+    return in_nodes_normalized;
+  }
+  get_nodes_att_values(arr_nodes, att){
+    var arr_att = [];
+    for (var i = 0; i < arr_nodes.length; i++) {
+      arr_att.push(arr_nodes[i]._private.data[att]);
+    }
+    return arr_att;
+  }
   get_edges(){
     return this.cy.edges();
   }
@@ -533,172 +545,67 @@ class dipam_diagram {
     return false;
   }
 
-
-  //build the workflow
-  //returns the workflow
-  build_workflow(){
-
-    //will contain all the paths of the diagram
-    var paths = {};
-    var path_queue = [];
-    var completed_paths = [];
-    var index_intersections_merge = {};
-    var index_intersections_split = {};
+  //build the topological execution order of the nodes
+  build_nodes_topological_ordering(){
+    var topological_ordered_list = [];
 
     //get all nodes
     var all_nodes = this.get_nodes();
 
-    //get the roots first
-    for (var i = 0; i < all_nodes.length; i++) {
-      if(this.is_root(all_nodes[i])){
-        //var root_outgoing_edges = this.outgoing_edges(all_nodes[i]);
-        var new_id = this.gen_path_id(paths);
-        paths[new_id] = {nodes: [all_nodes[i]]};
-        path_queue.push(new_id);
+    //Start processing
+    var i = 0;
+    while (i < all_nodes.length) {
+      var a_node = all_nodes[i];
+      if (in_arr_obj(topological_ordered_list, "id", a_node._private.data.id)) {
+        i++;
+      }else {
+        _process_node(a_node._private.data.id, this.get_nodes_att_values(this.get_source_nodes(a_node),'id'), this.get_nodes_att_values(this.get_target_nodes(a_node),'id'), i);
+        //break;
+        i = 0;
       }
     }
 
-    //while we still have paths to analyze keep going
-    while (path_queue.length > 0) {
-      //console.log("Queue: [", path_queue.toString(),"] The completed paths are: [", completed_paths.toString(),"]");
-      //remove first elem, NOT the last
-      var path_id = path_queue.shift();
-      var path_ela_res = _elaborate_path(this, path_id, paths, path_queue, completed_paths);
-      if (completed_paths.indexOf(path_id) == -1) {
-        //we are done with this path
-        completed_paths.push(path_id);
+
+    return topological_ordered_list;
+
+    function _process_node(node_id, inputs, outputs, current_index){
+      var add_it = false;
+      if (inputs.length == 0) {
+        //is a root node
+        add_it = true;
+      }else {
+        //check if all its inputs are inside the index_processed
+        var all_processed;
+        for (var j = 0; j < inputs.length; j++) {
+          if(in_arr_obj(topological_ordered_list, "id", inputs[j])){
+            all_processed = true;
+          }else {
+            all_processed = false;
+            break;
+          }
+        }
+        if (all_processed) {
+          add_it = true;
+        }
+      }
+
+      if (add_it) {
+        topological_ordered_list.push({
+            "id": node_id,
+            "input": inputs,
+            "output": outputs
+        });
       }
     }
-
-    return {
-      paths: this.normalize_path(paths),
-      queue: completed_paths,
-      merge_intersections_nodes: index_intersections_merge,
-      split_intersections_nodes: index_intersections_split
-    };
-    //console.log("intersection merge: ",index_intersections_merge);
-    //console.log("intersection split: ",index_intersections_split);
-
-    function _elaborate_path(objinstance, a_path_id, paths, path_queue, completed_paths) {
-      var a_path_obj = paths[a_path_id];
-      var last_node = a_path_obj.nodes[a_path_obj.nodes.length-1];
-      var last_node_id = last_node._private.data.id;
-      var outgoing_edges = objinstance.outgoing_edges(last_node);
-      var incoming_edges = objinstance.incoming_edges(last_node);
-
-      //STOP IF:
-
-
-      //(2) It has other incomings and is not an intersection point
-      if ( (!(last_node_id in index_intersections_merge)) ||  (index_intersections_merge[last_node_id].out_path == null) )
-      {
-        if (incoming_edges.length > 1){
-
-
-          if (!(last_node_id in index_intersections_merge)) {
-            index_intersections_merge[last_node_id] = {
-              'waiting': incoming_edges.length,
-              'in_paths': [],
-              'out_path': null,
-            }
-            var total_incomings = incoming_edges.length;
-          }
-          var inter_obj = index_intersections_merge[last_node_id];
-          inter_obj.waiting--;
-          inter_obj.in_paths.push(a_path_id);
-
-          if (inter_obj.waiting == 0) {
-            //console.log('I will Merge ... :');
-            var new_id = __merge_paths(inter_obj.in_paths);
-            paths[new_id] = {nodes: [last_node]};
-            path_queue.push(new_id);
-            inter_obj.out_path = new_id;
-          }
-
-          return a_path_obj;
-
-          //console.log('The incomings paths for: ',last_node._private.data.id, ' are: ',incoming_edges.length);
-          //console.log('Check number of incomings arrived for: ',last_node._private.data.id, 'and is: ',arrived_paths_ids.length);
+    function in_arr_obj(arr, att, val){
+      for (var i = 0; i < arr.length; i++) {
+        if(arr[i][att] == val){
+          return true;
         }
       }
-
-      //(1) It is a leaf
-      if (objinstance.is_leaf(last_node)) {
-        return a_path_obj;
-      }
-
-      //(3) Should split it
-      if ( (!(last_node_id in index_intersections_split)) )
-      {
-        if (outgoing_edges.length > 1) {
-
-
-          if (!(last_node_id in index_intersections_split)) {
-            index_intersections_split[last_node_id] = {
-              'in_path': a_path_id,
-              'out_paths': [],
-            };
-          }
-
-          //split and add them to path_queue
-          var new_ids = __split_path(outgoing_edges.length, a_path_id);
-          for (var i = 0; i < new_ids.length; i++) {
-            paths[new_ids[i]] = {nodes: [last_node]};
-            path_queue.push(new_ids[i]);
-            index_intersections_split[last_node_id].out_paths.push(new_ids[i]);
-          }
-          return a_path_obj;
-        }
-      }
-
-
-
-      //else keep calling recursively the function on the one and only edge
-      var target_node = null;
-      if (outgoing_edges.length == 1) {
-        target_node = outgoing_edges[0].target()[0];
-        a_path_obj.nodes.push(target_node);
-      }else if (outgoing_edges.length > 1) {
-        var index_of_path = index_intersections_split[last_node_id].out_paths.indexOf(a_path_id);
-        target_node = outgoing_edges[index_of_path].target()[0];
-        a_path_obj.nodes.push(target_node);
-      }
-
-      return _elaborate_path(objinstance, path_id, paths, path_queue, completed_paths);
-
-      //inner functions
-      function __split_path(num, origin_path_id){
-        var arr_ids = [];
-        for (var i = 0; i < num; i++) {
-          //parseInt(a_path_id.substring(2))
-          var new_id = "p-["+origin_path_id.substring(2)+"/"+i.toString()+"]";
-          arr_ids.push(new_id);
-        }
-        return arr_ids;
-      }
-      function __merge_paths(paths_ids_arr) {
-        var num_id = "";
-        for (var i = 0; i < paths_ids_arr.length; i++) {
-          num_id = num_id + "," + paths_ids_arr[i].substring(2);
-        }
-        num_id = num_id.substring(1);
-        var new_id = "p-"+"["+num_id+"]";
-        return new_id;
-      }
-      function __arrived_paths(node){
-        var arr_ids = [];
-        for (var i = 0; i < completed_paths.length; i++) {
-            var path_nodes = paths[completed_paths[i]].nodes;
-            if(path_nodes[path_nodes.length - 1]._private.data.id == node._private.data.id){
-              arr_ids.push(completed_paths[i]);
-            }
-        }
-        return arr_ids;
-      }
-
+      return false;
     }
   }
-
 
   //generate an id for a new path. In case the path is born from another specify its father id in <start_point>
   // returns a new id in the format: p-1

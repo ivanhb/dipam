@@ -6,6 +6,9 @@ import re
 import csv
 import os
 
+from src import tool
+from src import data
+
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for
 
 app = Flask(__name__)
@@ -75,7 +78,18 @@ def load_workflow():
     return "Load done !"
     #return redirect(url_for('index'))
 
+@app.route('/process', methods = ['POST'])
+def process():
+    method = request.form['method']
+    param = request.form['param']
+    data = request.form['data']
 
+    print(method)
+    print(param)
+    print(data)
+
+    #tool_instance = Tool()
+    #print(tool_instance.run(method, data, param))
 
 if __name__ == '__main__':
     #app.config['TEMPLATES_AUTO_RELOAD'] = True

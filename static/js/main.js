@@ -62,7 +62,7 @@ $('#btn_run_workflow').on({
           e.preventDefault();
           vw_interface.click_run_workflow();
           var status = this.value;
-          setTimeout(function(){ vw_interface.handle_workflow(status,diagram_instance.build_workflow()); }, 2000);
+          setTimeout(function(){ vw_interface.handle_workflow(status,diagram_instance.build_nodes_topological_ordering()); }, 2000);
     }
 });
 
@@ -148,8 +148,6 @@ function elem_onclick_handle(){
 vw_interface.build_overview(diagram_instance.get_diagram().data);
 vw_interface.click_overview_nav();
 
-
-diagram_instance.build_workflow();
 
 
 function decode_json(text){

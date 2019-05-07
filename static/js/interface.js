@@ -485,7 +485,9 @@ class dipam_interface {
         </div>`;
     }
   }
-  click_load_workflow(){}
+  click_load_workflow(){
+
+  }
 
 
   click_run_workflow(){
@@ -537,103 +539,30 @@ class dipam_interface {
       console.log(param);
       this.workflow = JSON.parse(JSON.stringify(param));
 
-      var paths_res = {};
-      var process_queue = JSON.parse(JSON.stringify(param.queue));
-
-      for (var i = 0; i < param.queue.length; i++) {
-        var p_id = param.queue[i];
-        var p_obj = param.paths[p_id];
-        paths_res[p_id] = {
-            status:'processing',
-            nodes_to_process: JSON.parse(JSON.stringify(p_obj.nodes_ids)),
-            result: []
+      for (var i = 0; i < this.workflow.length; i++) {
+        var w_elem = this.workflow[i];
+        console.log("Processing: ", this.workflow[i].id);
+        //call the server
+        var data_to_post = {
+          id: w_elem.id,
+          input: w_elem.input,
+          output: w_elem.output
         };
+        $.ajax({
+          type: 'POST',
+          url: "/process",
+          data: data_to_post,
+          success: console.log("process finished!!");,
+          dataType: 'jsonp',
+          async:false
+        });
       }
-
-      for (var p_id in paths_res) {
-        console.log("Processing: ", p_id);
-        _process_path(p_id, this);
-      }
-
-      var last_path = paths_res[Object.keys(paths_res)[Object.keys(paths_res).length -1]];
-      console.log("\n The final result is: "+last_path.result[0]);
 
     }else if (status == 'stop') {
       //Stop the execution and abort all the running functions"
       console.log("Stop the execution and abort all the running functions");
     }
 
-    function _process_path(path_id, instance){
-      var nodes_to_process = paths_res[path_id].nodes_to_process;
-
-      if (nodes_to_process.length > 0) {
-        var node_id = nodes_to_process.shift();
-
-        //the last node to process
-        if (nodes_to_process.length == 0) {
-
-          //check if it is a merging intersection node
-          if (node_id in param.merge_intersections_nodes){
-            var intersection_node = param.merge_intersections_nodes[node_id];
-            //check if i am processing the merging path
-            if (intersection_node.out_path != path_id) {
-              //give my result to the merging path
-              paths_res[intersection_node.out_path].result.push(paths_res[path_id].result[0]);
-              //setTimeout(function(){ return _process_path(path_id,instance);}, 400);
-              return _process_path(path_id,instance);
-            }
-          }
-        }
-
-        ////merge the results in one if  i am the path of the merging node
-        if (node_id in param.merge_intersections_nodes){
-          var intersection_node = param.merge_intersections_nodes[node_id];
-          //check if i am processing the merging path
-          if (intersection_node.out_path == path_id) {
-            var merge_results = paths_res[path_id].result[0];
-            for (var i = 1; i < paths_res[path_id].result.length; i++) {
-              merge_results = merge_results +","+ paths_res[path_id].result[i];
-            }
-            paths_res[path_id].result = ["["+merge_results+"]"];
-          }
-        }
-
-        //process the node by giving the current result to the node as input
-
-        //This case is possible only for 'Data' nodes
-        //the server need to populate this properly
-        if (paths_res[path_id].result.length == 0) {
-          console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
-          paths_res[path_id].result.push("["+node_id+":data]");
-          instance.add_timeline_block(node_id);
-        }else {
-          //else process regularly the node
-          console.log("Process node: "+node_id+" with input:"+paths_res[path_id].result);
-          paths_res[path_id].result[0] = "[Process("+paths_res[path_id].result+")by:"+node_id+"]";
-          instance.add_timeline_block(node_id);
-          //change this with the corresponding server call
-        }
-
-        //check if it is a splitting intersection node, right afer i have executed the current node
-        if (node_id in param.split_intersections_nodes){
-          var intersection_node = param.split_intersections_nodes[node_id];
-          //check if i am processing the splitting path
-          if (intersection_node.in_path == path_id) {
-            for (var i = 0; i < intersection_node.out_paths.length; i++) {
-              var out_path_id = intersection_node.out_paths[i];
-              paths_res[out_path_id].result.push(paths_res[path_id].result[0]);
-            }
-          }
-          //else i am a splitted path and i got the results already
-        }
-        //setTimeout(function(){ return _process_path(path_id,instance);}, 400);
-        return _process_path(path_id,instance);
-
-      }
-
-      paths_res[path_id].status = 'done';
-      return paths_res[path_id];
-    }
   }
 
   //add a html block to timeline and update percentage
