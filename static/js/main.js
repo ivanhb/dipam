@@ -82,7 +82,7 @@ $('#btn_save_workflow').on({
                 name: input_text,
                 load: "off"
               });
-              vw_interface.__get__extra_workflow_container().innerHTML =  "";
+              vw_interface.__get__extra_workflow_container().style.visibility = 'hidden';
             }else {
               //params not ok
             }

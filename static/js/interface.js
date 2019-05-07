@@ -447,6 +447,7 @@ class dipam_interface {
 
     var workflow_extra_container = this.__get__extra_workflow_container();
 
+    workflow_extra_container.style.visibility = 'visible';
     workflow_extra_container.innerHTML = _save_section();
 
     $('#btn_dir_select').on({
@@ -465,6 +466,7 @@ class dipam_interface {
     $('#btn_cancel_save').on({
         click: function(e) {
           workflow_extra_container.innerHTML =  "";
+          workflow_extra_container.style.visibility = 'hidden';
         }
     });
 
@@ -476,7 +478,7 @@ class dipam_interface {
                   <div class="input-group-prepend"><label class="input-group-text">Choose a name: </label></div>
                   <input id="input_workflow_save_name" type="text"></input>
             </div>
-            <div class="input-group">
+            <div class="panel-foot">
                   <button id="btn_cancel_save" type="button" value="" class="btn btn-default">Cancel</button>
                   <button id="btn_apply_save" type="button" value="" class="btn btn-default">Save workflow</button>
             </div>

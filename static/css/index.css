@@ -125,7 +125,10 @@ body {
   padding: 0px;
   position:absolute;
   width: 350px;
-  min-height: 100px;
+  min-height: 50px;
+  border-bottom: #917442 solid 4px;
+  margin-bottom: 20px;
+  visibility: hidden;
 }
 #workflow_save{
   position relative;
@@ -133,6 +136,18 @@ body {
   padding-top: 10px;
   padding-bottom: 20px;
   width: 100;
+}
+#workflow_save .input-group{
+  left: 0px;
+  margin: 0 auto;
+}
+#workflow_save .panel-foot{
+  padding-top: 30px;
+  margin: 0 auto;
+  width: 250px;
+}
+#workflow_save .panel-foot .btn{
+  margin-top: 10px;
 }
 #workflow_save *{
   width: 80%;
