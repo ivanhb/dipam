@@ -171,6 +171,29 @@ class dipam_diagram {
     return this.cy.edges();
   }
 
+  get_workflow_data(){
+    var workflow_to_save = {
+      "diagram_data": this.DIAGRAM_DATA,
+      "node_data": this.NODE_DATA,
+      "edge_data": this.EDGE_DATA,
+      'diagram': this.DIAGRAM_GENERAL,
+      'nodes': [],
+      'edges': [],
+    };
+    // build the nodes
+    var diagram_nodes = this.get_nodes();
+    for (var i = 0; i < diagram_nodes.length; i++) {
+      workflow_to_save.nodes.push({"data": JSON.parse(JSON.stringify(diagram_nodes[i]._private.data))});
+    }
+    // build the edges
+    var diagram_edges = this.get_edges();
+    for (var i = 0; i < diagram_edges.length; i++) {
+      workflow_to_save.edges.push({"data": JSON.parse(JSON.stringify(diagram_edges[i]._private.data))});
+    }
+
+    return workflow_to_save;
+  }
+
   add_node(type) {
     var node_n = this.gen_node_data(type);
     node_n.group = 'nodes';

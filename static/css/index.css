@@ -120,6 +120,24 @@ body {
   border: #917442 solid 1px;
 }
 
+#workflow_extra{
+  top: 70px;
+  padding: 0px;
+  position:absolute;
+  width: 350px;
+  min-height: 100px;
+}
+#workflow_save{
+  position relative;
+  margin-top: 5px;
+  padding-top: 10px;
+  padding-bottom: 20px;
+  width: 100;
+}
+#workflow_save *{
+  width: 80%;
+}
+
 #start_block{
   height: 100%;
   border: #917442 solid 2px;

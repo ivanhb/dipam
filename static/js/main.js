@@ -70,15 +70,55 @@ $('#btn_save_workflow').on({
     click: function(e) {
       e.preventDefault();
       vw_interface.click_save_workflow();
+
+      $('#btn_apply_save').on({
+          click: function(e) {
+            var input_text = document.getElementById("input_workflow_save_name").getAttribute("temp_value");
+            if ((input_text != "" ) && (input_text != null)){
+              var workflow_data = diagram_instance.get_workflow_data();
+              $.post( "/saveworkflow", {
+                workflow_data: JSON.stringify(workflow_data),
+                path: "",
+                name: input_text,
+                load: "off"
+              });
+              vw_interface.__get__extra_workflow_container().innerHTML =  "";
+            }else {
+              //params not ok
+            }
+          }
+      });
+
     }
 });
 
 $('#btn_load_workflow').on({
     click: function(e) {
       e.preventDefault();
-      vw_interface.click_load_workflow();
+      $('#file_to_load').trigger('click');
     }
 });
+
+$('#file_to_load').on({
+    change: function(e) {
+      var file = $('#file_to_load')[0].files[0];
+      if (file) {
+        var reader = new FileReader();
+        reader.readAsText(file, "UTF-8");
+        reader.onload = function(e) {
+            result = e.target.result;
+            //console.log(result);
+            $.post( "/loadworkflow", {
+              workflow_file: result
+            }).done(function() {
+              //$.get("/");
+              location.reload();
+            });
+        };
+      }
+    }
+});
+
 
 //nodes on click handler
 elem_onclick_handle();

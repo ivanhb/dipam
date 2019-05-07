@@ -46,6 +46,7 @@ class dipam_interface {
         this.DIAGRAM_ZOOM_CONTAINER= document.getElementById('diagram_zoom');
         this.ZOOMIN_BTN = document.getElementById('zoom_in_btn');
         this.ZOOMOUT_BTN = document.getElementById('zoom_out_btn');
+        this.WORKFLOW_EXTRA = document.getElementById('workflow_extra');
 
 
         //Construct the DOM types
@@ -106,6 +107,10 @@ class dipam_interface {
 
     __get__run_workflow_container(){
       return this.RUN_WORKFLOW;
+    }
+
+    __get__extra_workflow_container(){
+      return this.WORKFLOW_EXTRA;
     }
 
     get_tools() {
@@ -439,10 +444,48 @@ class dipam_interface {
 
 
   click_save_workflow(){
-    
 
+    var workflow_extra_container = this.__get__extra_workflow_container();
+
+    workflow_extra_container.innerHTML = _save_section();
+
+    $('#btn_dir_select').on({
+        click: function(e) {
+          e.preventDefault();
+          $('#file_to_load').trigger('click');
+        }
+    });
+
+    $('#dir_to_save_in').on({
+        change: function(e) {
+          console.log($('#dir_to_save_in')[0]);
+        }
+    });
+
+    $('#btn_cancel_save').on({
+        click: function(e) {
+          workflow_extra_container.innerHTML =  "";
+        }
+    });
+
+    function _save_section(){
+      return `<div id="workflow_save">
+            <div class="input-group">
+                  <button id="btn_dir_select" type="button" value="" class="btn btn-default">Choose directory</button>
+                  <input id="dir_to_save_in" type="file" webkitdirectory mozdirectory msdirectory odirectory directory multiple="multiple" style="display: none;"></input>
+                  <div class="input-group-prepend"><label class="input-group-text">Choose a name: </label></div>
+                  <input id="input_workflow_save_name" type="text"></input>
+            </div>
+            <div class="input-group">
+                  <button id="btn_cancel_save" type="button" value="" class="btn btn-default">Cancel</button>
+                  <button id="btn_apply_save" type="button" value="" class="btn btn-default">Save workflow</button>
+            </div>
+        </div>`;
+    }
   }
   click_load_workflow(){}
+
+
   click_run_workflow(){
 
     if (this.RUN_WORKFLOW.value == 'stop') {

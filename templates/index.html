@@ -47,12 +47,17 @@
     <div id="cy_foot">
       <div id="workflow_timeline">
         <button id="btn_run_workflow" type="button" value="stop" class="btn btn-default">Run workflow</button>
+
         <button id="btn_save_workflow" type="button" value="save" class="btn btn-default">Save</button>
         <button id="btn_load_workflow" type="button" value="load" class="btn btn-default">Load</button>
+        <input id="file_to_load" type="file" style="display: none;"/>
+
         <div id="start_block" class="timeline-block"></div>
         <div id="timeline_text" class="timeline-block">Workflow timeline ...</div>
         <div id="end_block" class="timeline-block"></div>
       </div>
+      <div id="workflow_extra">
+      <div>
     </div>
 
     <!--config file-->
