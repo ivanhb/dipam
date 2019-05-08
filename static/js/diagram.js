@@ -556,14 +556,23 @@ class dipam_diagram {
     var i = 0;
     while (i < all_nodes.length) {
       var a_node = all_nodes[i];
+      var a_node_config = this.CONFIG[a_node._private.data.type][a_node._private.data.value];
       if (in_arr_obj(topological_ordered_list, "id", a_node._private.data.id)) {
         i++;
       }else {
+        //define the node method for both cases
+        var a_node_method = null;
+        if (a_node._private.data.type == 'tool') {
+          a_node_method = a_node_config.function;
+        }else if (a_node._private.data.type == 'data') {
+          a_node_method = a_node_config.data_class;
+        }
+
         _process_node(
           //node-fields
           a_node._private.data.id,
           a_node._private.data.type,
-          a_node._private.data.value,
+          a_node_method,
           a_node._private.data.param,
           //node-inputs
           this.get_nodes_att_values(this.get_source_nodes(a_node),'id'),

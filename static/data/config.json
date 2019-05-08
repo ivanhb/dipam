@@ -2,11 +2,11 @@
   "data": {
         "d0":{
             "label": "Table",
-            "type": "txt"
+            "data_class": "table"
         },
         "d1":{
             "label": "Text file",
-            "type": "csv"
+            "data_class": "text"
         }
   },
   "tool": {

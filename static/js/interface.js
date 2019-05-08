@@ -554,20 +554,20 @@ class dipam_interface {
 
             console.log("Processing: ", workflow_to_process[i]);
             //call the server
-            $.post( "/process", {
+            var data_to_post = {
               id: w_elem.id,
               method: w_elem.method,
               type: w_elem.type,
               param: "",
               input: JSON.stringify(w_elem.input),
               output: JSON.stringify(w_elem.output)
-            }).done(function() {
+            };
+            $.post( "/process",data_to_post).done(function() {
               instance.add_timeline_block(w_elem.id);
               //process next node
               if (i == workflow_to_process.length - 1) {
                 console.log("Done All !!");
               }else {
-                console.log("Next ...");
                 _process_workflow(instance,i+1);
               }
             });

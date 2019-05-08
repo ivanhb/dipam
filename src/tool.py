@@ -5,10 +5,11 @@ class Tool(object):
         pass
 
     #run a func
-    def run(self, id_name, input_data, param = None):
+    def run(self, id_name, method, input_data, param = None):
         res = -1
         try:
-            res = getattr(self, id_name)(input_data, param)
+            res = getattr(self, method)(input_data, param)
+            print("The node:"+id_name+" . Return result: "+res)
             return res
         except AttributeError:
             return res

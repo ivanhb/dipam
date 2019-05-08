@@ -76,7 +76,6 @@ def load_workflow():
         json.dump(jsdata, outfile)
 
     return "Load done !"
-    #return redirect(url_for('index'))
 
 @app.route('/process', methods = ['POST'])
 def process():
@@ -87,11 +86,17 @@ def process():
     input = request.form['input']
     output = request.form['output']
 
-    print(input)
+    print("Processing: '"+id+"', of '"+type+"' type. The function/class of it is "+method)
+
+    if type == "tool":
+        a_tool = tool.Tool()
+        a_tool.run(id, method, input, param)
+    elif type == "data":
+        a_data = data.Data(id, method)
+
 
     return "Processing done !"
-    #tool_instance = Tool()
-    #print(tool_instance.run(method, data, param))
+
 
 if __name__ == '__main__':
     #app.config['TEMPLATES_AUTO_RELOAD'] = True
