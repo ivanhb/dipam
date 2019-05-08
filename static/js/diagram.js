@@ -559,8 +559,19 @@ class dipam_diagram {
       if (in_arr_obj(topological_ordered_list, "id", a_node._private.data.id)) {
         i++;
       }else {
-        _process_node(a_node._private.data.id, this.get_nodes_att_values(this.get_source_nodes(a_node),'id'), this.get_nodes_att_values(this.get_target_nodes(a_node),'id'), i);
-        //break;
+        _process_node(
+          //node-fields
+          a_node._private.data.id,
+          a_node._private.data.type,
+          a_node._private.data.value,
+          a_node._private.data.param,
+          //node-inputs
+          this.get_nodes_att_values(this.get_source_nodes(a_node),'id'),
+          //node-outputs
+          this.get_nodes_att_values(this.get_target_nodes(a_node),'id'),
+          //the current index
+          i
+        );
         i = 0;
       }
     }
@@ -568,7 +579,7 @@ class dipam_diagram {
 
     return topological_ordered_list;
 
-    function _process_node(node_id, inputs, outputs, current_index){
+    function _process_node(node_id, node_type, node_value, node_param, inputs, outputs, current_index){
       var add_it = false;
       if (inputs.length == 0) {
         //is a root node
@@ -592,6 +603,9 @@ class dipam_diagram {
       if (add_it) {
         topological_ordered_list.push({
             "id": node_id,
+            "type": node_type,
+            "method": node_value,
+            "param": node_param,
             "input": inputs,
             "output": outputs
         });

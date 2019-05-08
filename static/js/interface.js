@@ -538,31 +538,40 @@ class dipam_interface {
     if (status == 'run') {
       console.log(param);
       this.workflow = JSON.parse(JSON.stringify(param));
-
-      for (var i = 0; i < this.workflow.length; i++) {
-        var w_elem = this.workflow[i];
-        console.log("Processing: ", this.workflow[i].id);
-        //call the server
-        var data_to_post = {
-          id: w_elem.id,
-          input: w_elem.input,
-          output: w_elem.output
-        };
-        $.ajax({
-          type: 'POST',
-          url: "/process",
-          data: data_to_post,
-          success: console.log("process finished!!");,
-          dataType: 'jsonp',
-          async:false
-        });
-      }
+      var workflow_to_process = this.workflow;
+      var index_processed = {};
+      //process workflow
+      _process_workflow(this,0);
 
     }else if (status == 'stop') {
       //Stop the execution and abort all the running functions"
       console.log("Stop the execution and abort all the running functions");
     }
 
+    function _process_workflow(instance,i){
+
+            var w_elem = workflow_to_process[i];
+
+            console.log("Processing: ", workflow_to_process[i]);
+            //call the server
+            $.post( "/process", {
+              id: w_elem.id,
+              method: w_elem.method,
+              type: w_elem.type,
+              param: "",
+              input: JSON.stringify(w_elem.input),
+              output: JSON.stringify(w_elem.output)
+            }).done(function() {
+              instance.add_timeline_block(w_elem.id);
+              //process next node
+              if (i == workflow_to_process.length - 1) {
+                console.log("Done All !!");
+              }else {
+                console.log("Next ...");
+                _process_workflow(instance,i+1);
+              }
+            });
+      }
   }
 
   //add a html block to timeline and update percentage

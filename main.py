@@ -80,14 +80,16 @@ def load_workflow():
 
 @app.route('/process', methods = ['POST'])
 def process():
+    id = request.form['id']
     method = request.form['method']
+    type = request.form['type']
     param = request.form['param']
-    data = request.form['data']
+    input = request.form['input']
+    output = request.form['output']
 
-    print(method)
-    print(param)
-    print(data)
+    print(input)
 
+    return "Processing done !"
     #tool_instance = Tool()
     #print(tool_instance.run(method, data, param))
 
