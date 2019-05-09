@@ -203,6 +203,15 @@ body {
   width: 400px;
 }
 
+ul + label{
+  margin-left: 8px;
+  padding-top: 10px;
+}
+#lbl_filePath{
+  font-size: 11pt;
+  width: 140px;
+}
+
 #diagram_editor{
   position: absolute;
   width: 320px;

@@ -4,9 +4,9 @@ class dipam_diagram {
 
   constructor(container_id, config_data, diagram_name, workflow={}) {
 
-    this.DIAGRAM_DATA = workflow.diagram_data;
-    this.NODE_DATA = workflow.node_data;
-    this.EDGE_DATA = workflow.edge_data;
+    this.DIAGRAM_DATA = config.graph.diagram_data;
+    this.NODE_DATA = config.graph.node_data;
+    this.EDGE_DATA = config.graph.edge_data;
 
     this.CONFIG = config;
 
@@ -185,9 +185,6 @@ class dipam_diagram {
 
   get_workflow_data(){
     var workflow_to_save = {
-      "diagram_data": this.DIAGRAM_DATA,
-      "node_data": this.NODE_DATA,
-      "edge_data": this.EDGE_DATA,
       'diagram': this.DIAGRAM_GENERAL,
       'nodes': [],
       'edges': [],

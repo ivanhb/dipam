@@ -7,7 +7,7 @@ class dipam_interface {
           'edgeName': {'data_id': 'name', 'type':'input_box', 'title': 'Edge name', 'value':'id'},
           'dataName': {'data_id': 'name', 'type':'input_box', 'title': 'Data name', 'value':'name'},
           'toolName': {'data_id': 'name', 'type':'input_box', 'title': 'Tool name', 'value':'name'},
-          'filePath': {'data_id': 'name', 'type':'input_file', 'title': 'File', 'value':'name'},
+          'filePath': {'data_id': 'name', 'type':'input_file_or_dir', 'title': 'Select data', 'value':'name'},
           'dataType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Data type', 'value':[],'label':[]},
           'toolType': {'data_id': 'value', 'type': 'dropdown', 'title': 'Tool type', 'value':[],'label':[]},
           'editElem': {'position': 'divfoot', 'type':'light_button', 'title': 'Edit properties', 'value':'editoff', 'event':{'onclick':"[[INTERFACE]].after_editing();"}},
@@ -237,14 +237,36 @@ class dipam_interface {
               </div>
               `;
         break;
-        case 'input_file':
-          str_html = str_html + `
+        case 'input_file_or_dir':
+          /*
+          str_html = str_html +`
           <div class="input-group">
-            <label class="input-group-text">`+obj_dom_type.title+`</label>
-            <input data_elem_id="`+node.id+`" id="`+obj_dom_type.id+`" type="file" name="myFile" value="" />
+                <button id="btn_`+obj_dom_type.id+`" type="button" value="" class="btn btn-default" onclick="document.getElementById('`+obj_dom_type.id+`').click()">Select</button>
+                <input data_elem_id="`+node.id+`" id="`+obj_dom_type.id+`" onchange="console.log(this.files)" type="file" style="display: none;" multiple="true"/>
+                <label class="input-group-text">[[file_name]]</label>
           </div>
           `;
-        break;
+          */
+
+          str_html = str_html +`
+          <div class="input-group btn-group">
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+              `+obj_dom_type.title+`<span class="caret"></span></button>
+              <ul class="dropdown-menu" role="menu">
+                <li>
+                    <a id="btn_`+obj_dom_type.id+`_file" onclick="document.getElementById('`+obj_dom_type.id+`_file').click()">File\/s</a>
+                    <input data_elem_id="`+node.id+`" id="`+obj_dom_type.id+`_file" onchange="`+this.INTERFACE_INSTANCE+`.label_handler('file',this,'`+obj_dom_type.id+`')" type="file" style="display: none;" multiple="true"/>
+                </li>
+                <li>
+                    <a id="btn_`+obj_dom_type.id+`_dir" onclick="document.getElementById('`+obj_dom_type.id+`_dir').click()">Directory</a>
+                    <input data_elem_id="`+node.id+`" id="`+obj_dom_type.id+`_dir" onchange="`+this.INTERFACE_INSTANCE+`.label_handler('dir',this,'`+obj_dom_type.id+`')" type="file" style="display: none;" webkitdirectory directory multiple="false"/>
+                </li>
+              </ul>
+              <label id="lbl_`+obj_dom_type.id+`" class="input-group-text">[[file_name]]</label>
+          </div>
+          `;
+
+          break;
         case 'input_box':
           str_html = str_html + `
           <div class="input-group">
@@ -258,15 +280,33 @@ class dipam_interface {
           $(document).on('keyup', 'input', function(){
               document.getElementById(this.id).setAttribute('temp_value',$(this).val());
           });
-
-
-        break;
+          break;
         case 'light_button':
           str_html = str_html + '<span class="foot-dom"><button '+str_html_event+' id="'+obj_dom_type.id+'" type="button" data_elem_id="'+node.id+'" class="btn btn-light '+obj_dom_type.type+'">'+obj_dom_type.title+'</button></span>';
           break;
       }
 
       return str_html;
+    }
+
+    label_handler(type, elem, id){
+      var str = "";
+      switch (type) {
+        case 'file':
+          if (elem.files.length == 1){
+            str = elem.files[0].name;
+          }else if (elem.files.length > 1){
+            str = elem.files.length+ " files" ;
+          }
+          break;
+        case 'dir':
+          str = elem.files.length + " files from directory";
+          break;
+        default:
+      }
+
+      document.getElementById("lbl_"+id).setAttribute('value', elem.files);
+      document.getElementById("lbl_"+id).innerHTML = str;
     }
 
     __get__eventdom_containers(){

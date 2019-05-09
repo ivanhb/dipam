@@ -41,5 +41,10 @@
       "value_label": ["2","3","4","5","10","15","20"],
       "value": [2,3,4,5,10,15,20]
     }
+  },
+  "graph": {
+    "diagram_data": {"id": "", "name": "", "type": ""},
+    "node_data": {"id": "", "name": "", "type": "", "value": ""},
+    "edge_data": {"id": "", "name": "", "source": "", "target": "", "type": "", "value": ""}
   }
 }
