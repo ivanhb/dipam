@@ -3,12 +3,11 @@ class dipam_diagram {
 
 
   constructor(container_id, config_data, diagram_name, workflow={}) {
-
-    this.DIAGRAM_DATA = config.graph.diagram_data;
-    this.NODE_DATA = config.graph.node_data;
-    this.EDGE_DATA = config.graph.edge_data;
-
     this.CONFIG = config;
+
+    this.DIAGRAM_DATA = {id: "", name: "", type: ""};
+    this.NODE_DATA = {id: "", name: "", type: ""};
+    this.EDGE_DATA = {id: "", name: "", type: "", source: "", target:""};
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
 
@@ -146,12 +145,20 @@ class dipam_diagram {
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
   }
-
-  get_diagram_obj() {
+  get_diagram_obj(){
     return this.cy;
   }
   get_undo_redo() {
     return this.cy_undo_redo;
+  }
+  get_gen_elem(type){
+    switch (type) {
+      case 'diagram':
+        return this.get_diagram();
+        break;
+      default:
+        return this.get_nodes(type);
+    }
   }
   get_diagram(){
     return this.DIAGRAM_GENERAL;
@@ -202,6 +209,52 @@ class dipam_diagram {
 
     return workflow_to_save;
   }
+  get_keys(type){
+    var res = {'label':[],'value':[]};
+    if (this.CONFIG.hasOwnProperty(type)) {
+      for (var a_k in this.CONFIG[type]) {
+        res.value.push(a_k);
+        res.label.push(this.CONFIG[type][a_k].label);
+      }
+    }
+    return res;
+  }
+  get_data_keys(){
+  }
+
+  //<type>: 'data', 'tool', 'param'
+  get_conf_elems(type, values) {
+      var res = {};
+      for (var i = 0; i < values.length; i++) {
+        res[values[i]] = [];
+      }
+
+      for (var a_k in this.CONFIG) {
+        if (a_k == type) {
+          for (var k_elem in this.CONFIG[a_k]) {
+            var att_elems = this.CONFIG[a_k][k_elem];
+            for (var k_att_elem in att_elems) {
+              if (k_att_elem in res) {
+                res[k_att_elem].push(att_elems[k_att_elem]);
+              }
+            }
+          }
+        }
+      }
+
+      return res;
+  }
+  get_conf_att(type, k_type, k_att){
+    var res = -1;
+    if (type in this.CONFIG) {
+      if (k_type in this.CONFIG[type]) {
+        if (k_att in this.CONFIG[type][k_type]) {
+          return this.CONFIG[type][k_type][k_att];
+        }
+      }
+    }
+    return res;
+  }
 
   add_node(type) {
     var node_n = this.gen_node_data(type);
@@ -228,20 +281,26 @@ class dipam_diagram {
       }
     }
 
-
-    //in case there is another node there
-
     //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {
       if (Object.keys(this.CONFIG[n_type]).length > 0){
           var new_id = this.gen_id(n_type);
-          node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
           node_obj.data.id = new_id;
           node_obj.data.name = new_id;
           node_obj.data.type = n_type;
+          //as default put all the attributes of the first element
+          //node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
+          /*
+          for (var k_conf_elem in this.CONFIG[n_type]) {
+            for (var k_att in this.CONFIG[n_type][k_conf_elem]) {
+              node_obj.data[k_att] = JSON.parse(JSON.stringify(this.CONFIG[n_type][0][k_att]));
+            }
+            break;
+          }
+          */
       }
     }
-    console.log(node_obj);
+
     return node_obj;
   }
 
@@ -683,6 +742,13 @@ class dipam_diagram {
       }
     }
     return normalize_paths;
+  }
+
+  zoom_in(){
+    this.cy.zoom(this.cy.zoom() + 0.1);
+  }
+  zoom_out(){
+    this.cy.zoom(this.cy.zoom() - 0.1);
   }
 
 }

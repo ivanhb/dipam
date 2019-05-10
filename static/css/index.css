@@ -1,6 +1,7 @@
 :disabled{
   opacity: 0.6;
 }
+button,a { cursor: pointer; }
 
 body {
   font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
@@ -16,17 +17,11 @@ body {
   padding-left: 20px;
   border-right: solid 4px #917442;
 }
-
-#null_div{
-  position: absolute;
-  width: 350px;
-  height: 130px;
-  top: 390px;
-  border-right: dotted 4px #917442;
-  z-index: -1;
+#control_head{
 }
-
-
+#control_body{
+  width: 100%;
+}
 #control_foot{
   padding-top: 20%;
   margin: 0 auto;
@@ -34,10 +29,11 @@ body {
   width: 80%;
   text-align: center;
 }
-#control_foot *{
-  font-size: 103%;
+#control_foot .foot-dom{
+  font-size: 100%;
+  width: auto;
 }
-#control_foot .foot-dom button:hover{
+#control_foot button:hover{
  color: #82683b;
 }
 
@@ -48,9 +44,26 @@ body {
  color: green;
 }
 
-.foot-dom{
-  width: 350px;
+
+.input-group{
+  font-size:120%;
+  padding-left: 50px;
 }
+.input-group
+select, .dropdown-toggle{
+  min-width: 120px;
+  max-width: 150px;
+}
+.input-group
+input {
+  min-width: 220px;
+  max-width: 220px;
+}
+.input-group + .input-group{
+  padding-top: 25px;
+}
+
+
 .edit-switch{
   margin-bottom: 30px;
 }
@@ -188,20 +201,9 @@ body {
   border-bottom-color: #82683b;
   margin-bottom: 25px;
 }
-#control_body{
-  width: 100%;
 
-}
 
-.input-group + .input-group{
-  padding-top: 25px;
-}
 
-.input-group{
-  font-size:120%;
-  left: 50px;
-  width: 400px;
-}
 
 ul + label{
   margin-left: 8px;
@@ -280,4 +282,14 @@ ul + label{
 .dropdown{
   max-width: 250px;
   min-width: 200px;
+}
+
+
+#null_div{
+  position: absolute;
+  width: 350px;
+  height: 130px;
+  top: 390px;
+  border-right: dotted 4px #917442;
+  z-index: -1;
 }

@@ -2,11 +2,13 @@
   "data": {
         "d0":{
             "label": "Table",
-            "data_class": "table"
+            "data_class": "table",
+            "source": ""
         },
         "d1":{
             "label": "Text file",
-            "data_class": "text"
+            "data_class": "text",
+            "source": ""
         }
   },
   "tool": {
@@ -41,10 +43,5 @@
       "value_label": ["2","3","4","5","10","15","20"],
       "value": [2,3,4,5,10,15,20]
     }
-  },
-  "graph": {
-    "diagram_data": {"id": "", "name": "", "type": ""},
-    "node_data": {"id": "", "name": "", "type": "", "value": ""},
-    "edge_data": {"id": "", "name": "", "source": "", "target": "", "type": "", "value": ""}
   }
 }
