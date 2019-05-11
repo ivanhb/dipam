@@ -145,6 +145,14 @@ class dipam_diagram {
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
   }
+  set_events(){
+    var eh = this.cy.edgehandles();
+    this.cy.on('ehshow', (event, sourceNode) => {
+          if (sourceNode._private.selected == false) {
+            eh.hide();
+          }
+    });
+  }
   get_diagram_obj(){
     return this.cy;
   }

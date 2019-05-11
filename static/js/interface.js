@@ -25,6 +25,8 @@ class dipam_interface {
         this.ADD_TOOL = document.getElementById('add_tool');
         this.ADD_DATA = document.getElementById('add_data');
         this.RUN_WORKFLOW = document.getElementById('btn_run_workflow');
+        this.SAVE_WORKFLOW = document.getElementById('btn_save_workflow');
+        this.LOAD_WORKFLOW = document.getElementById('btn_load_workflow');
         this.TIMELINE_CONTAINER = document.getElementById('timeline_container');
         this.START_BLOCK = document.getElementById('start_block');
         this.TIMELINE_TEXT = document.getElementById('timeline_text');
@@ -38,6 +40,7 @@ class dipam_interface {
 
     set_corresponding_diagram(diagram){
       this.DIAGRAM_INSTANCE_OBJ = diagram;
+      this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_obj();
       //set values inside according to the given diagram
       /* ------------------------
       <elem>: 'nodes', 'edges', or 'diagram'
@@ -62,6 +65,7 @@ class dipam_interface {
 
         filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "source", intro_lbl: 'Select data', value:'', onchange:'select', multi:{ids:['file','dir'], param:['file','dir']} },
 
+        //keep always these two DOMs
         editElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Edit properties', value:'editoff', onclick:'edit'},
         removeElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Remove element', value:'', onclick:'remove'}
       };
@@ -89,45 +93,6 @@ class dipam_interface {
         }
       }
     }
-
-    //set all the interface events
-    set_events(){
-
-      var interface_instance = this;
-      var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-
-      //the info section Nav menu
-      $( "#"+this.NAV_OVERVIEW.getAttribute('id')).on("click", function() {
-        interface_instance.click_overview_nav();
-      });
-      $( "#"+this.NAV_INFO.getAttribute('id')).on("click", function() {
-        interface_instance.click_info_nav();
-      });
-
-      //the undo/redo Nav menu
-      $( "#"+this.UNDO_BTN.getAttribute('id')).on("click", function() {
-        diagram_instance.cy_undo_redo.undo();
-        interface_instance.show_undo_redo(
-                    diagram_instance.get_undo_redo().isUndoStackEmpty(),
-                    diagram_instance.get_undo_redo().isRedoStackEmpty());
-      });
-      $( "#"+this.REDO_BTN.getAttribute('id')).on("click", function() {
-        diagram_instance.cy_undo_redo.redo();
-        interface_instance.show_undo_redo(
-                    diagram_instance.get_undo_redo().isUndoStackEmpty(),
-                    diagram_instance.get_undo_redo().isRedoStackEmpty());
-      });
-
-      //the zoom in/out Nav menu
-      $( "#"+this.ZOOMIN_BTN.getAttribute('id')).on("click", function() {
-        diagram_instance.zoom_in();
-      });
-      $( "#"+this.ZOOMOUT_BTN.getAttribute('id')).on("click", function() {
-        diagram_instance.zoom_out();
-      });
-
-    }
-
 
     __set__info_section_html(param){
       this.info_section_html = param;
@@ -157,8 +122,10 @@ class dipam_interface {
       this.set_section_events(this.OVERVIEW_SECTION[elem_class][elem_type], elem);
     }
 
+    /*
+    <elem>: should be the original cy elem
+    */
     build_info(elem, elem_class= 'nodes') {
-      console.log(elem,elem_class);
       var elem_type = elem._private.data.type;
       //first decide what doms should be visualized (defined in DOMTYPE)
       this.info_section_html = this.build_section(this.INFO_SECTION[elem_class][elem_type], elem._private);
@@ -196,7 +163,6 @@ class dipam_interface {
       }
       return str_html;
     }
-
     //build a specific dom
     build_a_dom(obj_dom_type, elem){
       var str_html= "";
@@ -217,8 +183,7 @@ class dipam_interface {
           }
         }
       }
-
-      console.log(obj_dom_type, elem, dom_value);
+      //console.log(obj_dom_type, elem, dom_value);
 
       switch (obj_dom_type.type) {
         /* Attributes needed are: <value>:Array, <label>:Array */
@@ -263,7 +228,6 @@ class dipam_interface {
                   <label data-att-value="`+dom_value+`" id="lbl_`+obj_dom_type.id+`" class="val-box input-group-text" value=""></label>
               </div>
               `;
-              console.log(str_html);
           break;
 
         case 'input_box':
@@ -389,12 +353,12 @@ class dipam_interface {
     }
 
     click_on_node(node){
-      this.build_info(node);
+      this.build_info(node,'nodes');
       this.click_info_nav();
     }
 
     click_on_edge(edge){
-      this.build_info(edge);
+      this.build_info(edge, 'edges');
       this.click_info_nav();
     }
 
@@ -730,5 +694,160 @@ class dipam_interface {
       this.REDO_BTN.style.visibility = 'hidden';
     }
   }
+
+
+  //************************************************************//
+  //********* Events handlers **********************************//
+  //************************************************************//
+  //set all the interface events
+  set_events(){
+
+    var interface_instance = this;
+    var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
+    var diagram_cy = this.DIAGRAM_INSTANCE_CY;
+
+
+    //ADD Node and Tool Buttons
+    $('#'+this.ADD_DATA.getAttribute('id')).on({
+      click: function(e) {
+        diagram_instance.add_node('data');
+        _elem_onclick_handle();
+        interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+        diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+        document.getElementById('editElem').click();
+      }
+    });
+    $('#'+this.ADD_TOOL.getAttribute('id')).on({
+      click: function(e) {
+        diagram_instance.add_node('tool');
+        _elem_onclick_handle();
+        interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+        diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+        document.getElementById('editElem').click();
+      }
+    });
+
+
+    //the info section Nav menu
+    $( "#"+this.NAV_OVERVIEW.getAttribute('id')).on("click", function() {
+      interface_instance.click_overview_nav();
+    });
+    $( "#"+this.NAV_INFO.getAttribute('id')).on("click", function() {
+      interface_instance.click_info_nav();
+    });
+
+    //the undo/redo Nav menu
+    $( "#"+this.UNDO_BTN.getAttribute('id')).on("click", function() {
+      diagram_instance.cy_undo_redo.undo();
+      interface_instance.show_undo_redo(
+                  diagram_instance.get_undo_redo().isUndoStackEmpty(),
+                  diagram_instance.get_undo_redo().isRedoStackEmpty());
+    });
+    $( "#"+this.REDO_BTN.getAttribute('id')).on("click", function() {
+      diagram_instance.cy_undo_redo.redo();
+      interface_instance.show_undo_redo(
+                  diagram_instance.get_undo_redo().isUndoStackEmpty(),
+                  diagram_instance.get_undo_redo().isRedoStackEmpty());
+    });
+
+    //the zoom in/out Nav menu
+    $( "#"+this.ZOOMIN_BTN.getAttribute('id')).on("click", function() {
+      diagram_instance.zoom_in();
+    });
+    $( "#"+this.ZOOMOUT_BTN.getAttribute('id')).on("click", function() {
+      diagram_instance.zoom_out();
+    });
+
+
+    /*The Workflow buttons and correlated events*/
+    $( "#"+this.RUN_WORKFLOW.getAttribute('id')).on({
+        click: function(e) {
+              e.preventDefault();
+              interface_instance.click_run_workflow();
+              var status = this.value;
+              setTimeout(function(){ interface_instance.handle_workflow(status,diagram_instance.build_nodes_topological_ordering()); }, 2000);
+        }
+    });
+
+    $( "#"+this.SAVE_WORKFLOW.getAttribute('id')).on({
+        click: function(e) {
+          e.preventDefault();
+          interface_instance.click_save_workflow();
+
+          $('#btn_apply_save').on({
+              click: function(e) {
+                var input_text = document.getElementById("input_workflow_save_name").getAttribute("temp_value");
+                if ((input_text != "" ) && (input_text != null)){
+                  var workflow_data = diagram_instance.get_workflow_data();
+                  $.post( "/saveworkflow", {
+                    workflow_data: JSON.stringify(workflow_data),
+                    path: "",
+                    name: input_text,
+                    load: "off"
+                  });
+                  interface_instance.__get__extra_workflow_container().style.visibility = 'hidden';
+                }else {
+                  //params not ok
+                }
+              }
+          });
+
+        }
+    });
+
+    $( "#"+this.LOAD_WORKFLOW.getAttribute('id')).on({
+        click: function(e) {
+          e.preventDefault();
+          $('#file_to_load').trigger('click');
+        }
+    });
+    $('#file_to_load').on({
+        change: function(e) {
+          var file = $('#file_to_load')[0].files[0];
+          if (file) {
+            var reader = new FileReader();
+            reader.readAsText(file, "UTF-8");
+            reader.onload = function(e) {
+                var result = e.target.result;
+                //console.log(result);
+                $.post( "/loadworkflow", {
+                  workflow_file: result
+                }).done(function() {
+                  //$.get("/");
+                  location.reload();
+                });
+            };
+          }
+        }
+    });
+
+
+
+    _elem_onclick_handle();
+
+    function _elem_onclick_handle(){
+        //nodes on click handler
+        diagram_cy.nodes().on('click', function(e){
+            console.log("Node clicked !");
+            console.log(this);
+            diagram_instance.click_elem_style(this,'node');
+            diagram_instance.check_node_compatibility(this);
+            interface_instance.click_on_node(this);
+        });
+
+        //edges on click handler
+        diagram_cy.edges().on('click', function(e){
+            console.log("Edge clicked !");
+            console.log(this);
+            diagram_instance.click_elem_style(this,'edge');
+            interface_instance.click_on_edge(this);
+        });
+      }
+
+  }
+
+
+
+
 
 }
