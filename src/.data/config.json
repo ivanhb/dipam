@@ -1,4 +1,10 @@
 {
+  "diagram": {
+        "nodes": {
+          "elem":["data","tool"],
+          "data": {"file_source": ""}
+        }
+  },
   "data": {
         "d0":{
             "label": "Table",

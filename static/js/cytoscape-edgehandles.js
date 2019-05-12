@@ -538,7 +538,7 @@ function makeEdges() {
 				if (after_add != -1) {
 					vw_interface.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
 					added = added.merge(source2target);
-					elem_onclick_handle();
+					vw_interface.set_events(true);
 				}
 	    }else {
 	    	console.log("You already have another edge between these two nodes !!");

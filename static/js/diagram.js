@@ -8,6 +8,9 @@ class dipam_diagram {
     this.DIAGRAM_DATA = {id: "", name: "", type: ""};
     this.NODE_DATA = {id: "", name: "", type: ""};
     this.EDGE_DATA = {id: "", name: "", type: "", source: "", target:""};
+    //add the additional ad-hoc attributes defined in config
+    this._apply_diagram_config_definition();
+    console.log(this.DIAGRAM_DATA, this.NODE_DATA, this.EDGE_DATA);
 
     this.DIAGRAM_CONTAINER = document.getElementById(container_id);
 
@@ -144,7 +147,42 @@ class dipam_diagram {
     this.get_nodes('tool').style(this.STYLE.node.tool);
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
+
   }
+
+  _apply_diagram_config_definition() {
+    var diagram_obj = this.CONFIG.diagram;
+    //diagram data
+    if ('general' in diagram_obj) {
+    }
+
+    //nodes data
+    if ('nodes' in diagram_obj) {
+      var elems = ['[ONE]'];
+      if ('elem' in diagram_obj.nodes) {
+        elems = diagram_obj.nodes.elem;
+      }
+      if (elems.length > 1) {
+        var must_att = JSON.parse(JSON.stringify(this.NODE_DATA));
+        this.NODE_DATA = {};
+        for (var i = 0; i < elems.length; i++) {
+          this.NODE_DATA[elems[i]] = JSON.parse(JSON.stringify(must_att));
+          //check its extra attributes and add them
+          if (elems[i] in diagram_obj.nodes) {
+            var extra_att_obj = diagram_obj.nodes[elems[i]];
+            for (var k_att in extra_att_obj) {
+              this.NODE_DATA[elems[i]][k_att] = extra_att_obj[k_att];
+            }
+          }
+        }
+      }
+    }
+
+    //diagram data
+    if ('edges' in diagram_obj) {
+    }
+  }
+
   set_events(){
     var eh = this.cy.edgehandles();
     this.cy.on('ehshow', (event, sourceNode) => {
@@ -164,10 +202,23 @@ class dipam_diagram {
       case 'diagram':
         return this.get_diagram();
         break;
+      case 'edge':
+        return this.get_edges();
       default:
         return this.get_nodes(type);
     }
   }
+  get_gen_elem_by_id(id){
+    if (this.get_diagram().data.id == id) {
+      return this.get_diagram();
+    }else if (this.cy.nodes('node[id = "'+id+'"]').length > 0) {
+      return this.cy.nodes('node[id = "'+id+'"]')[0];
+    }else if (this.cy.edges('edge[id = "'+id+'"]').length > 0) {
+      return this.cy.edges('edge[id = "'+id+'"]')[0];
+    }
+    return -1;
+  }
+
   get_diagram(){
     return this.DIAGRAM_GENERAL;
   }
@@ -241,9 +292,11 @@ class dipam_diagram {
         if (a_k == type) {
           for (var k_elem in this.CONFIG[a_k]) {
             var att_elems = this.CONFIG[a_k][k_elem];
-            for (var k_att_elem in att_elems) {
-              if (k_att_elem in res) {
-                res[k_att_elem].push(att_elems[k_att_elem]);
+            for (var k_att_elem in res) {
+              if (k_att_elem == '[KEY]') {
+                  res[k_att_elem].push(k_elem);
+              }else if (k_att_elem in this.CONFIG[a_k][k_elem]) {
+                    res[k_att_elem].push(att_elems[k_att_elem]);
               }
             }
           }

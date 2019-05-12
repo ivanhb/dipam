@@ -1,4 +1,3 @@
-
 class dipam_interface {
 
     constructor(diagram_instance, interface_instance) {
@@ -7,7 +6,10 @@ class dipam_interface {
         this.INFO_SECTION = {nodes: {}, edges:{}};
 
         this.info_section_html = "";
+        this.info_section_elem = {};
         this.overview_section_html = "";
+        this.overview_section_elem = {};
+
         this.eventdom = {};
         this.workflow = null;
 
@@ -54,16 +56,20 @@ class dipam_interface {
       (3) input_file: <elem_att>
       (4) button: <action>
       */
+      /*
+        In case it modify one of the DIAGRAM-ELEMENT attribute this should be specified in [elem_att]. e.g: [name]
+        Otherwise if it modifies an attribute associated to its config type, then [elem_att] should not be defined
+      */
       this.DOMTYPE = {
         graphName: {elem: 'diagram', type:'input_box', elem_att: "name", intro_lbl: 'Graph name', value:''},
         edgeName:  {elem: 'edges', type:'input_box', elem_att: "name", intro_lbl: 'Edge name', value:''},
         dataName:  {elem: 'nodes', type:'input_box', elem_att: "name", intro_lbl: 'Data name', value:''},
         toolName:  {elem: 'nodes', type:'input_box', elem_att: "name", intro_lbl: 'Tool name', value:''},
 
-        dataType: {elem: 'nodes', sub_elem: 'data', type: 'dropdown', elem_att: "data_class", intro_lbl: 'Data type', value:[], label:[]},
-        toolType: {elem: 'nodes', sub_elem: 'tool', type: 'dropdown', elem_att: "function", intro_lbl: 'Tool type', value:[], label:[]},
+        dataType: {elem: 'nodes', sub_elem: 'data', type: 'dropdown', intro_lbl: 'Data type', value:[], label:[]},
+        toolType: {elem: 'nodes', sub_elem: 'tool', type: 'dropdown', intro_lbl: 'Tool type', value:[], label:[]},
 
-        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "source", intro_lbl: 'Select data', value:'', onchange:'select', multi:{ids:['file','dir'], param:['file','dir']} },
+        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "source", intro_lbl: 'Select data', value:'', onchange:'select' },
 
         //keep always these two DOMs
         editElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Edit properties', value:'editoff', onclick:'edit'},
@@ -80,36 +86,19 @@ class dipam_interface {
       for (var k_dom in this.DOMTYPE) {
         switch (k_dom) {
           case 'dataType':
-            var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('data', ['data_class','label']);
-            this.DOMTYPE[k_dom].value = res.data_class;
+            var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('data', ['[KEY]','label']);
+            this.DOMTYPE[k_dom].value = res['[KEY]'];
             this.DOMTYPE[k_dom].label = res.label;
             break;
           case 'toolType':
-            var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('tool', ['function','label']);
-            this.DOMTYPE[k_dom].value = res.function;
+            var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('tool', ['[KEY]','label']);
+            this.DOMTYPE[k_dom].value = res['[KEY]'];
             this.DOMTYPE[k_dom].label = res.label;
+            console.log(this.DOMTYPE[k_dom]);
             break;
           default:
         }
       }
-    }
-
-    __set__info_section_html(param){
-      this.info_section_html = param;
-    }
-
-    __set__overview_section_html(param){
-      this.overview_section_html = param;
-    }
-
-
-
-    __get__run_workflow_container(){
-      return this.RUN_WORKFLOW;
-    }
-
-    __get__extra_workflow_container(){
-      return this.WORKFLOW_EXTRA;
     }
 
 
@@ -118,20 +107,19 @@ class dipam_interface {
       var elem_type = elem.data.type;
       //first decide what doms should be visualized (defined in DOMTYPE)
       this.overview_section_html = this.build_section(this.OVERVIEW_SECTION[elem_class][elem_type], elem);
-      //now set the events of the just added elements
-      this.set_section_events(this.OVERVIEW_SECTION[elem_class][elem_type], elem);
+      this.overview_section_elem['elem'] = elem;
+      this.overview_section_elem['elem_class'] = elem_class;
     }
 
-    /*
-    <elem>: should be the original cy elem
-    */
+    /*<elem>: should be the original cy elem*/
     build_info(elem, elem_class= 'nodes') {
       var elem_type = elem._private.data.type;
       //first decide what doms should be visualized (defined in DOMTYPE)
       this.info_section_html = this.build_section(this.INFO_SECTION[elem_class][elem_type], elem._private);
-      //now set the events of the just added elements
-      this.set_section_events(this.INFO_SECTION[elem_class][elem_type], elem._private);
+      this.info_section_elem['elem'] = elem;
+      this.info_section_elem['elem_class'] = elem_class;
     }
+
 
     build_section(dom_key, elem){
 
@@ -225,7 +213,7 @@ class dipam_interface {
                         <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
                     </li>
                   </ul>
-                  <label data-att-value="`+dom_value+`" id="lbl_`+obj_dom_type.id+`" class="val-box input-group-text" value=""></label>
+                  <label data-att-value="`+dom_value+`" id="`+obj_dom_type.id+`" class="val-box input-group-text" value=""></label>
               </div>
               `;
           break;
@@ -250,73 +238,83 @@ class dipam_interface {
     }
 
     //set and define the events for the elements added in the section panel
-    set_section_events(dom_key, node){
+    set_section_events(dom_key, elem){
+
+      if ('_private' in elem) {
+        elem = elem._private;
+      }
 
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
 
       var dom_key_arr = dom_key.split("-");
       for (var i = 0; i < dom_key_arr.length; i++) {
-        var doms_ids = [dom_key_arr[i]];
         var obj_dom = this.DOMTYPE[dom_key_arr[i]];
-
-        //in case we got sub doms related to same element
-        if ('multi' in obj_dom) {
-          doms_ids = [];
-          for (var j = 0; j < obj_dom.multi.ids; j++) {
-            doms_ids[obj_dom.id+"_"+obj_dom.multi.ids[j]] = obj_dom.multi.param[j];
-          }
-        }
-
-        //now set the events of these doms
-        _set_dom_event(doms_ids);
+        this.set_dom_event(obj_dom, elem);
       }
 
       //always do these default events
       $(document).on('keyup', 'input', function(){
           document.getElementById(this.id).setAttribute('data-temp-value',$(this).val());
       });
+    }
 
-      function _set_dom_event(doms_ids){
-        var set_of_events = {'onclick':'click','onchange':'change'};
-        for (var k_event in set_of_events) {
+    set_dom_event(a_dom_obj, corresponding_elem = null){
+      var interface_instance = this;
+      var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
 
-          if (k_event in obj_dom){
-            switch (obj_dom[set_of_events[k_event]]) {
-              case 'edit':
-                  for (var k_dom in doms_ids) {
-                    $( "#"+k_dom).on(obj_dom[k_event], function() {
-                      interface_instance.after_editing();
-                    });
-                  };
+      console.log(corresponding_elem);
+      var set_of_events = {'onclick':'click','onchange':'change'};
+      for (var k_event in set_of_events) {
+        //check each event if is inside the DOM object
+        if (k_event in a_dom_obj){
+          var event_val = a_dom_obj[k_event];
+          var event_key = set_of_events[k_event];
+          console.log(event_val, event_key, a_dom_obj);
+
+          //now switch according to the event value
+          switch (event_val) {
+            //Edit the fields in the section
+            case 'edit':
+              $( "#"+a_dom_obj.id).on("click", function() {
+                interface_instance.editing();
+              });
+              break;
+            case 'cancel':
+              $( "#"+a_dom_obj.id).on("click", function() {
+                interface_instance.editing("cancel");
+              });
+              break;
+            case 'save':
+              $( "#"+a_dom_obj.id).on("click", function() {
+                interface_instance.reload_control_section(
+                    diagram_instance.update_elem(corresponding_elem.data.id,
+                    interface_instance.editing("save")));
+              });
+              break;
+            //Remove an element from the CY
+            case 'remove':
+                $( "#"+a_dom_obj.id).on(event_key, function() {
+                    diagram_instance.remove_elem(corresponding_elem.data.id);
+                    interface_instance.removing();
+                    interface_instance.show_undo_redo(
+                      diagram_instance.get_undo_redo().isUndoStackEmpty(),
+                      diagram_instance.get_undo_redo().isRedoStackEmpty()
+                    );
+                });
                 break;
-              case 'remove':
-                  for (var k_dom in doms_ids) {
+              case 'select':
+                    /*
                     $( "#"+k_dom).on(obj_dom[k_event], function() {
-                      diagram_instance.remove_elem(node._private.data.id);
-                      interface_instance.after_removing();
-                      interface_instance.show_undo_redo(
-                        diagram_instance.get_undo_redo().isUndoStackEmpty(),
-                        diagram_instance.get_undo_redo().isRedoStackEmpty()
-                      );
+                      interface_instance.input_file_handler(doms_ids[k_dom],this, doms_ids[j]);
                     });
-                  };
+                    */
                   break;
-                case 'select':
-                    for (var k_dom in doms_ids) {
-                      $( "#"+k_dom).on(obj_dom[k_event], function() {
-                        interface_instance.input_file_handler(doms_ids[k_dom],this, doms_ids[j]);
-                      });
-                    };
-                    break;
-              default:
-            }
+            default:
           }
         }
       }
     }
-
-
 
 
     input_file_handler(type, elem, id){
@@ -344,13 +342,6 @@ class dipam_interface {
       return str;
     }
 
-    __get__eventdom_containers(){
-      var containers = [];
-      for (var k_eventelem in this.eventdom) {
-        containers.push(document.getElementById(this.eventdom[k_eventelem].id));
-      }
-      return containers;
-    }
 
     click_on_node(node){
       this.build_info(node,'nodes');
@@ -365,16 +356,47 @@ class dipam_interface {
     click_info_nav() {
       this.switch_nav('nav_info');
       this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
+      var info_elem = this.info_section_elem;
+      this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem._private.data.type], info_elem.elem);
     }
 
-    after_removing(){
-      this.__set__info_section_html("");
+    click_overview_nav() {
+      this.switch_nav('nav_overview');
+      this.CONTROL_CONTAINER.innerHTML = this.overview_section_html;
+      var overview_elem = this.overview_section_elem;
+      this.set_section_events(this.OVERVIEW_SECTION[overview_elem.elem_class][overview_elem.elem.data.type], overview_elem.elem);
+    }
+
+    switch_nav(nav_node_id) {
+      for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
+        var obj = document.getElementsByClassName('nav-btn')[i];
+        if(obj.id == nav_node_id){
+          document.getElementsByClassName('nav-btn')[i].className = "nav-btn active";
+        }else {
+          document.getElementsByClassName('nav-btn')[i].className = "nav-btn";
+        }
+      }
+    }
+
+    get_active_nav(){
+      for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
+        if (document.getElementsByClassName('nav-btn')[i].className == "nav-btn active") {
+          return document.getElementsByClassName('nav-btn')[i].id.replace("nav_","").replace("a_","");
+        }
+      }
+      return -1;
+    }
+
+
+
+    removing(){
+      this.info_section_html = "";
       this.click_overview_nav();
     }
 
-    after_editing(action = null){
+    editing(action = null){
       this._switch_edit_doms();
-      return this._cancel_save_btns(action);
+      return this.set_edit_section(action);
     }
 
     _switch_edit_doms(){
@@ -393,7 +415,7 @@ class dipam_interface {
       document.getElementById('editElem').setAttribute('value',newflag);
     }
 
-    _cancel_save_btns(action = null){
+    set_edit_section(action = null){
       var res = 1;
       var editdom = document.getElementById('editElem');
       var data_elem_id = editdom.getAttribute('data-id');
@@ -401,16 +423,24 @@ class dipam_interface {
       editdom.style.visibility = 'hidden';
 
       var edit_value = editdom.getAttribute('value');
+
+      //if i am not yet in editing mode then the edit section should be built first
       if (edit_value == 'editon') {
         var two_buttons_dom = `<span id="edit_buttons" class="foot-dom">
-                               <span><button id='edit_cancel' onclick='`+this.INTERFACE_INSTANCE+`.after_editing("cancel");' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
+                               <span><button id='edit_cancel' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
                                <span>
-                               <button id='edit_save'
-                                        onclick='`+this.INTERFACE_INSTANCE+`.reload_control_section(`+this.DIAGRAM_INSTANCE+`.update_elem("`+data_elem_id+`",`+this.INTERFACE_INSTANCE+`.after_editing("save")));'`
-                                        +`type='button' class='btn btn-default edit-switch'>Save</button></span>
+                               <button id='edit_save' type='button' class='btn btn-default edit-switch'>Save</button></span>
                                </span>`;
         editdom.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.innerHTML;
+        //set events
+        var corresponding_elem = this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(data_elem_id);
+        console.log(corresponding_elem);
+        this.set_dom_event({id:'edit_cancel', onclick: 'cancel'}, corresponding_elem);
+        this.set_dom_event({id:'edit_save', onclick: 'save'}, corresponding_elem);
+
       }else {
+        //I am already in editing mode (the edit section have been already built)
+        //check what action I should take now
 
         //remove the edit buttons
         if (document.getElementById('edit_buttons') != undefined) {
@@ -430,7 +460,8 @@ class dipam_interface {
             break;
           case 'save':
             editdom.setAttribute('value','editoff');
-            res = this._save();
+            res = this.save();
+            console.log(res);
             break;
           default:
         }
@@ -440,7 +471,7 @@ class dipam_interface {
 
     reload_control_section(new_elem = null){
 
-      var active_nav = this.active_nav();
+      var active_nav = this.get_active_nav();
 
       //check in which section I was
       if (active_nav == 'overview'){
@@ -461,14 +492,15 @@ class dipam_interface {
       }
     }
 
-    _save() {
+    save() {
       var arr_modified_doms = document.getElementsByClassName('val-box');
 
       var res_value = {};
       for (var i = 0; i < arr_modified_doms.length; i++) {
         var obj_dom = arr_modified_doms[i];
-        var dom_value_type = this.DOMTYPE[obj_dom.id].type;
-        var dom_data_target = this.DOMTYPE[obj_dom.id].data_id;
+        console.log(obj_dom);
+        var dom_value_type = this.DOMTYPE[obj_dom.getAttribute('id')].type;
+        var dom_data_target = this.DOMTYPE[obj_dom.getAttribute('id')].data_id;
 
         switch (dom_value_type) {
             case 'dropdown':
@@ -481,7 +513,7 @@ class dipam_interface {
               }
             break;
             case 'input_box':
-              var new_val = obj_dom.getAttribute('temp_value');
+              var new_val = obj_dom.getAttribute('data-temp-value');
               obj_dom.setAttribute('value',new_val);
               res_value[dom_data_target] = new_val;
             break;
@@ -495,35 +527,12 @@ class dipam_interface {
     }
 
 
-    click_overview_nav() {
-      this.switch_nav('nav_overview');
-      this.CONTROL_CONTAINER.innerHTML = this.overview_section_html;
-    }
 
-    switch_nav(nav_node_id) {
-      for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
-        var obj = document.getElementsByClassName('nav-btn')[i];
-        if(obj.id == nav_node_id){
-          document.getElementsByClassName('nav-btn')[i].className = "nav-btn active";
-        }else {
-          document.getElementsByClassName('nav-btn')[i].className = "nav-btn";
-        }
-      }
-    }
-
-    active_nav(){
-      for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
-        if (document.getElementsByClassName('nav-btn')[i].className == "nav-btn active") {
-          return document.getElementsByClassName('nav-btn')[i].id.replace("nav_","").replace("a_","");
-        }
-      }
-      return -1;
-    }
 
 
   click_save_workflow(){
 
-    var workflow_extra_container = this.__get__extra_workflow_container();
+    var workflow_extra_container = this.WORKFLOW_EXTRA;
 
     workflow_extra_container.style.visibility = 'visible';
     workflow_extra_container.innerHTML = _save_section();
@@ -700,7 +709,12 @@ class dipam_interface {
   //********* Events handlers **********************************//
   //************************************************************//
   //set all the interface events
-  set_events(){
+  set_events(reload = false){
+
+    if (reload){
+      _elem_onclick_handle();
+      return 1;
+    }
 
     var interface_instance = this;
     var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
@@ -785,7 +799,7 @@ class dipam_interface {
                     name: input_text,
                     load: "off"
                   });
-                  interface_instance.__get__extra_workflow_container().style.visibility = 'hidden';
+                  interface_instance.WORKFLOW_EXTRA.style.visibility = 'hidden';
                 }else {
                   //params not ok
                 }
@@ -820,8 +834,6 @@ class dipam_interface {
           }
         }
     });
-
-
 
     _elem_onclick_handle();
 
