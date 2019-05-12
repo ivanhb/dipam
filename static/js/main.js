@@ -13,15 +13,12 @@ function decode_json(text){
 }
 
 //init the diagram
-var diagram_instance = new dipam_diagram("cy", config, "Dipam for Catarsi", workflow);
+var diagram_instance = new dipam_diagram(config, workflow);
 diagram_instance.set_events();
 
 
-//create an instance of the interface, it takes:
-// The configuration file
-// The string name of the diagram instance (which it will be created later)
-// The string name of the interface instance (the variable name)
-var vw_interface = new dipam_interface("diagram_instance", "vw_interface");
+//Create the interface,
+var vw_interface = new dipam_interface();
 vw_interface.set_corresponding_diagram(diagram_instance)
 vw_interface.set_events();
 

@@ -52,7 +52,7 @@ body {
 .input-group
 select, .dropdown-toggle{
   min-width: 120px;
-  max-width: 150px;
+  max-width: 220px;
 }
 .input-group
 input {

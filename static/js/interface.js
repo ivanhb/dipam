@@ -1,6 +1,6 @@
 class dipam_interface {
 
-    constructor(diagram_instance, interface_instance) {
+    constructor() {
         this.DOMTYPE = null;
         this.OVERVIEW_SECTION = {all: {}};
         this.INFO_SECTION = {nodes: {}, edges:{}};
@@ -13,8 +13,6 @@ class dipam_interface {
         this.eventdom = {};
         this.workflow = null;
 
-        this.DIAGRAM_INSTANCE = diagram_instance;
-        this.INTERFACE_INSTANCE = interface_instance;
         this.DIAGRAM_INSTANCE_OBJ = null;
 
         //define the dom ids
@@ -66,10 +64,10 @@ class dipam_interface {
         dataName:  {elem: 'nodes', type:'input_box', elem_att: "name", intro_lbl: 'Data name', value:''},
         toolName:  {elem: 'nodes', type:'input_box', elem_att: "name", intro_lbl: 'Tool name', value:''},
 
-        dataType: {elem: 'nodes', sub_elem: 'data', type: 'dropdown', intro_lbl: 'Data type', value:[], label:[]},
-        toolType: {elem: 'nodes', sub_elem: 'tool', type: 'dropdown', intro_lbl: 'Tool type', value:[], label:[]},
+        dataType: {elem: 'nodes', sub_elem: 'data', type: 'dropdown', intro_lbl: 'Data type', value:[], label:[], onchange:'dropdown'},
+        toolType: {elem: 'nodes', sub_elem: 'tool', type: 'dropdown', intro_lbl: 'Tool type', value:[], label:[], onchange:'dropdown'},
 
-        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "source", intro_lbl: 'Select data', value:'', onchange:'select' },
+        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "file_source", intro_lbl: 'Select data', value:'', onchange:'fileselect' },
 
         //keep always these two DOMs
         editElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Edit properties', value:'editoff', onclick:'edit'},
@@ -94,7 +92,6 @@ class dipam_interface {
             var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('tool', ['[KEY]','label']);
             this.DOMTYPE[k_dom].value = res['[KEY]'];
             this.DOMTYPE[k_dom].label = res.label;
-            console.log(this.DOMTYPE[k_dom]);
             break;
           default:
         }
@@ -111,11 +108,12 @@ class dipam_interface {
       this.overview_section_elem['elem_class'] = elem_class;
     }
 
-    /*<elem>: should be the original cy elem*/
     build_info(elem, elem_class= 'nodes') {
-      var elem_type = elem._private.data.type;
+      if('_private' in elem)
+        elem = elem._private;
+      var elem_type = elem.data.type;
       //first decide what doms should be visualized (defined in DOMTYPE)
-      this.info_section_html = this.build_section(this.INFO_SECTION[elem_class][elem_type], elem._private);
+      this.info_section_html = this.build_section(this.INFO_SECTION[elem_class][elem_type], elem);
       this.info_section_elem['elem'] = elem;
       this.info_section_elem['elem_class'] = elem_class;
     }
@@ -155,23 +153,11 @@ class dipam_interface {
     build_a_dom(obj_dom_type, elem){
       var str_html= "";
 
-      var dom_value = "";
-      if ('value' in obj_dom_type) {
-        dom_value = obj_dom_type.value;
-      }
+      var att_key = 'value';
       if ('elem_att' in obj_dom_type) {
-        if (obj_dom_type['elem_att'] in elem) {
-          dom_value = elem[obj_dom_type['elem_att']];
-        }
-        else if (true) {
-          //check maybe is in config
-          var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_att(elem.type, elem.value , obj_dom_type['elem_att']);
-          if (res != -1) {
-            dom_value = res;
-          }
-        }
+        att_key = obj_dom_type['elem_att'];
       }
-      //console.log(obj_dom_type, elem, dom_value);
+      var dom_value = elem[att_key];
 
       switch (obj_dom_type.type) {
         /* Attributes needed are: <value>:Array, <label>:Array */
@@ -185,7 +171,7 @@ class dipam_interface {
                   if (opt_val == dom_value) {
                     selected_val = "selected";
                   }
-                  str_options = "<option value='"+opt_val+"' "+selected_val+">"+opt_lbl+"</option>"+str_options;
+                  str_options = "<option data-select-target='"+obj_dom_type.id+"' value='"+opt_val+"' "+selected_val+">"+opt_lbl+"</option>"+str_options;
 
                 };
                 str_html = str_html + `
@@ -193,27 +179,27 @@ class dipam_interface {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+dom_value+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="val-box custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+dom_value+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
                 </div>
                 `;
               }
         break;
 
         case 'input_file':
+              var str_options = `<option id='`+obj_dom_type.id+`_optfile' value='file' selected>File\/s</option>
+                                <option id='`+obj_dom_type.id+`_optdir' value='dir'>Directory</option>`;
+
               str_html = str_html +`
               <div class="input-group btn-group `+obj_dom_type.type+`">
-                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">`+obj_dom_type.intro_lbl+`<span class="caret"></span></button>
-                  <ul class="dropdown-menu" role="menu">
-                    <li>
-                        <a id="btn_`+obj_dom_type.id+`_file" onclick="document.getElementById('`+obj_dom_type.id+`_file').click()">File\/s</a>
-                        <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`_file" style="display: none;" multiple="true"/>
-                    </li>
-                    <li>
-                        <a id="btn_`+obj_dom_type.id+`_dir" onclick="document.getElementById('`+obj_dom_type.id+`_dir').click()">Directory</a>
-                        <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
-                    </li>
-                  </ul>
-                  <label data-att-value="`+dom_value+`" id="`+obj_dom_type.id+`" class="val-box input-group-text" value=""></label>
+                  <div class="input-group-prepend">
+                    <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
+                  </div>
+                  <select data-att-value="`+dom_value+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+
+                  <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_file" style="display: none;" multiple="true"/>
+                  <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
+
+                  <label id="`+obj_dom_type.id+`__lbl" class="input-group-text" value="">`+this.label_handler(obj_dom_type.id, {elem: dom_value, type: 'file'})+`</label>
               </div>
               `;
           break;
@@ -224,7 +210,7 @@ class dipam_interface {
             <div class="input-group-prepend">
               <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
             </div>
-            <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="val-box" data-att-value="`+dom_value+`" value="`+dom_value+`" data-temp-value="`+dom_value+`" type="text" disabled></input>
+            <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value" data-att-value="`+dom_value+`" value="`+dom_value+`" data-att-value="`+dom_value+`" type="text" disabled></input>
           </div>
           `;
           break;
@@ -255,7 +241,8 @@ class dipam_interface {
 
       //always do these default events
       $(document).on('keyup', 'input', function(){
-          document.getElementById(this.id).setAttribute('data-temp-value',$(this).val());
+          //document.getElementById(this.id).setAttribute('data-temp-value',$(this).val());
+          document.getElementById(this.id).setAttribute('data-att-value',$(this).val());
       });
     }
 
@@ -263,14 +250,16 @@ class dipam_interface {
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
 
-      console.log(corresponding_elem);
+      if ('_private' in corresponding_elem) {
+        corresponding_elem = corresponding_elem._private;
+      }
+
       var set_of_events = {'onclick':'click','onchange':'change'};
       for (var k_event in set_of_events) {
         //check each event if is inside the DOM object
         if (k_event in a_dom_obj){
           var event_val = a_dom_obj[k_event];
           var event_key = set_of_events[k_event];
-          console.log(event_val, event_key, a_dom_obj);
 
           //now switch according to the event value
           switch (event_val) {
@@ -303,40 +292,71 @@ class dipam_interface {
                     );
                 });
                 break;
-              case 'select':
-                    /*
-                    $( "#"+k_dom).on(obj_dom[k_event], function() {
-                      interface_instance.input_file_handler(doms_ids[k_dom],this, doms_ids[j]);
-                    });
-                    */
+            case 'dropdown':
+                  $( "#"+a_dom_obj.id).on(event_key, function(){
+                      var arr_option_selected = $("#"+a_dom_obj.id+" option:selected");
+                      if (arr_option_selected.length > 0) {
+                        this.setAttribute('data-att-value',arr_option_selected[0].value)
+                      }
+                  });
                   break;
+            case 'fileselect':
+                  $( "#"+a_dom_obj.id).on(event_key, function(){
+                      var arr_option_selected = $("#"+a_dom_obj.id+" option:selected");
+                      if (arr_option_selected.length > 0) {
+                        var opt_value = arr_option_selected[0].value;
+                        console.log(opt_value);
+                        $('#'+a_dom_obj.id+"_"+opt_value).trigger('click');
+                      }
+                  });
+
+                  var a_dom_obj_lbl = document.getElementById(a_dom_obj.id+"__lbl");
+
+                  $( "#"+a_dom_obj.id+"_file").on(event_key, function(){
+                    if(this.files){
+                        console.log(this.files);
+                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: this, type: 'file'});
+                        $( "#"+a_dom_obj.id)[0].setAttribute('data-att-value',corresponding_lbl);
+                        a_dom_obj_lbl.innerHTML = corresponding_lbl;
+                    }
+                  });
+                  $( "#"+a_dom_obj.id+"_dir").on(event_key, function(){
+                    if(this.files){
+                        console.log(this.files);
+                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: this, type: 'dir'});
+                        $("#"+a_dom_obj.id)[0].setAttribute('data-att-value',corresponding_lbl);
+                        a_dom_obj_lbl.innerHTML = corresponding_lbl;
+                    }
+                  });
+
+                  break;
+
             default:
           }
         }
       }
     }
 
-
-    input_file_handler(type, elem, id){
-      document.getElementById("lbl_"+id).setAttribute('value', elem.files);
-      var str = this._label_handler(type, elem, id);
-      document.getElementById("lbl_"+id).innerHTML = str;
-
-    }
-
-    _label_handler(type, elem, id){
+    label_handler(dom_id, param){
       var str = "";
-      switch (type) {
-        case 'file':
-          if (elem.files.length == 1){
-            str = elem.files[0].name;
-          }else if (elem.files.length > 1){
-            str = elem.files.length+ " files" ;
-          }
-          break;
-        case 'dir':
-          str = elem.files.length + " files from directory";
-          break;
+      switch (dom_id) {
+        case 'filePath':
+            if (param.elem.files != undefined) {
+              switch (param.type) {
+                case 'file':
+                  if (param.elem.files.length == 1){
+                    str = param.elem.files[0].name;
+                  }else if (param.elem.files.length > 1){
+                    str = param.elem.files.length+ " files" ;
+                  }
+                  break;
+                case 'dir':
+                  str = param.elem.files.length + " files from directory";
+                  break;
+                default:
+              }
+              break;
+            }
         default:
       }
       return str;
@@ -344,11 +364,17 @@ class dipam_interface {
 
 
     click_on_node(node){
+      if ('_private' in node) {
+        node = node._private;
+      }
       this.build_info(node,'nodes');
       this.click_info_nav();
     }
 
     click_on_edge(edge){
+      if ('_private' in edge) {
+        edge = edge._private;
+      }
       this.build_info(edge, 'edges');
       this.click_info_nav();
     }
@@ -357,7 +383,7 @@ class dipam_interface {
       this.switch_nav('nav_info');
       this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
       var info_elem = this.info_section_elem;
-      this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem._private.data.type], info_elem.elem);
+      this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem.data.type], info_elem.elem);
     }
 
     click_overview_nav() {
@@ -401,7 +427,7 @@ class dipam_interface {
 
     _switch_edit_doms(){
       var current_flag = false;
-      var arr_doms_toedit = document.getElementsByClassName('val-box');
+      var arr_doms_toedit = document.getElementsByClassName('save-value');
       for (var i = 0; i < arr_doms_toedit.length; i++) {
         if (i == 0) {
            current_flag = arr_doms_toedit[i].disabled;
@@ -484,8 +510,10 @@ class dipam_interface {
       }else if (active_nav == 'info') {
         //in case an element (node/edge) have been updated/edited
         if (new_elem != null) {
-          new_elem = new_elem._private;
-          this.build_info(new_elem.data);
+          if ('_private' in new_elem) {
+            new_elem = new_elem._private;
+          }
+          this.build_info(new_elem);
         }
         document.getElementById('nav_info_a').click();
         //this.click_info_nav();
@@ -493,42 +521,21 @@ class dipam_interface {
     }
 
     save() {
-      var arr_modified_doms = document.getElementsByClassName('val-box');
+      var arr_modified_doms = document.getElementsByClassName('save-value');
 
       var res_value = {};
       for (var i = 0; i < arr_modified_doms.length; i++) {
         var obj_dom = arr_modified_doms[i];
-        console.log(obj_dom);
-        var dom_value_type = this.DOMTYPE[obj_dom.getAttribute('id')].type;
-        var dom_data_target = this.DOMTYPE[obj_dom.getAttribute('id')].data_id;
-
-        switch (dom_value_type) {
-            case 'dropdown':
-              var arr_options = obj_dom.childNodes;
-              for (var j = 0; j < arr_options.length; j++) {
-                if(arr_options[j].selected){
-                  res_value[dom_data_target] = arr_options[j].getAttribute('value');
-                  break;
-                }
-              }
-            break;
-            case 'input_box':
-              var new_val = obj_dom.getAttribute('data-temp-value');
-              obj_dom.setAttribute('value',new_val);
-              res_value[dom_data_target] = new_val;
-            break;
-            case "input_file":
-              var new_val = obj_dom.getAttribute('value');
-              break;
-          default:
+        var dom_def = this.DOMTYPE[obj_dom.getAttribute('id')];
+        var ele_target_att = 'value';
+        if ('elem_att' in dom_def) {
+          ele_target_att = dom_def.elem_att;
         }
+        res_value[ele_target_att] = obj_dom.getAttribute('data-att-value');
       }
+      console.log(res_value);
       return res_value;
     }
-
-
-
-
 
   click_save_workflow(){
 
@@ -840,8 +847,7 @@ class dipam_interface {
     function _elem_onclick_handle(){
         //nodes on click handler
         diagram_cy.nodes().on('click', function(e){
-            console.log("Node clicked !");
-            console.log(this);
+            console.log("Node clicked !", this);
             diagram_instance.click_elem_style(this,'node');
             diagram_instance.check_node_compatibility(this);
             interface_instance.click_on_node(this);
@@ -849,17 +855,13 @@ class dipam_interface {
 
         //edges on click handler
         diagram_cy.edges().on('click', function(e){
-            console.log("Edge clicked !");
-            console.log(this);
+            console.log("Edge clicked !", this);
             diagram_instance.click_elem_style(this,'edge');
             interface_instance.click_on_edge(this);
         });
       }
 
   }
-
-
-
 
 
 }

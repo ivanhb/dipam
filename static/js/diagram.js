@@ -2,17 +2,16 @@
 class dipam_diagram {
 
 
-  constructor(container_id, config_data, diagram_name, workflow={}) {
+  constructor(config_data, workflow={}) {
     this.CONFIG = config;
 
-    this.DIAGRAM_DATA = {id: "", name: "", type: ""};
-    this.NODE_DATA = {id: "", name: "", type: ""};
-    this.EDGE_DATA = {id: "", name: "", type: "", source: "", target:""};
+    this.DIAGRAM_DATA = {id: "", name: "", type: "", value:""};
+    this.NODE_DATA = {id: "", name: "", type: "", value:""};
+    this.EDGE_DATA = {id: "", name: "", type: "", value:"", source: "", target:""};
     //add the additional ad-hoc attributes defined in config
     this._apply_diagram_config_definition();
-    console.log(this.DIAGRAM_DATA, this.NODE_DATA, this.EDGE_DATA);
 
-    this.DIAGRAM_CONTAINER = document.getElementById(container_id);
+    this.DIAGRAM_CONTAINER = document.getElementById('cy');
 
     this.DIAGRAM_GENERAL = workflow.diagram;
     this.INIT_NODES = workflow.nodes;
@@ -324,10 +323,17 @@ class dipam_diagram {
     this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
   }
   gen_node_data(n_type) {
+    var a_node_data = null;
+    if (n_type in this.NODE_DATA) {
+      a_node_data = JSON.parse(JSON.stringify(this.NODE_DATA[n_type]));
+    }else {
+      a_node_data = JSON.parse(JSON.stringify(this.NODE_DATA));
+    }
+
     var node_obj = {
       style: this.STYLE.node[n_type],
       position: { x: 0, y: 0},
-      data: JSON.parse(JSON.stringify(this.NODE_DATA))
+      data: a_node_data
     };
 
     //generate position (NOTE: width and height are not correct)
@@ -349,16 +355,7 @@ class dipam_diagram {
           node_obj.data.id = new_id;
           node_obj.data.name = new_id;
           node_obj.data.type = n_type;
-          //as default put all the attributes of the first element
-          //node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
-          /*
-          for (var k_conf_elem in this.CONFIG[n_type]) {
-            for (var k_att in this.CONFIG[n_type][k_conf_elem]) {
-              node_obj.data[k_att] = JSON.parse(JSON.stringify(this.CONFIG[n_type][0][k_att]));
-            }
-            break;
-          }
-          */
+          node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
       }
     }
 
@@ -452,7 +449,7 @@ class dipam_diagram {
     this.check_node_compatibility(d_node);
 
     //update diagram
-    cy.style().update();
+    this.cy.style().update();
 
     return d_node;
   }
