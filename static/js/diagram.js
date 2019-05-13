@@ -170,6 +170,9 @@ class dipam_diagram {
           if (elems[i] in diagram_obj.nodes) {
             var extra_att_obj = diagram_obj.nodes[elems[i]];
             for (var k_att in extra_att_obj) {
+              if(extra_att_obj[k_att] instanceof Object){
+                this.NODE_DATA[elems[i]][k_att+"_temp"] = extra_att_obj[k_att];
+              }
               this.NODE_DATA[elems[i]][k_att] = extra_att_obj[k_att];
             }
           }

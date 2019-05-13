@@ -22,20 +22,20 @@
             "label": "Topic modeling with LDA",
             "function": "lda",
             "param": ["p1"],
-            "compatible_input": ["d0"],
-            "output": ["d1"]
+            "compatible_input": ["d1"],
+            "output": ["d0"]
         },
         "t-chart-bar": {
             "label": "Bar chart",
             "function": "bar_chart",
             "param": ["p0"],
-            "compatible_input": ["d1"]
+            "compatible_input": ["d0"]
         },
         "t-filter-names": {
             "label": "Filter names",
             "function": "filter_names",
-            "compatible_input": ["d0"],
-            "output": ["d0"]
+            "compatible_input": ["d1"],
+            "output": ["d1"]
         }
   },
   "param": {

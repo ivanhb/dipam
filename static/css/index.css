@@ -43,7 +43,9 @@ body {
 #control_foot .foot-dom button#edit_save:hover{
  color: green;
 }
-
+#control_foot .foot-dom #edit_buttons{
+  padding-left: 120px;
+}
 
 .input-group{
   font-size:120%;

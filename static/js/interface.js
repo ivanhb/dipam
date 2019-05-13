@@ -186,6 +186,7 @@ class dipam_interface {
         break;
 
         case 'input_file':
+              dom_value = elem[att_key+"_temp"];
               var str_options = `<option id='`+obj_dom_type.id+`_optfile' value='file' selected>File\/s</option>
                                 <option id='`+obj_dom_type.id+`_optdir' value='dir'>Directory</option>`;
 
@@ -194,7 +195,7 @@ class dipam_interface {
                   <div class="input-group-prepend">
                     <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
                   </div>
-                  <select data-att-value="`+dom_value+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                  <select data-att-value="[OBJ[`+att_key+`_temp]" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
 
                   <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_file" style="display: none;" multiple="true"/>
                   <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
@@ -316,16 +317,29 @@ class dipam_interface {
                     if(this.files){
                         console.log(this.files);
                         var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: this, type: 'file'});
-                        $( "#"+a_dom_obj.id)[0].setAttribute('data-att-value',corresponding_lbl);
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
+
+                        var data_att_value = this;
+                        if(a_dom_obj.elem_att+"_temp" in corresponding_elem.data){
+                          corresponding_elem.data[a_dom_obj.elem_att+"_temp"] = JSON.parse(JSON.stringify(this.files));
+                          data_att_value = "[OBJ["+a_dom_obj.elem_att+"_temp]";
+                        }
+                        $( "#"+a_dom_obj.id)[0].setAttribute('data-att-value',data_att_value);
+
                     }
                   });
                   $( "#"+a_dom_obj.id+"_dir").on(event_key, function(){
                     if(this.files){
                         console.log(this.files);
                         var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: this, type: 'dir'});
-                        $("#"+a_dom_obj.id)[0].setAttribute('data-att-value',corresponding_lbl);
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
+
+                        var data_att_value = this;
+                        if(a_dom_obj.elem_att+"_temp" in corresponding_elem.data){
+                          corresponding_elem.data[a_dom_obj.elem_att+"_temp"] = JSON.parse(JSON.stringify(this.files));
+                          data_att_value = "[OBJ["+a_dom_obj.elem_att+"_temp]";
+                        }
+                        $( "#"+a_dom_obj.id)[0].setAttribute('data-att-value',data_att_value);
                     }
                   });
 
@@ -341,7 +355,8 @@ class dipam_interface {
       var str = "";
       switch (dom_id) {
         case 'filePath':
-            if (param.elem.files != undefined) {
+            console.log(param);
+            if ('files' in param.elem) {
               switch (param.type) {
                 case 'file':
                   if (param.elem.files.length == 1){
@@ -539,6 +554,10 @@ class dipam_interface {
 
   click_save_workflow(){
 
+    var interface_instance = this;
+    var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
+    var diagram_cy = this.DIAGRAM_INSTANCE_CY;
+
     var workflow_extra_container = this.WORKFLOW_EXTRA;
 
     workflow_extra_container.style.visibility = 'visible';
@@ -561,6 +580,25 @@ class dipam_interface {
         click: function(e) {
           workflow_extra_container.innerHTML =  "";
           workflow_extra_container.style.visibility = 'hidden';
+        }
+    });
+
+    $('#btn_apply_save').on({
+        click: function(e) {
+          var input_text = document.getElementById("input_workflow_save_name").getAttribute("data-att-value");
+          console.log(input_text);
+          if ((input_text != "" ) && (input_text != null)){
+            var workflow_data = diagram_instance.get_workflow_data();
+            $.post( "/saveworkflow", {
+              workflow_data: JSON.stringify(workflow_data),
+              path: "",
+              name: input_text,
+              load: "off"
+            });
+            interface_instance.WORKFLOW_EXTRA.style.visibility = 'hidden';
+          }else {
+            //params not ok
+          }
         }
     });
 
@@ -718,14 +756,14 @@ class dipam_interface {
   //set all the interface events
   set_events(reload = false){
 
+    var interface_instance = this;
+    var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
+    var diagram_cy = this.DIAGRAM_INSTANCE_CY;
+
     if (reload){
       _elem_onclick_handle();
       return 1;
     }
-
-    var interface_instance = this;
-    var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-    var diagram_cy = this.DIAGRAM_INSTANCE_CY;
 
 
     //ADD Node and Tool Buttons
@@ -794,25 +832,6 @@ class dipam_interface {
         click: function(e) {
           e.preventDefault();
           interface_instance.click_save_workflow();
-
-          $('#btn_apply_save').on({
-              click: function(e) {
-                var input_text = document.getElementById("input_workflow_save_name").getAttribute("temp_value");
-                if ((input_text != "" ) && (input_text != null)){
-                  var workflow_data = diagram_instance.get_workflow_data();
-                  $.post( "/saveworkflow", {
-                    workflow_data: JSON.stringify(workflow_data),
-                    path: "",
-                    name: input_text,
-                    load: "off"
-                  });
-                  interface_instance.WORKFLOW_EXTRA.style.visibility = 'hidden';
-                }else {
-                  //params not ok
-                }
-              }
-          });
-
         }
     });
 
@@ -822,6 +841,7 @@ class dipam_interface {
           $('#file_to_load').trigger('click');
         }
     });
+
     $('#file_to_load').on({
         change: function(e) {
           var file = $('#file_to_load')[0].files[0];
