@@ -140,6 +140,8 @@ class dipam_interface {
 
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
+      //reset the temp values
+      this.reset_dipam_temp_val();
 
       var str_html= "";
       var dom_key_arr = dom_key.split("-");
@@ -204,9 +206,8 @@ class dipam_interface {
         break;
 
         case 'input_file':
-              console.log(JSON.stringify(elem));
-              dom_value = elem[att_key+"_temp"];
-              var str_options = `<option id='`+obj_dom_type.id+`_optfile' value='file' selected>File\/s</option>
+              var str_options = `<option selected>Select source</option>
+                                <option id='`+obj_dom_type.id+`_optfile' value='file'>File\/s</option>
                                 <option id='`+obj_dom_type.id+`_optdir' value='dir'>Directory</option>`;
 
               str_html = str_html +`
@@ -260,9 +261,12 @@ class dipam_interface {
       }
 
       //always do these default events
-      $(document).on('keyup', 'input', function(){
+      $(document).on('keyup', '#control input', function(){
           var key_att = document.getElementById(this.id).getAttribute('data-att-value');
-          this.set_dipam_temp_val(key_att,$(this).val());
+          interface_instance.set_dipam_temp_val(key_att,$(this).val());
+      });
+      $(document).on('keyup', '#workflow_extra input', function(){
+          document.getElementById(this.id).setAttribute('data-att-value',$(this).val());
       });
     }
 
@@ -334,34 +338,23 @@ class dipam_interface {
                   var a_dom_obj_lbl = document.getElementById(a_dom_obj.id+"__lbl");
 
                   $( "#"+a_dom_obj.id+"_file").on(event_key, function(){
-                    if(this.files){
+                    var data_att_value = this.files;
+                    if(data_att_value){
                         console.log(this.files);
-                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: this, type: 'file'});
+                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: data_att_value, type: 'file'});
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
-
-                        var data_att_value = this;
-                        if(a_dom_obj.elem_att+"_temp" in corresponding_elem.data){
-                          corresponding_elem.data[a_dom_obj.elem_att+"_temp"] = JSON.parse(JSON.stringify(this.files));
-                          data_att_value = "[OBJ["+a_dom_obj.elem_att+"_temp]";
-                        }
-
                         var att_key = $("#"+a_dom_obj.id)[0].getAttribute('data-att-value');
-                        this.set_dipam_temp_val(att_key, data_att_value);
+                        interface_instance.set_dipam_temp_val(att_key, data_att_value);
                     }
                   });
                   $( "#"+a_dom_obj.id+"_dir").on(event_key, function(){
-                    if(this.files){
+                    var data_att_value = this.files;
+                    if(data_att_value){
                         console.log(this.files);
-                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: this, type: 'dir'});
+                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: data_att_value, type: 'dir'});
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
-
-                        var data_att_value = this;
-                        if(a_dom_obj.elem_att+"_temp" in corresponding_elem.data){
-                          corresponding_elem.data[a_dom_obj.elem_att+"_temp"] = JSON.parse(JSON.stringify(this.files));
-                          data_att_value = "[OBJ["+a_dom_obj.elem_att+"_temp]";
-                        }
                         var att_key = $("#"+a_dom_obj.id)[0].getAttribute('data-att-value');
-                        this.set_dipam_temp_val(att_key, data_att_value);
+                        interface_instance.set_dipam_temp_val(att_key, data_att_value);
                     }
                   });
 
@@ -379,22 +372,20 @@ class dipam_interface {
         case 'filePath':
             console.log(param);
             if (param.elem != undefined) {
-              if ('files' in param.elem) {
                 switch (param.type) {
                   case 'file':
-                    if (param.elem.files.length == 1){
-                      str = param.elem.files[0].name;
-                    }else if (param.elem.files.length > 1){
-                      str = param.elem.files.length+ " files" ;
+                    if (param.elem.length == 1){
+                      str = param.elem[0].name;
+                    }else if (param.elem.length > 1){
+                      str = param.elem.length+ " files" ;
                     }
                     break;
                   case 'dir':
-                    str = param.elem.files.length + " files from directory";
+                    str = param.elem.length + " files from directory";
                     break;
                   default:
                 }
                 break;
-              }
             }
         default:
       }
@@ -565,12 +556,8 @@ class dipam_interface {
       var res_value = {};
       for (var i = 0; i < arr_modified_doms.length; i++) {
         var obj_dom = arr_modified_doms[i];
-        var dom_def = this.DOMTYPE[obj_dom.getAttribute('id')];
-        var ele_target_att = 'value';
-        if ('elem_att' in dom_def) {
-          ele_target_att = dom_def.elem_att;
-        }
-        res_value[ele_target_att] = this.get_dipam_temp_val(elem_att);
+        var ele_target_att = obj_dom.getAttribute('data-att-value');
+        res_value[ele_target_att] = this.get_dipam_temp_val(ele_target_att);
       }
       console.log(res_value);
       return res_value;

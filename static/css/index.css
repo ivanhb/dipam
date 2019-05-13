@@ -2,6 +2,9 @@
   opacity: 0.6;
 }
 button,a { cursor: pointer; }
+select {
+  margin-right: 10px;
+}
 
 body {
   font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
