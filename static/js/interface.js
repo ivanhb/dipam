@@ -30,6 +30,7 @@ class dipam_interface {
         this.TIMELINE_CONTAINER = document.getElementById('timeline_container');
         this.START_BLOCK = document.getElementById('start_block');
         this.TIMELINE_TEXT = document.getElementById('timeline_text');
+        this.TIMELINE_END = document.getElementById('end_block');
         this.UNDO_BTN = document.getElementById('undo_btn');
         this.REDO_BTN = document.getElementById('redo_btn');
         this.DIAGRAM_ZOOM_CONTAINER= document.getElementById('diagram_zoom');
@@ -67,7 +68,7 @@ class dipam_interface {
         dataType: {elem: 'nodes', sub_elem: 'data', type: 'dropdown', intro_lbl: 'Data type', value:[], label:[], onchange:'dropdown'},
         toolType: {elem: 'nodes', sub_elem: 'tool', type: 'dropdown', intro_lbl: 'Tool type', value:[], label:[], onchange:'dropdown'},
 
-        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "file_source", intro_lbl: 'Select data', value:'', onchange:'fileselect' },
+        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "p-file", intro_lbl: 'Select data', value:'', onchange:'fileselect' },
 
         //keep always these two DOMs
         editElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Edit properties', value:'editoff', onclick:'edit'},
@@ -96,6 +97,22 @@ class dipam_interface {
           default:
         }
       }
+
+      //a temp internal data structure
+      this.temp_dipam_value = {};
+    }
+
+    set_dipam_temp_val(key, new_val){
+      this.temp_dipam_value[key] = new_val;
+    }
+    get_dipam_temp_val(key){
+      if (key in this.temp_dipam_value) {
+        return this.temp_dipam_value[key];
+      }
+      return -1;
+    }
+    reset_dipam_temp_val(key, new_val){
+      this.temp_dipam_value = {};
     }
 
 
@@ -158,6 +175,7 @@ class dipam_interface {
         att_key = obj_dom_type['elem_att'];
       }
       var dom_value = elem[att_key];
+      this.set_dipam_temp_val(att_key,dom_value);
 
       switch (obj_dom_type.type) {
         /* Attributes needed are: <value>:Array, <label>:Array */
@@ -179,13 +197,14 @@ class dipam_interface {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+dom_value+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+att_key+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
                 </div>
                 `;
               }
         break;
 
         case 'input_file':
+              console.log(JSON.stringify(elem));
               dom_value = elem[att_key+"_temp"];
               var str_options = `<option id='`+obj_dom_type.id+`_optfile' value='file' selected>File\/s</option>
                                 <option id='`+obj_dom_type.id+`_optdir' value='dir'>Directory</option>`;
@@ -195,7 +214,7 @@ class dipam_interface {
                   <div class="input-group-prepend">
                     <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
                   </div>
-                  <select data-att-value="[OBJ[`+att_key+`_temp]" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                  <select data-att-value="`+att_key+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
 
                   <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_file" style="display: none;" multiple="true"/>
                   <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
@@ -211,13 +230,13 @@ class dipam_interface {
             <div class="input-group-prepend">
               <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
             </div>
-            <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value" data-att-value="`+dom_value+`" value="`+dom_value+`" data-att-value="`+dom_value+`" type="text" disabled></input>
+            <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value" value="`+dom_value+`" data-att-value="`+att_key+`" type="text" disabled></input>
           </div>
           `;
           break;
 
         case 'button':
-          str_html = str_html + '<div class="foot-dom '+obj_dom_type.type+'"><button id="'+obj_dom_type.id+'" type="button" data-id="'+elem.id+'" class="btn btn-light" data-att-value="'+dom_value+'">'+obj_dom_type.intro_lbl+'</button></div>';
+          str_html = str_html + '<div class="foot-dom '+obj_dom_type.type+'"><button id="'+obj_dom_type.id+'" type="button" data-id="'+elem.id+'" class="btn btn-light" data-att-value="'+att_key+'">'+obj_dom_type.intro_lbl+'</button></div>';
           break;
       }
 
@@ -242,8 +261,8 @@ class dipam_interface {
 
       //always do these default events
       $(document).on('keyup', 'input', function(){
-          //document.getElementById(this.id).setAttribute('data-temp-value',$(this).val());
-          document.getElementById(this.id).setAttribute('data-att-value',$(this).val());
+          var key_att = document.getElementById(this.id).getAttribute('data-att-value');
+          this.set_dipam_temp_val(key_att,$(this).val());
       });
     }
 
@@ -297,7 +316,8 @@ class dipam_interface {
                   $( "#"+a_dom_obj.id).on(event_key, function(){
                       var arr_option_selected = $("#"+a_dom_obj.id+" option:selected");
                       if (arr_option_selected.length > 0) {
-                        this.setAttribute('data-att-value',arr_option_selected[0].value)
+
+                        this.set_dipam_temp_val(this.getAttribute('data-att-value'), arr_option_selected[0].value);
                       }
                   });
                   break;
@@ -324,8 +344,9 @@ class dipam_interface {
                           corresponding_elem.data[a_dom_obj.elem_att+"_temp"] = JSON.parse(JSON.stringify(this.files));
                           data_att_value = "[OBJ["+a_dom_obj.elem_att+"_temp]";
                         }
-                        $( "#"+a_dom_obj.id)[0].setAttribute('data-att-value',data_att_value);
 
+                        var att_key = $("#"+a_dom_obj.id)[0].getAttribute('data-att-value');
+                        this.set_dipam_temp_val(att_key, data_att_value);
                     }
                   });
                   $( "#"+a_dom_obj.id+"_dir").on(event_key, function(){
@@ -339,7 +360,8 @@ class dipam_interface {
                           corresponding_elem.data[a_dom_obj.elem_att+"_temp"] = JSON.parse(JSON.stringify(this.files));
                           data_att_value = "[OBJ["+a_dom_obj.elem_att+"_temp]";
                         }
-                        $( "#"+a_dom_obj.id)[0].setAttribute('data-att-value',data_att_value);
+                        var att_key = $("#"+a_dom_obj.id)[0].getAttribute('data-att-value');
+                        this.set_dipam_temp_val(att_key, data_att_value);
                     }
                   });
 
@@ -356,21 +378,23 @@ class dipam_interface {
       switch (dom_id) {
         case 'filePath':
             console.log(param);
-            if ('files' in param.elem) {
-              switch (param.type) {
-                case 'file':
-                  if (param.elem.files.length == 1){
-                    str = param.elem.files[0].name;
-                  }else if (param.elem.files.length > 1){
-                    str = param.elem.files.length+ " files" ;
-                  }
-                  break;
-                case 'dir':
-                  str = param.elem.files.length + " files from directory";
-                  break;
-                default:
+            if (param.elem != undefined) {
+              if ('files' in param.elem) {
+                switch (param.type) {
+                  case 'file':
+                    if (param.elem.files.length == 1){
+                      str = param.elem.files[0].name;
+                    }else if (param.elem.files.length > 1){
+                      str = param.elem.files.length+ " files" ;
+                    }
+                    break;
+                  case 'dir':
+                    str = param.elem.files.length + " files from directory";
+                    break;
+                  default:
+                }
+                break;
               }
-              break;
             }
         default:
       }
@@ -546,7 +570,7 @@ class dipam_interface {
         if ('elem_att' in dom_def) {
           ele_target_att = dom_def.elem_att;
         }
-        res_value[ele_target_att] = obj_dom.getAttribute('data-att-value');
+        res_value[ele_target_att] = this.get_dipam_temp_val(elem_att);
       }
       console.log(res_value);
       return res_value;
@@ -603,18 +627,20 @@ class dipam_interface {
     });
 
     function _save_section(){
-      return `<div id="workflow_save">
-            <div class="input-group">
-                  <button id="btn_dir_select" type="button" value="" class="btn btn-default">Choose directory</button>
-                  <input id="dir_to_save_in" type="file" webkitdirectory mozdirectory msdirectory odirectory directory multiple="multiple" style="display: none;"></input>
-                  <div class="input-group-prepend"><label class="input-group-text">Choose a name: </label></div>
-                  <input id="input_workflow_save_name" type="text"></input>
-            </div>
-            <div class="panel-foot">
-                  <button id="btn_cancel_save" type="button" value="" class="btn btn-default">Cancel</button>
-                  <button id="btn_apply_save" type="button" value="" class="btn btn-default">Save workflow</button>
-            </div>
-        </div>`;
+      return `<div class="workflow-section-body">
+                  <div class="input-group">
+                        <button id="btn_dir_select" type="button" value="" class="btn btn-default">Choose directory</button>
+                        <input id="dir_to_save_in" type="file" webkitdirectory mozdirectory msdirectory odirectory directory multiple="multiple" style="display: none;"></input>
+                  </div>
+                  <div class="input-group">
+                        <div class="input-group-prepend"><label class="input-group-text">Choose a name: </label></div>
+                        <input id="input_workflow_save_name" type="text"></input>
+                  </div>
+              </div>
+              <div class="workflow-section-foot">
+                    <button id="btn_cancel_save" type="button" value="" class="btn btn-default">Cancel</button>
+                    <button id="btn_apply_save" type="button" value="" class="btn btn-default">Save workflow</button>
+              </div>`;
     }
   }
   click_load_workflow(){
@@ -661,7 +687,8 @@ class dipam_interface {
       if (enable) {
         [...document.getElementsByClassName('timeline-block-inner')].map(n => n && n.remove());
       }
-      instance.TIMELINE_TEXT.innerHTML = "Workflow timeline ...";
+      //instance.TIMELINE_TEXT.innerHTML = "Workflow timeline ...";
+      instance.TIMELINE_END.style.visibility = 'hidden';
     }
   }
 
@@ -699,6 +726,7 @@ class dipam_interface {
               //process next node
               if (i == workflow_to_process.length - 1) {
                 console.log("Done All !!");
+                instance.TIMELINE_END.style.visibility = 'visible';
               }else {
                 _process_workflow(instance,i+1);
               }
@@ -709,7 +737,7 @@ class dipam_interface {
   //add a html block to timeline and update percentage
   add_timeline_block(node_id){
     console.log("Add Block !");
-    this.TIMELINE_TEXT.innerHTML = "Workflow Done";
+    //this.TIMELINE_TEXT.innerHTML = "Workflow Done";
     var block_to_add = document.createElement("div");
     block_to_add.setAttribute("class", "timeline-block-inner");
     block_to_add.setAttribute("data-value", node_id);

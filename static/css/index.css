@@ -99,7 +99,7 @@ input {
   margin: 0 auto;
   font-size: 20px;
   vertical-align: middle;
-  margin-left:10px;
+  padding-top: 100px;
 }
 .timeline-block-inner{
   display:inline-block;
@@ -110,9 +110,28 @@ input {
   margin-right:2px;
 }
 #timeline_container{
+  position: absolute;
   display:inline-block;
+  min-height: 50px;
+  margin-left:10px;
 }
-
+#start_block.timeline-block{
+  margin-top: 5px;
+  height: 30px;
+  border: #917442 solid 2px;
+  margin-right: 2px;
+}
+#end_block.timeline-block{
+  margin-top: 5px;
+  height: 30px;
+  border: #917442 solid 2px;
+  margin-left: 0px;
+  margin-left: -3px;
+  visibility: visible;
+}
+#timeline_container .timeline-block{
+  padding-top: 20px;
+}
 .timeline-block + .timeline-block{
   margin-left: 10px;
 }
@@ -120,10 +139,6 @@ input {
   opacity: 0.4;
 }
 
-#workflow_timeline{
-  float: left;
-  height: 100%;
-}
 #btn_run_workflow{
   vertical-align: middle;
   font-size: 18px;
@@ -137,7 +152,9 @@ input {
 
 #workflow_extra{
   top: 70px;
-  padding: 0px;
+  padding-left: 30px;
+  padding-top: 10px;
+  padding-bottom: 20px;
   position:absolute;
   width: 350px;
   min-height: 50px;
@@ -145,34 +162,18 @@ input {
   margin-bottom: 20px;
   visibility: hidden;
 }
-#workflow_save{
-  position relative;
-  margin-top: 5px;
-  padding-top: 10px;
-  padding-bottom: 20px;
-  width: 100;
+#workflow_extra .input-group{
+  padding-left: 0px;
 }
-#workflow_save .input-group{
-  left: 0px;
+#workflow_extra .input-group + .input-group{
+  bottom: 10px;
+}
+.workflow-section-foot{
+  padding-top: 15px;
   margin: 0 auto;
-}
-#workflow_save .panel-foot{
-  padding-top: 30px;
-  margin: 0 auto;
-  width: 250px;
-}
-#workflow_save .panel-foot .btn{
-  margin-top: 10px;
-}
-#workflow_save *{
-  width: 80%;
+  float:right;
 }
 
-#start_block{
-  height: 100%;
-  border: #917442 solid 2px;
-  margin-right: 2px;
-}
 
 .node-style{
   border: transparent;

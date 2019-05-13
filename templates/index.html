@@ -55,9 +55,11 @@
         <button id="btn_load_workflow" type="button" value="load" class="btn btn-default">Load</button>
         <input id="file_to_load" type="file" style="display: none;"/>
 
-        <div id="start_block" class="timeline-block"></div>
-        <div id="timeline_text" class="timeline-block">Workflow timeline ...</div>
-        <div id="end_block" class="timeline-block"></div>
+        <div id="timeline_container" class="timeline-container">
+          <div id="start_block" class="timeline-block"></div>
+          <!--<div id="timeline_text" class="timeline-block">Workflow timeline ...</div>-->
+          <div id="end_block" class="timeline-block" style="visibility: hidden;"></div>
+        </div>
       </div>
       <div id="workflow_extra">
       <div>

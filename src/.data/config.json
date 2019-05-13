@@ -1,53 +1,51 @@
 {
-  "diagram": {
-        "nodes": {
-          "elem":["data","tool"],
-          "data": {"file_source": {}}
-        }
-  },
   "data": {
-        "d0":{
+        "d-gen-table":{
             "label": "Table",
             "data_class": "table",
-            "source": ""
+            "param": ["p-file"]
         },
-        "d1":{
+        "d-gen-text":{
             "label": "Text file",
             "data_class": "text",
-            "source": ""
+            "param": ["p-file"]
         }
   },
   "tool": {
         "t-topic-lda": {
             "label": "Topic modeling with LDA",
             "function": "lda",
-            "param": ["p1"],
-            "compatible_input": ["d1"],
-            "output": ["d0"]
+            "param": ["p-topic"],
+            "compatible_input": ["d-gen-text"],
+            "output": ["d-gen-table"]
         },
         "t-chart-bar": {
             "label": "Bar chart",
             "function": "bar_chart",
-            "param": ["p0"],
-            "compatible_input": ["d0"]
+            "param": ["p-log"],
+            "compatible_input": ["d-gen-table"]
         },
         "t-filter-names": {
             "label": "Filter names",
             "function": "filter_names",
-            "compatible_input": ["d1"],
-            "output": ["d1"]
+            "compatible_input": ["d-gen-text"],
+            "output": ["d-gen-text"]
         }
   },
   "param": {
-    "p0":{
-      "label": "Log scale",
-      "value_label": ["True","False"],
-      "value": [0,1]
-    },
-    "p1":{
-      "label": "Topic number",
-      "value_label": ["2","3","4","5","10","15","20"],
-      "value": [2,3,4,5,10,15,20]
-    }
+        "p-file":{
+          "label": "File/s or Directory",
+          "value": {}
+        },
+        "p-log":{
+          "label": "Log scale",
+          "value_label": ["True","False"],
+          "value": [0,1]
+        },
+        "p-topic":{
+          "label": "Topic number",
+          "value_label": ["2","3","4","5","10","15","20"],
+          "value": [2,3,4,5,10,15,20]
+        }
   }
 }

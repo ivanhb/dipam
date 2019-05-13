@@ -9,7 +9,7 @@ class dipam_diagram {
     this.NODE_DATA = {id: "", name: "", type: "", value:""};
     this.EDGE_DATA = {id: "", name: "", type: "", value:"", source: "", target:""};
     //add the additional ad-hoc attributes defined in config
-    this._apply_diagram_config_definition();
+    //this._apply_diagram_config_definition();
 
     this.DIAGRAM_CONTAINER = document.getElementById('cy');
 
@@ -147,42 +147,6 @@ class dipam_diagram {
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
 
-  }
-
-  _apply_diagram_config_definition() {
-    var diagram_obj = this.CONFIG.diagram;
-    //diagram data
-    if ('general' in diagram_obj) {
-    }
-
-    //nodes data
-    if ('nodes' in diagram_obj) {
-      var elems = ['[ONE]'];
-      if ('elem' in diagram_obj.nodes) {
-        elems = diagram_obj.nodes.elem;
-      }
-      if (elems.length > 1) {
-        var must_att = JSON.parse(JSON.stringify(this.NODE_DATA));
-        this.NODE_DATA = {};
-        for (var i = 0; i < elems.length; i++) {
-          this.NODE_DATA[elems[i]] = JSON.parse(JSON.stringify(must_att));
-          //check its extra attributes and add them
-          if (elems[i] in diagram_obj.nodes) {
-            var extra_att_obj = diagram_obj.nodes[elems[i]];
-            for (var k_att in extra_att_obj) {
-              if(extra_att_obj[k_att] instanceof Object){
-                this.NODE_DATA[elems[i]][k_att+"_temp"] = extra_att_obj[k_att];
-              }
-              this.NODE_DATA[elems[i]][k_att] = extra_att_obj[k_att];
-            }
-          }
-        }
-      }
-    }
-
-    //diagram data
-    if ('edges' in diagram_obj) {
-    }
   }
 
   set_events(){
@@ -353,15 +317,33 @@ class dipam_diagram {
 
     //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {
+      var type_value = Object.keys(this.CONFIG[n_type])[0];
       if (Object.keys(this.CONFIG[n_type]).length > 0){
           var new_id = this.gen_id(n_type);
           node_obj.data.id = new_id;
           node_obj.data.name = new_id;
           node_obj.data.type = n_type;
-          node_obj.data.value = Object.keys(this.CONFIG[n_type])[0];
+          node_obj.data.value = type_value;
       }
-    }
-
+      //check if I should add dynamic fields for the param associated
+      var my_conf = this.CONFIG[n_type][type_value];
+      if ('param' in this.CONFIG[n_type][type_value]) {
+        for (var i = 0; i < my_conf.param.length; i++) {
+          var p_key = my_conf.param[i];
+          if (p_key in this.CONFIG.param) {
+              var corresponding_param = this.CONFIG.param[p_key];
+              var corresponding_param_val = null;
+              if (Array.isArray(corresponding_param.value)) {
+                corresponding_param_val = corresponding_param.value[0];
+              }else if (corresponding_param.value instanceof Object) {
+                corresponding_param_val = JSON.parse(JSON.stringify(corresponding_param.value));
+              }
+              node_obj.data[p_key] = corresponding_param_val;
+            }
+          }
+        }
+      }
+    console.log(node_obj);
     return node_obj;
   }
 
