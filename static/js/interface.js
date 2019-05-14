@@ -1,9 +1,7 @@
 class dipam_interface {
 
     constructor() {
-        this.DOMTYPE = null;
         this.OVERVIEW_SECTION = {all: {}};
-        this.INFO_SECTION = {nodes: {}, edges:{}};
 
         this.info_section_html = "";
         this.info_section_elem = {};
@@ -42,74 +40,18 @@ class dipam_interface {
     set_corresponding_diagram(diagram){
       this.DIAGRAM_INSTANCE_OBJ = diagram;
       this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_obj();
-      //set values inside according to the given diagram
-      /* ------------------------
-      <elem>: 'nodes', 'edges', or 'diagram'
-      <type>: the dom type
-      <intro_lbl>: the intro label for the corresponding element
-      <value>: the value should be a speicifc field of <elem>
-      -------------------------- */
-      /* The DOM types are:
-      (1) input_box
-      (2) dropdown: <elem_att>
-      (3) input_file: <elem_att>
-      (4) button: <action>
-      */
-      /*
-        In case it modify one of the DIAGRAM-ELEMENT attribute this should be specified in [elem_att]. e.g: [name]
-        Otherwise if it modifies an attribute associated to its config type, then [elem_att] should not be defined
-      */
-      this.DOMTYPE = {
-        graphName: {elem: 'diagram', type:'input_box', elem_att: "name", intro_lbl: 'Graph name', value:''},
-        edgeName:  {elem: 'edges', type:'input_box', elem_att: "name", intro_lbl: 'Edge name', value:''},
-        dataName:  {elem: 'nodes', type:'input_box', elem_att: "name", intro_lbl: 'Data name', value:''},
-        toolName:  {elem: 'nodes', type:'input_box', elem_att: "name", intro_lbl: 'Tool name', value:''},
-
-        dataType: {elem: 'nodes', sub_elem: 'data', type: 'dropdown', intro_lbl: 'Data type', value:[], label:[], onchange:'dropdown'},
-        toolType: {elem: 'nodes', sub_elem: 'tool', type: 'dropdown', intro_lbl: 'Tool type', value:[], label:[], onchange:'dropdown'},
-
-        filePath: {elem: 'nodes', sub_elem: 'data', type:'input_file', elem_att: "p-file", intro_lbl: 'Select data', value:'', onchange:'fileselect' },
-
-        //keep always these two DOMs
-        editElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Edit properties', value:'editoff', onclick:'edit'},
-        removeElem: {position: 'foot', type:'button', class:'btn btn-light', intro_lbl: 'Remove element', value:'', onclick:'remove'}
-      };
-
-      //what to integrate in each section
-      this.OVERVIEW_SECTION.all.diagram = "graphName-editElem";
-      this.INFO_SECTION.nodes["tool"] = "toolName-toolType-editElem-removeElem";
-      this.INFO_SECTION.nodes["data"] = "dataName-dataType-filePath-editElem-removeElem";
-      this.INFO_SECTION.edges["edge"] = "edgeName-removeElem";
-
-      this.DOM_EVENT_ELEMS = {
-          'edit':{'event': 'click'},
-          'remove': {'event': 'click'},
-          'cancel': {'event': 'click'},
-          'save': {'event': 'click'},
-          'select-file': {'event': 'change'},
-          'select-value': {'event': 'click'}
-      };
-
-
-      //init the values of each DOM element
-      for (var k_dom in this.DOMTYPE) {
-        switch (k_dom) {
-          case 'dataType':
-            var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('data', ['[KEY]','label']);
-            this.DOMTYPE[k_dom].value = res['[KEY]'];
-            this.DOMTYPE[k_dom].label = res.label;
-            break;
-          case 'toolType':
-            var res = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems('tool', ['[KEY]','label']);
-            this.DOMTYPE[k_dom].value = res['[KEY]'];
-            this.DOMTYPE[k_dom].label = res.label;
-            break;
-          default:
-        }
-      }
-
       //a temp internal data structure
       this.temp_dipam_value = {};
+
+      //The doms that should trigger events
+      this.DOM_EVENT_ELEMS = {
+          'edit':{},
+          'remove': {},
+          'cancel': {},
+          'save': {},
+          'select-file': {},
+          'select-value': {}
+      };
     }
 
     set_dipam_temp_val(key, new_val){
@@ -221,7 +163,7 @@ class dipam_interface {
 
         var extra_dom_label = dom_value;
         if ('label_handler' in param) {
-          extra_dom_label = interface_instance.label_handler(a_dom_id, {label: dom_value, elem: elem});
+          extra_dom_label = interface_instance.label_handler(a_dom_id, {value: dom_value, elem: elem});
         }
 
         switch (dom_tag) {
@@ -296,7 +238,7 @@ class dipam_interface {
       }
 
     }
-
+    /* Setting the Events */
     set_must_events(){
       var interface_instance = this;
       //always do these default events
@@ -340,8 +282,11 @@ class dipam_interface {
           case 'save':
             $( "#"+dom_id).on('click', function() {
               interface_instance.reload_control_section(
-                  diagram_instance.update_elem(corresponding_elem.data.id,
-                  interface_instance.editing("save")));
+                  diagram_instance.update_elem(
+                    corresponding_elem.data.id,
+                    interface_instance.editing("save"))
+                  );
+              console.log(interface_instance.temp_dipam_value);
             });
             break;
           //Remove an element from the CY
@@ -356,7 +301,7 @@ class dipam_interface {
               });
               break;
           case 'select-value':
-                $( "#"+dom_id).on('click', function(){
+                $( "#"+dom_id).on('change', function(){
                     var arr_option_selected = $("#"+dom_id+" option:selected");
                     if (arr_option_selected.length > 0) {
                       interface_instance.set_dipam_temp_val(this.getAttribute('data-att-value'), arr_option_selected[0].value);
@@ -364,11 +309,12 @@ class dipam_interface {
                 });
                 break;
 
-            case 'fileselect':
-                  $( "#"+dom_id).on('click', function(){
+            case 'select-file':
+                  $( "#"+dom_id).on('change', function(){
                       var arr_option_selected = $("#"+dom_id+" option:selected");
                       if (arr_option_selected.length > 0) {
                         var opt_value = arr_option_selected[0].value;
+                        console.log($('#'+dom_id+"_"+opt_value));
                         $('#'+dom_id+"_"+opt_value).trigger('click');
                       }
                   });
@@ -378,7 +324,7 @@ class dipam_interface {
                   $( "#"+dom_id+"_file").on('change', function(){
                     var data_att_value = this.files;
                     if(data_att_value){
-                        var corresponding_lbl = interface_instance.label_handler(dom_id, {label: data_att_value, elem: corresponding_elem} );
+                        var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
                         var att_key = $("#"+dom_id)[0].getAttribute('data-att-value');
                         interface_instance.set_dipam_temp_val(att_key, data_att_value);
@@ -388,7 +334,7 @@ class dipam_interface {
                     var data_att_value = this.files;
                     if(data_att_value){
                         console.log(this.files);
-                        var corresponding_lbl = interface_instance.label_handler(dom_id, {label: data_att_value, elem: corresponding_elem} );
+                        var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
                         var att_key = $("#"+dom_id)[0].getAttribute('data-att-value');
                         interface_instance.set_dipam_temp_val(att_key, data_att_value);
@@ -398,34 +344,7 @@ class dipam_interface {
             default:
       }
     }
-
-    label_handler(dom_id, param){
-      var str = "";
-      switch (dom_id) {
-        case 'filePath':
-            console.log(param);
-            if (param.elem != undefined) {
-                switch (param.type) {
-                  case 'file':
-                    if (param.elem.length == 1){
-                      str = param.elem[0].name;
-                    }else if (param.elem.length > 1){
-                      str = param.elem.length+ " files" ;
-                    }
-                    break;
-                  case 'dir':
-                    str = param.elem.length + " files from directory";
-                    break;
-                  default:
-                }
-                break;
-            }
-        default:
-      }
-      return str;
-    }
-
-
+    /*on click methods*/
     click_on_node(node){
       if ('_private' in node) {
         node = node._private;
@@ -433,7 +352,6 @@ class dipam_interface {
       this.build_info(node,'nodes');
       this.click_info_nav();
     }
-
     click_on_edge(edge){
       if ('_private' in edge) {
         edge = edge._private;
@@ -441,7 +359,6 @@ class dipam_interface {
       this.build_info(edge, 'edges');
       this.click_info_nav();
     }
-
     click_info_nav() {
       this.switch_nav('nav_info');
       this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
@@ -451,7 +368,6 @@ class dipam_interface {
 
       //this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem.data.type], info_elem.elem);
     }
-
     click_overview_nav() {
       this.switch_nav('nav_overview');
       this.CONTROL_CONTAINER.innerHTML = this.overview_section_html;
@@ -460,7 +376,6 @@ class dipam_interface {
       this.set_must_events();
       this.set_control_section_events(overview_elem.elem);
     }
-
     switch_nav(nav_node_id) {
       for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
         var obj = document.getElementsByClassName('nav-btn')[i];
@@ -471,6 +386,28 @@ class dipam_interface {
         }
       }
     }
+
+
+
+
+    label_handler(dom_id, param){
+      var str = "";
+      switch (dom_id) {
+        case 'select-file':
+            if (param.value != undefined) {
+                    if (param.value.length == 1){
+                      str = param.value[0].name;
+                    }else if (param.value.length > 1){
+                      str = param.value.length+ " files" ;
+                    }
+            }
+        default:
+      }
+      return str;
+    }
+
+
+
 
     get_active_nav(){
       for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
