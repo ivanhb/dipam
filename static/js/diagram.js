@@ -271,16 +271,33 @@ class dipam_diagram {
 
       return res;
   }
-  get_conf_att(type, k_type, k_att){
-    var res = -1;
-    if (type in this.CONFIG) {
-      if (k_type in this.CONFIG[type]) {
-        if (k_att in this.CONFIG[type][k_type]) {
-          return this.CONFIG[type][k_type][k_att];
+
+  get_conf_att(type = null, k_type = null, k_att = null){
+    if (type != null) {
+      if (type in this.CONFIG) {
+
+        if (k_type != null) {
+          if (k_type in this.CONFIG[type]) {
+
+            if (k_att != null) {
+              if (k_att in this.CONFIG[type][k_type]) {
+                return this.CONFIG[type][k_type][k_att];
+              }
+            }else {
+              return this.CONFIG[type][k_type];
+            }
+
+          }
+        }else {
+          return this.CONFIG[type];
         }
+
       }
+    }else {
+      return this.CONFIG;
     }
-    return res;
+
+    return -1;
   }
 
   add_node(type) {

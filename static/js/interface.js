@@ -81,6 +81,16 @@ class dipam_interface {
       this.INFO_SECTION.nodes["data"] = "dataName-dataType-filePath-editElem-removeElem";
       this.INFO_SECTION.edges["edge"] = "edgeName-removeElem";
 
+      this.DOM_EVENT_ELEMS = {
+          'edit':{'event': 'click'},
+          'remove': {'event': 'click'},
+          'cancel': {'event': 'click'},
+          'save': {'event': 'click'},
+          'select-file': {'event': 'change'},
+          'select-value': {'event': 'click'}
+      };
+
+
       //init the values of each DOM element
       for (var k_dom in this.DOMTYPE) {
         switch (k_dom) {
@@ -115,151 +125,180 @@ class dipam_interface {
       this.temp_dipam_value = {};
     }
 
-
     //build the info panel on the left
     build_overview(elem, elem_class= 'all') {
-      var elem_type = elem.data.type;
-      //first decide what doms should be visualized (defined in DOMTYPE)
-      this.overview_section_html = this.build_section(this.OVERVIEW_SECTION[elem_class][elem_type], elem);
-      this.overview_section_elem['elem'] = elem;
-      this.overview_section_elem['elem_class'] = elem_class;
+        this.overview_section_html = this.build_control_section(elem);
+        this.overview_section_elem['elem'] = elem;
+        this.overview_section_elem['elem_class'] = elem_class;
     }
 
     build_info(elem, elem_class= 'nodes') {
       if('_private' in elem)
         elem = elem._private;
-      var elem_type = elem.data.type;
-      //first decide what doms should be visualized (defined in DOMTYPE)
-      this.info_section_html = this.build_section(this.INFO_SECTION[elem_class][elem_type], elem);
+      this.info_section_html = this.build_control_section(elem);
       this.info_section_elem['elem'] = elem;
       this.info_section_elem['elem_class'] = elem_class;
     }
 
-
-    build_section(dom_key, elem){
-
+    build_control_section(elem){
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-      //reset the temp values
-      this.reset_dipam_temp_val();
+      var res_str_html = "";
+      var fixed_elems = ['id','type','source','target'];
+      var foot_buttons = ['edit', 'remove'];
+      if (elem.data.type == 'diagram') {
+        foot_buttons = ['edit'];
+      }
 
-      var str_html= "";
-      var dom_key_arr = dom_key.split("-");
-      var doms_positions = ['head','body','foot'];
-      for (var i = 0; i < doms_positions.length; i++) {
-        //set each different position
-        var a_pos = doms_positions[i];
-        str_html = str_html + '<div id="control_'+a_pos+'">';
+      res_str_html = res_str_html + '<div id="control_mid">';
+      for (var k_attribute in elem.data) {
+        var a_dom_str = "";
 
-        //for each position populate it with corresponding doms
-        for (var j = 0; j < dom_key_arr.length; j++) {
-          var obj_dom = this.DOMTYPE[dom_key_arr[j]];
-          if (!('position' in obj_dom)) {
-            obj_dom['position'] = 'body';
+        //check is not one of the fixed attributes
+        if(fixed_elems.indexOf(k_attribute) == -1){
+
+          var att_val = elem.data[k_attribute];
+          //set the temp value of the section just built
+          this.set_dipam_temp_val(k_attribute,att_val);
+
+          //check if is a must-attribute
+          switch (k_attribute) {
+            case 'name':
+              //is an input-box
+              a_dom_str = _build_a_dom("input-text", elem, k_attribute, {intro_lbl: "Name:"});
+              break;
+            case 'value':
+              //is a dropdown
+              var res_elem_type = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems(elem.data.type, ['[KEY]','label']);
+              a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: "Type:", value: res_elem_type['[KEY]'], label: res_elem_type['label']});
+              break;
+            default:
+              //is a param
+              var para_obj = diagram_instance.get_conf_att("param",k_attribute, null);
+              if (para_obj != -1) {
+                  //is a param attribute
+                  if (Array.isArray(att_val)) {
+                      if (att_val.length == 2) {
+                        //is a switch
+                        a_dom_str = _build_a_dom("switch", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
+                      }else if (att_val.length > 2) {
+                        //is a dropdown
+                        a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
+                      }
+                  }else if (typeof att_val == "string") {
+                        //is an input-box
+                        a_dom_str = _build_a_dom("input-text", elem, k_attribute, {intro_lbl: para_obj.label, value:""});
+                  }else if (att_val instanceof Object) {
+                        //is an input-file
+                        a_dom_str = _build_a_dom("select-file", elem, k_attribute, {intro_lbl: para_obj.label, label_handler: true});
+                  }
+             }
+
           }
-          if (obj_dom.position == a_pos) {
-            obj_dom['id'] = dom_key_arr[j];
-            str_html = str_html + this.build_a_dom(obj_dom, elem.data);
-          }
+          res_str_html = res_str_html + a_dom_str;
+        }
+      }
+      res_str_html = res_str_html + '</div>';
+
+      //now the foot buttons
+      var param_btn = {
+        'edit': {intro_lbl: 'Edit properties'},
+        'remove': {intro_lbl: 'Remove properties'},
+      };
+      res_str_html = res_str_html + '<div id="control_foot">';
+      for (var i = 0; i < foot_buttons.length; i++) {
+        var btn_key = foot_buttons[i];
+        a_dom_str = _build_a_dom(btn_key, elem, null, param_btn[btn_key]);
+        res_str_html = res_str_html + a_dom_str;
+      }
+      res_str_html = res_str_html + '</div>';
+      return res_str_html;
+
+      function _build_a_dom(dom_tag, elem, k_attribute, param = {}){
+        var a_dom_id = dom_tag;
+        var str_html = "";
+        var dom_value = elem.data[k_attribute];
+
+        var extra_dom_label = dom_value;
+        if ('label_handler' in param) {
+          extra_dom_label = interface_instance.label_handler(a_dom_id, {label: dom_value, elem: elem});
         }
 
-        //close position section
-        str_html = str_html + '</div>';
-      }
-      return str_html;
-    }
-    //build a specific dom
-    build_a_dom(obj_dom_type, elem){
-      var str_html= "";
-
-      var att_key = 'value';
-      if ('elem_att' in obj_dom_type) {
-        att_key = obj_dom_type['elem_att'];
-      }
-      var dom_value = elem[att_key];
-      this.set_dipam_temp_val(att_key,dom_value);
-
-      switch (obj_dom_type.type) {
-        /* Attributes needed are: <value>:Array, <label>:Array */
-        case 'dropdown':
-              if(obj_dom_type.sub_elem == elem.type){
-                var str_options = "";
-                for (var j = 0; j < obj_dom_type.value.length; j++) {
-                  var opt_val = obj_dom_type.value[j];
-                  var opt_lbl = obj_dom_type.label[j];
+        switch (dom_tag) {
+          case 'select-value':
+              var str_options = "";
+              for (var j = 0; j < param.value.length; j++) {
                   var selected_val = "";
-                  if (opt_val == dom_value) {
+                  if (param.value[j] == dom_value) {
                     selected_val = "selected";
                   }
-                  str_options = "<option data-select-target='"+obj_dom_type.id+"' value='"+opt_val+"' "+selected_val+">"+opt_lbl+"</option>"+str_options;
+                  str_options = "<option data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+">"+param.label[j]+"</option>"+str_options;
+               };
 
-                };
                 str_html = str_html + `
-                <div class="input-group `+obj_dom_type.type+`">
+                <div class="input-group `+dom_tag+`">
                       <div class="input-group-prepend">
-                        <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
+                        <label class="input-group-text">`+param.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+att_key+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value custom-select" disabled>`+str_options+`</select>
                 </div>
                 `;
-              }
-        break;
+              break;
 
-        case 'input_file':
-              var str_options = `<option selected>Select source</option>
-                                <option id='`+obj_dom_type.id+`_optfile' value='file'>File\/s</option>
-                                <option id='`+obj_dom_type.id+`_optdir' value='dir'>Directory</option>`;
-
-              str_html = str_html +`
-              <div class="input-group btn-group `+obj_dom_type.type+`">
+          case 'input-text':
+                str_html = str_html + `
+                <div class="input-group `+dom_tag+`">
                   <div class="input-group-prepend">
-                    <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
+                    <label class="input-group-text">`+param.intro_lbl+`</label>
                   </div>
-                  <select data-att-value="`+att_key+`" data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                  <input data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value" value="`+dom_value+`" data-att-value="`+k_attribute+`" type="text" disabled></input>
+                </div>
+                `;
+                break;
 
-                  <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_file" style="display: none;" multiple="true"/>
-                  <input data-id="`+elem.id+`" type="file" id="`+obj_dom_type.id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
+          case 'select-file':
+                  var str_options = `<option selected>Select source</option>
+                                    <option id='`+a_dom_id+`_optfile' value='file'>File\/s</option>
+                                    <option id='`+a_dom_id+`_optdir' value='dir'>Directory</option>`;
 
-                  <label id="`+obj_dom_type.id+`__lbl" class="input-group-text" value="">`+this.label_handler(obj_dom_type.id, {elem: dom_value, type: 'file'})+`</label>
-              </div>
-              `;
-          break;
+                  str_html = str_html +`
+                  <div class="input-group btn-group `+dom_tag+`">
+                      <div class="input-group-prepend">
+                        <label class="input-group-text">`+param.intro_lbl+`</label>
+                      </div>
+                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value custom-select" disabled>`+str_options+`</select>
 
-        case 'input_box':
-          str_html = str_html + `
-          <div class="input-group `+obj_dom_type.type+`">
-            <div class="input-group-prepend">
-              <label class="input-group-text">`+obj_dom_type.intro_lbl+`</label>
-            </div>
-            <input data-id="`+elem.id+`" id="`+obj_dom_type.id+`" class="save-value" value="`+dom_value+`" data-att-value="`+att_key+`" type="text" disabled></input>
-          </div>
-          `;
-          break;
+                      <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_file" style="display: none;" multiple="true"/>
+                      <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
 
-        case 'button':
-          str_html = str_html + '<div class="foot-dom '+obj_dom_type.type+'"><button id="'+obj_dom_type.id+'" type="button" data-id="'+elem.id+'" class="btn btn-light" data-att-value="'+att_key+'">'+obj_dom_type.intro_lbl+'</button></div>';
-          break;
+                      <label id="`+a_dom_id+`__lbl" class="input-group-text" value="">`+extra_dom_label+`</label>
+                  </div>
+                  `;
+                  break;
+
+            case 'edit':
+                  str_html = str_html + `
+                  <div class="foot-dom btn-edit">
+                  <button id="`+dom_tag+`" value="editoff" type="button" data-id="`+elem.data.id+`" class="btn btn-light">
+                  `+param.intro_lbl+`</button></div>`;
+                  break;
+
+            case 'remove':
+                  str_html = str_html + `
+                  <div class="foot-dom btn-remove">
+                  <button id="`+dom_tag+`" type="button" data-id="`+elem.data.id+`" class="btn btn-light">
+                  `+param.intro_lbl+`</button></div>`;
+                  break;
+
+          default:
+        }
+        return str_html;
       }
 
-      return str_html;
     }
 
-    //set and define the events for the elements added in the section panel
-    set_section_events(dom_key, elem){
-
-      if ('_private' in elem) {
-        elem = elem._private;
-      }
-
+    set_must_events(){
       var interface_instance = this;
-      var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-
-      var dom_key_arr = dom_key.split("-");
-      for (var i = 0; i < dom_key_arr.length; i++) {
-        var obj_dom = this.DOMTYPE[dom_key_arr[i]];
-        this.set_dom_event(obj_dom, elem);
-      }
-
       //always do these default events
       $(document).on('keyup', '#control input', function(){
           var key_att = document.getElementById(this.id).getAttribute('data-att-value');
@@ -269,100 +308,94 @@ class dipam_interface {
           document.getElementById(this.id).setAttribute('data-att-value',$(this).val());
       });
     }
-
-    set_dom_event(a_dom_obj, corresponding_elem = null){
+    set_control_section_events(elem){
+      if ('_private' in elem) {
+        elem = elem._private;
+      }
+      for (var k_dom_event in this.DOM_EVENT_ELEMS) {
+        var event_dom = document.getElementById(k_dom_event);
+        if (event_dom) {
+          this.set_a_dom_event(event_dom, elem, this.DOM_EVENT_ELEMS[k_dom_event]);
+        }
+      }
+    }
+    set_a_dom_event(event_dom, corresponding_elem = null, param = {}){
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-
       if ('_private' in corresponding_elem) {
         corresponding_elem = corresponding_elem._private;
       }
-
-      var set_of_events = {'onclick':'click','onchange':'change'};
-      for (var k_event in set_of_events) {
-        //check each event if is inside the DOM object
-        if (k_event in a_dom_obj){
-          var event_val = a_dom_obj[k_event];
-          var event_key = set_of_events[k_event];
-
-          //now switch according to the event value
-          switch (event_val) {
-            //Edit the fields in the section
-            case 'edit':
-              $( "#"+a_dom_obj.id).on("click", function() {
+      var dom_id = event_dom.getAttribute('id');
+      switch (dom_id) {
+          case 'edit':
+              $( "#"+dom_id).on('click', function() {
                 interface_instance.editing();
               });
               break;
-            case 'cancel':
-              $( "#"+a_dom_obj.id).on("click", function() {
+          case 'cancel':
+              $( "#"+dom_id).on('click', function() {
                 interface_instance.editing("cancel");
               });
-              break;
-            case 'save':
-              $( "#"+a_dom_obj.id).on("click", function() {
-                interface_instance.reload_control_section(
-                    diagram_instance.update_elem(corresponding_elem.data.id,
-                    interface_instance.editing("save")));
+            break;
+          case 'save':
+            $( "#"+dom_id).on('click', function() {
+              interface_instance.reload_control_section(
+                  diagram_instance.update_elem(corresponding_elem.data.id,
+                  interface_instance.editing("save")));
+            });
+            break;
+          //Remove an element from the CY
+          case 'remove':
+              $( "#"+dom_id).on('click', function() {
+                  diagram_instance.remove_elem(corresponding_elem.data.id);
+                  interface_instance.removing();
+                  interface_instance.show_undo_redo(
+                    diagram_instance.get_undo_redo().isUndoStackEmpty(),
+                    diagram_instance.get_undo_redo().isRedoStackEmpty()
+                  );
               });
               break;
-            //Remove an element from the CY
-            case 'remove':
-                $( "#"+a_dom_obj.id).on(event_key, function() {
-                    diagram_instance.remove_elem(corresponding_elem.data.id);
-                    interface_instance.removing();
-                    interface_instance.show_undo_redo(
-                      diagram_instance.get_undo_redo().isUndoStackEmpty(),
-                      diagram_instance.get_undo_redo().isRedoStackEmpty()
-                    );
+          case 'select-value':
+                $( "#"+dom_id).on('click', function(){
+                    var arr_option_selected = $("#"+dom_id+" option:selected");
+                    if (arr_option_selected.length > 0) {
+                      interface_instance.set_dipam_temp_val(this.getAttribute('data-att-value'), arr_option_selected[0].value);
+                    }
                 });
                 break;
-            case 'dropdown':
-                  $( "#"+a_dom_obj.id).on(event_key, function(){
-                      var arr_option_selected = $("#"+a_dom_obj.id+" option:selected");
-                      if (arr_option_selected.length > 0) {
 
-                        this.set_dipam_temp_val(this.getAttribute('data-att-value'), arr_option_selected[0].value);
-                      }
-                  });
-                  break;
             case 'fileselect':
-                  $( "#"+a_dom_obj.id).on(event_key, function(){
-                      var arr_option_selected = $("#"+a_dom_obj.id+" option:selected");
+                  $( "#"+dom_id).on('click', function(){
+                      var arr_option_selected = $("#"+dom_id+" option:selected");
                       if (arr_option_selected.length > 0) {
                         var opt_value = arr_option_selected[0].value;
-                        console.log(opt_value);
-                        $('#'+a_dom_obj.id+"_"+opt_value).trigger('click');
+                        $('#'+dom_id+"_"+opt_value).trigger('click');
                       }
                   });
 
-                  var a_dom_obj_lbl = document.getElementById(a_dom_obj.id+"__lbl");
+                  var a_dom_obj_lbl = document.getElementById(dom_id+"__lbl");
 
-                  $( "#"+a_dom_obj.id+"_file").on(event_key, function(){
+                  $( "#"+dom_id+"_file").on('change', function(){
                     var data_att_value = this.files;
                     if(data_att_value){
-                        console.log(this.files);
-                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: data_att_value, type: 'file'});
+                        var corresponding_lbl = interface_instance.label_handler(dom_id, {label: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
-                        var att_key = $("#"+a_dom_obj.id)[0].getAttribute('data-att-value');
+                        var att_key = $("#"+dom_id)[0].getAttribute('data-att-value');
                         interface_instance.set_dipam_temp_val(att_key, data_att_value);
                     }
                   });
-                  $( "#"+a_dom_obj.id+"_dir").on(event_key, function(){
+                  $( "#"+dom_id+"_dir").on('change', function(){
                     var data_att_value = this.files;
                     if(data_att_value){
                         console.log(this.files);
-                        var corresponding_lbl = interface_instance.label_handler(a_dom_obj.id, {elem: data_att_value, type: 'dir'});
+                        var corresponding_lbl = interface_instance.label_handler(dom_id, {label: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
-                        var att_key = $("#"+a_dom_obj.id)[0].getAttribute('data-att-value');
+                        var att_key = $("#"+dom_id)[0].getAttribute('data-att-value');
                         interface_instance.set_dipam_temp_val(att_key, data_att_value);
                     }
                   });
-
                   break;
-
             default:
-          }
-        }
       }
     }
 
@@ -413,14 +446,19 @@ class dipam_interface {
       this.switch_nav('nav_info');
       this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
       var info_elem = this.info_section_elem;
-      this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem.data.type], info_elem.elem);
+      this.set_must_events();
+      this.set_control_section_events(info_elem.elem);
+
+      //this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem.data.type], info_elem.elem);
     }
 
     click_overview_nav() {
       this.switch_nav('nav_overview');
       this.CONTROL_CONTAINER.innerHTML = this.overview_section_html;
       var overview_elem = this.overview_section_elem;
-      this.set_section_events(this.OVERVIEW_SECTION[overview_elem.elem_class][overview_elem.elem.data.type], overview_elem.elem);
+      //this.set_section_events(this.OVERVIEW_SECTION[overview_elem.elem_class][overview_elem.elem.data.type], overview_elem.elem);
+      this.set_must_events();
+      this.set_control_section_events(overview_elem.elem);
     }
 
     switch_nav(nav_node_id) {
@@ -468,14 +506,13 @@ class dipam_interface {
       if (!current_flag == true) {
         newflag = "editoff";
       }
-      document.getElementById('editElem').setAttribute('value',newflag);
+      document.getElementById('edit').setAttribute('value',newflag);
     }
 
     set_edit_section(action = null){
       var res = 1;
-      var editdom = document.getElementById('editElem');
+      var editdom = document.getElementById('edit');
       var data_elem_id = editdom.getAttribute('data-id');
-      var original_inner_html = editdom.innerHTML;
       editdom.style.visibility = 'hidden';
 
       var edit_value = editdom.getAttribute('value');
@@ -483,16 +520,17 @@ class dipam_interface {
       //if i am not yet in editing mode then the edit section should be built first
       if (edit_value == 'editon') {
         var two_buttons_dom = `<span id="edit_buttons" class="foot-dom">
-                               <span><button id='edit_cancel' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
+                               <span><button id='cancel' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
                                <span>
-                               <button id='edit_save' type='button' class='btn btn-default edit-switch'>Save</button></span>
+                               <button id='save' type='button' class='btn btn-default edit-switch'>Save</button></span>
                                </span>`;
         editdom.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.innerHTML;
         //set events
         var corresponding_elem = this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(data_elem_id);
         console.log(corresponding_elem);
-        this.set_dom_event({id:'edit_cancel', onclick: 'cancel'}, corresponding_elem);
-        this.set_dom_event({id:'edit_save', onclick: 'save'}, corresponding_elem);
+
+        this.set_a_dom_event(document.getElementById("cancel"), corresponding_elem);
+        this.set_a_dom_event(document.getElementById("save"), corresponding_elem);
 
       }else {
         //I am already in editing mode (the edit section have been already built)
