@@ -1,40 +1,50 @@
 class dipam_interface {
 
     constructor() {
-        this.OVERVIEW_SECTION = {all: {}};
+        this.DIAGRAM_INSTANCE_OBJ = null;
+        this.DOMS = {
+          "DIAGRAM": {
+              "CONTAINER": document.getElementById('cy'),
+              //diagram editor (add nodes)
+              "EDITOR_CONTAINER": document.getElementById('diagram_editor'),
+              "ADD_TOOL_BTN": document.getElementById('add_tool'),
+              "ADD_DATA_BTN": document.getElementById('add_data'),
+              //undo-redo
+              "UNDO_REDO_CONTAINER": document.getElementById('undo_btn'),
+              "UNDO_BTN": document.getElementById('undo_btn'),
+              "REDO_BTN": document.getElementById('redo_btn'),
+              //zoom
+              "ZOOM_CONTAINER": document.getElementById('diagram_zoom'),
+              "ZOOMIN_BTN": document.getElementById('zoom_in_btn'),
+              "ZOOMOUT_BTN": document.getElementById('zoom_out_btn'),
+          },
+          "CONTROL": {
+              "CONTAINER": document.getElementById('control_body'),
+              //menu navigator
+              "NAV_CONTAINER": document.getElementById('control_nav'),
+              "INFO_BTN": document.getElementById('nav_info_a'),
+              "OVERVIEW_BTN": document.getElementById('nav_overview_a'),
+          },
+          "WORKFLOW": {
+              //buttons
+              "RUN_BTN": document.getElementById('btn_run_workflow'),
+              "SAVE_BTN": document.getElementById('btn_save_workflow'),
+              "LOAD_BTN": document.getElementById('btn_load_workflow'),
+              //timeline
+              "TIMELINE_CONTAINER": document.getElementById('timeline_container'),
+              "START_BLOCK": document.getElementById('start_block'),
+              "END_BLOCK": document.getElementById('end_block'),
+              //extra section
+              "EXTRA_CONTAINER": document.getElementById('workflow_extra'),
+          }
+        }
 
         this.info_section_html = "";
         this.info_section_elem = {};
         this.overview_section_html = "";
         this.overview_section_elem = {};
 
-        this.eventdom = {};
         this.workflow = null;
-
-        this.DIAGRAM_INSTANCE_OBJ = null;
-
-        //define the dom ids
-        this.NAV_INFO = document.getElementById('nav_info_a');
-        this.NAV_OVERVIEW = document.getElementById('nav_overview_a');
-        this.DIAGRAM_EDITOR_CONTAINER = document.getElementById('diagram_editor');
-        this.CONTROL_BTNS = document.getElementById('control_nav');
-        this.CONTROL_CONTAINER = document.getElementById('control_body');
-        this.CY_CONTAINER = document.getElementById('cy');
-        this.ADD_TOOL = document.getElementById('add_tool');
-        this.ADD_DATA = document.getElementById('add_data');
-        this.RUN_WORKFLOW = document.getElementById('btn_run_workflow');
-        this.SAVE_WORKFLOW = document.getElementById('btn_save_workflow');
-        this.LOAD_WORKFLOW = document.getElementById('btn_load_workflow');
-        this.TIMELINE_CONTAINER = document.getElementById('timeline_container');
-        this.START_BLOCK = document.getElementById('start_block');
-        this.TIMELINE_TEXT = document.getElementById('timeline_text');
-        this.TIMELINE_END = document.getElementById('end_block');
-        this.UNDO_BTN = document.getElementById('undo_btn');
-        this.REDO_BTN = document.getElementById('redo_btn');
-        this.DIAGRAM_ZOOM_CONTAINER= document.getElementById('diagram_zoom');
-        this.ZOOMIN_BTN = document.getElementById('zoom_in_btn');
-        this.ZOOMOUT_BTN = document.getElementById('zoom_out_btn');
-        this.WORKFLOW_EXTRA = document.getElementById('workflow_extra');
     }
 
     set_corresponding_diagram(diagram){
@@ -361,7 +371,7 @@ class dipam_interface {
     }
     click_info_nav() {
       this.switch_nav('nav_info');
-      this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
+      this.DOMS.CONTROL.CONTAINER.innerHTML = this.info_section_html;
       var info_elem = this.info_section_elem;
       if (info_elem.elem) {
         this.set_must_events();
@@ -370,7 +380,7 @@ class dipam_interface {
     }
     click_overview_nav() {
       this.switch_nav('nav_overview');
-      this.CONTROL_CONTAINER.innerHTML = this.overview_section_html;
+      this.DOMS.CONTROL.CONTAINER.innerHTML = this.overview_section_html;
       var overview_elem = this.overview_section_elem;
       //this.set_section_events(this.OVERVIEW_SECTION[overview_elem.elem_class][overview_elem.elem.data.type], overview_elem.elem);
       this.set_must_events();
@@ -508,7 +518,7 @@ class dipam_interface {
         if (new_elem != null) {
           this.build_overview(new_elem);
         }
-        document.getElementById('nav_overview_a').click();
+        this.DOMS.CONTROL.OVERVIEW_BTN.click();
       }else if (active_nav == 'info') {
         //in case an element (node/edge) have been updated/edited
         if (new_elem != null) {
@@ -517,7 +527,7 @@ class dipam_interface {
           }
           this.build_info(new_elem);
         }
-        document.getElementById('nav_info_a').click();
+        this.DOMS.CONTROL.INFO_BTN.click();
       }
     }
 
@@ -540,7 +550,7 @@ class dipam_interface {
     var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
     var diagram_cy = this.DIAGRAM_INSTANCE_CY;
 
-    var workflow_extra_container = this.WORKFLOW_EXTRA;
+    var workflow_extra_container = this.DOMS.WORKFLOW.EXTRA_CONTAINER;
 
     workflow_extra_container.style.visibility = 'visible';
     workflow_extra_container.innerHTML = _save_section();
@@ -577,7 +587,7 @@ class dipam_interface {
               name: input_text,
               load: "off"
             });
-            interface_instance.WORKFLOW_EXTRA.style.visibility = 'hidden';
+            interface_instance.DOMS.WORKFLOW.EXTRA_CONTAINER.style.visibility = 'hidden';
           }else {
             //params not ok
           }
@@ -608,14 +618,14 @@ class dipam_interface {
 
   click_run_workflow(){
 
-    if (this.RUN_WORKFLOW.value == 'stop') {
+    if (this.DOMS.WORKFLOW.RUN_BTN.value == 'stop') {
       _disable_divs(this,false);
-      this.RUN_WORKFLOW.value = 'run';
-      this.RUN_WORKFLOW.innerHTML = "Stop process";
+      this.DOMS.WORKFLOW.RUN_BTN.value = 'run';
+      this.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Stop process";
     }else {
       _disable_divs(this,true);
-      this.RUN_WORKFLOW.value = 'stop';
-      this.RUN_WORKFLOW.innerHTML = "Run workflow";
+      this.DOMS.WORKFLOW.RUN_BTN.value = 'stop';
+      this.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Run workflow";
     }
 
     function _disable_divs(instance,enable=false){
@@ -626,27 +636,27 @@ class dipam_interface {
         opacity_val = '';
       }
 
-      instance.CY_CONTAINER.style["pointer-events"] = p_event;
-      instance.CY_CONTAINER.style["opacity"] = opacity_val;
+      instance.DOMS.DIAGRAM.CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.DIAGRAM.CONTAINER.style["opacity"] = opacity_val;
 
-      instance.DIAGRAM_EDITOR_CONTAINER.style["pointer-events"] = p_event;
-      instance.DIAGRAM_EDITOR_CONTAINER.style["opacity"] = opacity_val;
+      instance.DOMS.DIAGRAM.EDITOR_CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.DIAGRAM.EDITOR_CONTAINER.style["opacity"] = opacity_val;
 
-      instance.DIAGRAM_ZOOM_CONTAINER.style["pointer-events"] = p_event;
-      instance.DIAGRAM_ZOOM_CONTAINER.style["opacity"] = opacity_val;
+      instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["opacity"] = opacity_val;
 
-      instance.CONTROL_BTNS.style["pointer-events"] = p_event;
-      instance.CONTROL_BTNS.style["opacity"] = opacity_val;
+      instance.DOMS.CONTROL.NAV_CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.CONTROL.NAV_CONTAINER.style["opacity"] = opacity_val;
 
-      instance.CONTROL_CONTAINER.style["pointer-events"] = p_event;
-      instance.CONTROL_CONTAINER.style["opacity"] = opacity_val;
+      instance.DOMS.CONTROL.CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.CONTROL.CONTAINER.style["opacity"] = opacity_val;
 
       //instance.TIMELINE_CONTAINER.innerHTML = "";
       if (enable) {
         [...document.getElementsByClassName('timeline-block-inner')].map(n => n && n.remove());
       }
       //instance.TIMELINE_TEXT.innerHTML = "Workflow timeline ...";
-      instance.TIMELINE_END.style.visibility = 'hidden';
+      instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'hidden';
     }
   }
 
@@ -684,7 +694,7 @@ class dipam_interface {
               //process next node
               if (i == workflow_to_process.length - 1) {
                 console.log("Done All !!");
-                instance.TIMELINE_END.style.visibility = 'visible';
+                instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
               }else {
                 _process_workflow(instance,i+1);
               }
@@ -700,7 +710,7 @@ class dipam_interface {
     block_to_add.setAttribute("class", "timeline-block-inner");
     block_to_add.setAttribute("data-value", node_id);
 
-    var starting_block = this.START_BLOCK;
+    var starting_block = this.DOMS.WORKFLOW.START_BLOCK;
     var found = false;
     for (var i = 0; i < document.getElementsByClassName('timeline-block-inner').length; i++) {
       if(document.getElementsByClassName('timeline-block-inner')[i].getAttribute('data-value') == node_id){
@@ -708,7 +718,7 @@ class dipam_interface {
       }
     }
     if (!found) {
-      _insert_after(block_to_add,this.START_BLOCK);
+      _insert_after(block_to_add,this.DOMS.WORKFLOW.START_BLOCK);
     }
 
     function _insert_after(newNode, referenceNode) {
@@ -722,16 +732,16 @@ class dipam_interface {
   }
 
   show_undo(flag= true){
-    this.UNDO_BTN.style.visibility = 'visible';
+    this.DOMS.DIAGRAM.UNDO_BTN.style.visibility = 'visible';
     if (!(flag)) {
-      this.UNDO_BTN.style.visibility = 'hidden';
+      this.DOMS.DIAGRAM.UNDO_BTN.style.visibility = 'hidden';
     }
   }
 
   show_redo(flag= true){
-    this.REDO_BTN.style.visibility = 'visible';
+    this.DOMS.DIAGRAM.REDO_BTN.style.visibility = 'visible';
     if (!(flag)) {
-      this.REDO_BTN.style.visibility = 'hidden';
+      this.DOMS.DIAGRAM.REDO_BTN.style.visibility = 'hidden';
     }
   }
 
@@ -753,7 +763,7 @@ class dipam_interface {
 
 
     //ADD Node and Tool Buttons
-    $('#'+this.ADD_DATA.getAttribute('id')).on({
+    $('#'+this.DOMS.DIAGRAM.ADD_DATA_BTN.getAttribute('id')).on({
       click: function(e) {
         diagram_instance.add_node('data');
         _elem_onclick_handle();
@@ -762,7 +772,7 @@ class dipam_interface {
         document.getElementById('edit').click();
       }
     });
-    $('#'+this.ADD_TOOL.getAttribute('id')).on({
+    $('#'+this.DOMS.DIAGRAM.ADD_TOOL_BTN.getAttribute('id')).on({
       click: function(e) {
         diagram_instance.add_node('tool');
         _elem_onclick_handle();
@@ -774,21 +784,21 @@ class dipam_interface {
 
 
     //the info section Nav menu
-    $( "#"+this.NAV_OVERVIEW.getAttribute('id')).on("click", function() {
+    $( "#"+this.DOMS.CONTROL.OVERVIEW_BTN.getAttribute('id')).on("click", function() {
       interface_instance.click_overview_nav();
     });
-    $( "#"+this.NAV_INFO.getAttribute('id')).on("click", function() {
+    $( "#"+this.DOMS.CONTROL.INFO_BTN.getAttribute('id')).on("click", function() {
       interface_instance.click_info_nav();
     });
 
     //the undo/redo Nav menu
-    $( "#"+this.UNDO_BTN.getAttribute('id')).on("click", function() {
+    $( "#"+this.DOMS.DIAGRAM.UNDO_BTN.getAttribute('id')).on("click", function() {
       diagram_instance.cy_undo_redo.undo();
       interface_instance.show_undo_redo(
                   diagram_instance.get_undo_redo().isUndoStackEmpty(),
                   diagram_instance.get_undo_redo().isRedoStackEmpty());
     });
-    $( "#"+this.REDO_BTN.getAttribute('id')).on("click", function() {
+    $( "#"+this.DOMS.DIAGRAM.REDO_BTN.getAttribute('id')).on("click", function() {
       diagram_instance.cy_undo_redo.redo();
       interface_instance.show_undo_redo(
                   diagram_instance.get_undo_redo().isUndoStackEmpty(),
@@ -796,16 +806,16 @@ class dipam_interface {
     });
 
     //the zoom in/out Nav menu
-    $( "#"+this.ZOOMIN_BTN.getAttribute('id')).on("click", function() {
+    $( "#"+this.DOMS.DIAGRAM.ZOOMIN_BTN.getAttribute('id')).on("click", function() {
       diagram_instance.zoom_in();
     });
-    $( "#"+this.ZOOMOUT_BTN.getAttribute('id')).on("click", function() {
+    $( "#"+this.DOMS.DIAGRAM.ZOOMOUT_BTN.getAttribute('id')).on("click", function() {
       diagram_instance.zoom_out();
     });
 
 
     /*The Workflow buttons and correlated events*/
-    $( "#"+this.RUN_WORKFLOW.getAttribute('id')).on({
+    $( "#"+this.DOMS.WORKFLOW.RUN_BTN.getAttribute('id')).on({
         click: function(e) {
               e.preventDefault();
               interface_instance.click_run_workflow();
@@ -814,14 +824,14 @@ class dipam_interface {
         }
     });
 
-    $( "#"+this.SAVE_WORKFLOW.getAttribute('id')).on({
+    $( "#"+this.DOMS.WORKFLOW.SAVE_BTN.getAttribute('id')).on({
         click: function(e) {
           e.preventDefault();
           interface_instance.click_save_workflow();
         }
     });
 
-    $( "#"+this.LOAD_WORKFLOW.getAttribute('id')).on({
+    $( "#"+this.DOMS.WORKFLOW.LOAD_BTN.getAttribute('id')).on({
         click: function(e) {
           e.preventDefault();
           $('#file_to_load').trigger('click');
@@ -868,6 +878,4 @@ class dipam_interface {
       }
 
   }
-
-
 }
