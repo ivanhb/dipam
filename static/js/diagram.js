@@ -365,39 +365,50 @@ class dipam_diagram {
   }
 
   after_add_edge(edge_data){
-    var source_node = this.cy.nodes("node[id='"+edge_data.source+"']")[0];
-    var target_node = this.cy.nodes("node[id='"+edge_data.target+"']")[0];
+    var interface_instance = this;
+    var cy_instance = this.cy;
+    var source_node = cy_instance.nodes("node[id='"+edge_data.source+"']")[0];
+    var target_node = cy_instance.nodes("node[id='"+edge_data.target+"']")[0];
     var flag_compatible = this.is_compatible(source_node, target_node);
 
     //check if the diagram is still a DAG
-    var flag_is_cycle = is_cycle(this.get_target_nodes(source_node), source_node, this.cy);
+    var flag_is_cycle = is_cycle(this.get_target_nodes(source_node), source_node);
 
     //check also if there is another same edge
     if ((!flag_compatible) || flag_is_cycle)  {
       console.log('Edge not compatible! ');
-      this.cy.remove('#'+edge_data.id);
+      if (flag_is_cycle) {
+        console.log("It creates a loop !");
+      }
+      cy_instance.remove('#'+edge_data.id);
     }else {
       //if flag_compatible add it to log file
-      this.cy_undo_redo.do("add", this.cy.$("#"+edge_data.id));
+      this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
     }
 
     return edge_data;
 
     //is cycle starting from node N
-    function is_cycle(arr_nodes, origin, cy_instance){
+    function is_cycle(arr_nodes, origin){
 
+      //check if one of the nodes is origin
       for (var i = 0; i < arr_nodes.length; i++) {
         var node = arr_nodes[i];
-        //check the target nodes of the selected node <node>
-        var out_nodes = cy_instance.edges('edge[source="'+node._private.data.id+'"]').targets();
-        out_nodes = out_nodes.nodes('node[type = "data"]').union(out_nodes.nodes('node[type = "tool"]'));
-        console.log(node, out_nodes);
-        if (out_nodes.length == 0) {
-          return __is_same_node(node, origin);
-        }else {
-          return __is_same_node(node, origin) || is_cycle(out_nodes, origin, cy_instance);
+        if (__is_same_node(node, origin)) {
+          return true;
         }
       }
+
+      var res = false;
+      for (var i = 0; i < arr_nodes.length; i++) {
+        var node = arr_nodes[i];
+        var out_nodes = interface_instance.get_target_nodes(node);
+        if (out_nodes.length != 0) {
+            res = res || is_cycle(out_nodes , origin);
+        }
+      }
+
+      return res;
 
       function __is_same_node(n_a, n_b){
         return (n_a._private.data.id == n_b._private.data.id);
@@ -413,7 +424,6 @@ class dipam_diagram {
     edge_obj.data.target = target_id;
     return JSON.parse(JSON.stringify(edge_obj));
   }
-
 
   //Update an element
   // (1) Its data in the cy diagram
@@ -564,14 +574,8 @@ class dipam_diagram {
     for (var i = 0; i < target_element.length; i++) {
       target_element[i].style(this.COMPATIBLE_STYLE[active]);
       target_element[i]._private.active = active;
-      //this.set_node_interaction(target_element[i], 'selectable', flag_interaction);
     }
     return target_element;
-  }
-
-  //set selectable, draggable values
-  set_node_interaction(elem, type, flag){
-      elem._private[type] = flag;
   }
 
   //Generate an ID for a giving type of element
@@ -746,63 +750,6 @@ class dipam_diagram {
     }
   }
 
-  //generate an id for a new path. In case the path is born from another specify its father id in <start_point>
-  // returns a new id in the format: p-1
-  gen_path_id(paths){
-    var new_path_id = Object.keys(paths).length;
-    return 'p-'+'['+new_path_id+']';
-  }
-
-
-  //is the given node a crossbreed
-  //returns true or false
-  is_crossbreed(node){
-    return this.incoming_edges(node).length > 1;
-  }
-
-  //is the given node a root
-  //returns true or false
-  is_root(node){
-    return this.incoming_edges(node).length == 0;
-  }
-
-  //is the given node a leaf
-  //returns true or false
-  is_leaf(node){
-    return this.outgoing_edges(node).length == 0;
-  }
-
-  //the ougoing edges of a given node
-  // an array of edges or [] if empty
-  outgoing_edges(node){
-    var outgoing_edges_arr = this.cy.edges('edge[source = "'+node._private.data.id+'"]');
-    if (outgoing_edges_arr.length == 0) {
-      return [];
-    }
-    return outgoing_edges_arr;
-  }
-
-  //the incoming edges of a given node
-  // an array of edges or [] if empty
-  incoming_edges(node){
-    var incoming_edges_arr = this.cy.edges('edge[target ="'+node._private.data.id+'"]');
-    if (incoming_edges_arr.length == 0) {
-      return [];
-    }
-    return incoming_edges_arr;
-  }
-
-  //normalize the workflow path
-  normalize_path(paths_obj){
-    var normalize_paths = {};
-    for (var k_path in paths_obj) {
-      normalize_paths[k_path] = {nodes_ids:[]};
-      for (var i = 0; i < paths_obj[k_path].nodes.length; i++) {
-        normalize_paths[k_path].nodes_ids.push(paths_obj[k_path].nodes[i].id());
-      }
-    }
-    return normalize_paths;
-  }
 
   zoom_in(){
     this.cy.zoom(this.cy.zoom() + 0.1);

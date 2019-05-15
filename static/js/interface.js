@@ -363,10 +363,10 @@ class dipam_interface {
       this.switch_nav('nav_info');
       this.CONTROL_CONTAINER.innerHTML = this.info_section_html;
       var info_elem = this.info_section_elem;
-      this.set_must_events();
-      this.set_control_section_events(info_elem.elem);
-
-      //this.set_section_events(this.INFO_SECTION[info_elem.elem_class][info_elem.elem.data.type], info_elem.elem);
+      if (info_elem.elem) {
+        this.set_must_events();
+        this.set_control_section_events(info_elem.elem);
+      }
     }
     click_overview_nav() {
       this.switch_nav('nav_overview');
@@ -386,8 +386,6 @@ class dipam_interface {
         }
       }
     }
-
-
 
 
     label_handler(dom_id, param){
@@ -508,10 +506,9 @@ class dipam_interface {
       if (active_nav == 'overview'){
         //in case the overview attributes have been updated/edited
         if (new_elem != null) {
-          this.build_overview(new_elem.data);
+          this.build_overview(new_elem);
         }
         document.getElementById('nav_overview_a').click();
-        //this.click_overview_nav();
       }else if (active_nav == 'info') {
         //in case an element (node/edge) have been updated/edited
         if (new_elem != null) {
@@ -521,7 +518,6 @@ class dipam_interface {
           this.build_info(new_elem);
         }
         document.getElementById('nav_info_a').click();
-        //this.click_info_nav();
       }
     }
 
@@ -763,7 +759,7 @@ class dipam_interface {
         _elem_onclick_handle();
         interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
         diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
-        document.getElementById('editElem').click();
+        document.getElementById('edit').click();
       }
     });
     $('#'+this.ADD_TOOL.getAttribute('id')).on({
@@ -772,7 +768,7 @@ class dipam_interface {
         _elem_onclick_handle();
         interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
         diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
-        document.getElementById('editElem').click();
+        document.getElementById('edit').click();
       }
     });
 
