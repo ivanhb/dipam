@@ -671,82 +671,71 @@ class dipam_diagram {
 
     //get all nodes
     var all_nodes = this.get_nodes();
+    var ids_queue = this.get_nodes_att_values(all_nodes, 'id');
 
-    //Start processing
-    var i = 0;
-    while (i < all_nodes.length) {
-      var a_node = all_nodes[i];
+    //console.log(ids_queue.shift(),ids_queue);
+    //var count = 15;
+    while (ids_queue.length > 0) {
+      //count--; if (count == 0) {break;}
+
+      console.log(ids_queue.length, ids_queue, topological_ordered_list);
+      var n_id = ids_queue.shift();
+      var a_node = this.get_gen_elem_by_id(n_id);
       var a_node_config = this.CONFIG[a_node._private.data.type][a_node._private.data.value];
-      if (in_arr_obj(topological_ordered_list, "id", a_node._private.data.id)) {
-        i++;
-      }else {
-        //define the node method for both cases
-        var a_node_method = null;
-        if (a_node._private.data.type == 'tool') {
-          a_node_method = a_node_config.function;
-        }else if (a_node._private.data.type == 'data') {
-          a_node_method = a_node_config.data_class;
-        }
 
-        _process_node(
-          //node-fields
-          a_node._private.data.id,
-          a_node._private.data.type,
-          a_node_method,
-          a_node._private.data.param,
-          //node-inputs
-          this.get_nodes_att_values(this.get_source_nodes(a_node),'id'),
-          //node-outputs
-          this.get_nodes_att_values(this.get_target_nodes(a_node),'id'),
-          //the current index
-          i
-        );
-        i = 0;
+      //define the node method for both cases
+      var a_node_class = null;
+      if (a_node._private.data.type == 'tool') {
+        a_node_class = a_node_config["function"];
+      }else if (a_node._private.data.type == 'data') {
+        a_node_class = a_node_config["data_class"];
+      }
+
+      //var a_node_to_process = jQuery.extend(true, {}, a_node);
+      var a_node_to_process = a_node._private.data;
+      a_node_to_process['class'] = a_node_class;
+      a_node_to_process['input'] = this.get_nodes_att_values(this.get_source_nodes(a_node),'id');
+      a_node_to_process['output'] = this.get_nodes_att_values(this.get_target_nodes(a_node),'id');
+
+      if(!(_process_node(a_node_to_process))){
+        ids_queue.push(n_id);
       }
     }
 
-
     return topological_ordered_list;
 
-    function _process_node(node_id, node_type, node_value, node_param, inputs, outputs, current_index){
+    function _process_node(a_node){
       var add_it = false;
-      if (inputs.length == 0) {
-        //is a root node
-        add_it = true;
-      }else {
-        //check if all its inputs are inside the index_processed
-        var all_processed;
-        for (var j = 0; j < inputs.length; j++) {
-          if(in_arr_obj(topological_ordered_list, "id", inputs[j])){
+      var inputs = a_node.input;
+
+      //check if all its inputs are inside the index_processed
+      var all_processed = true;
+      for (var j = 0; j < inputs.length; j++) {
+          if(_in_topological_order(inputs[j], topological_ordered_list)) {
             all_processed = true;
           }else {
             all_processed = false;
             break;
           }
-        }
-        if (all_processed) {
+      }
+      if (all_processed) {
           add_it = true;
-        }
       }
 
       if (add_it) {
-        topological_ordered_list.push({
-            "id": node_id,
-            "type": node_type,
-            "method": node_value,
-            "param": node_param,
-            "input": inputs,
-            "output": outputs
-        });
+        topological_ordered_list.push(a_node);
       }
-    }
-    function in_arr_obj(arr, att, val){
-      for (var i = 0; i < arr.length; i++) {
-        if(arr[i][att] == val){
-          return true;
+
+      return add_it;
+
+      function _in_topological_order(val, topological_ordered_list){
+        for (var k = 0; k < topological_ordered_list.length; k++) {
+          if(topological_ordered_list[k].id == val){
+            return true;
+          }
         }
+        return false;
       }
-      return false;
     }
   }
 

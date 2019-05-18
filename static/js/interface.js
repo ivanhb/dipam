@@ -37,7 +37,7 @@ class dipam_interface {
               //extra section
               "EXTRA_CONTAINER": document.getElementById('workflow_extra'),
           }
-        }
+        };
 
         this.info_section_html = "";
         this.info_section_elem = {};
@@ -333,6 +333,7 @@ class dipam_interface {
 
                   $( "#"+dom_id+"_file").on('change', function(){
                     var data_att_value = this.files;
+                    console.log(data_att_value);
                     if(data_att_value){
                         var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
@@ -342,8 +343,8 @@ class dipam_interface {
                   });
                   $( "#"+dom_id+"_dir").on('change', function(){
                     var data_att_value = this.files;
+                    console.log(data_att_value);
                     if(data_att_value){
-                        console.log(this.files);
                         var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
                         var att_key = $("#"+dom_id)[0].getAttribute('data-att-value');
@@ -354,6 +355,9 @@ class dipam_interface {
             default:
       }
     }
+
+
+
     /*on click methods*/
     click_on_node(node){
       if ('_private' in node) {
@@ -662,9 +666,10 @@ class dipam_interface {
 
   //Executes all the workflow
   handle_workflow(status, param){
+    console.log(param);
     if (status == 'run') {
       console.log(param);
-      this.workflow = JSON.parse(JSON.stringify(param));
+      this.workflow = param;
       var workflow_to_process = this.workflow;
       var index_processed = {};
       //process workflow
@@ -681,24 +686,55 @@ class dipam_interface {
 
             console.log("Processing: ", workflow_to_process[i]);
             //call the server
-            var data_to_post = {
-              id: w_elem.id,
-              method: w_elem.method,
-              type: w_elem.type,
-              param: "",
-              input: JSON.stringify(w_elem.input),
-              output: JSON.stringify(w_elem.output)
-            };
-            $.post( "/process",data_to_post).done(function() {
-              instance.add_timeline_block(w_elem.id);
-              //process next node
-              if (i == workflow_to_process.length - 1) {
-                console.log("Done All !!");
-                instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
-              }else {
-                _process_workflow(instance,i+1);
-              }
+            var data_to_post = _gen_form_data(w_elem);
+            for (var dp of data_to_post){
+              if(dp[0] == 'p-file[]'){console.log(dp)};
+            }
+
+            $.ajax({
+              url: "/process",
+              data: data_to_post,
+              processData: false,
+              contentType: false,
+              type: 'POST',
+              success: function(data) {
+                    instance.add_timeline_block(w_elem.id);
+                    //process next node
+                    if (i == workflow_to_process.length - 1) {
+                      console.log("Done All !!");
+                      instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
+                      instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process done";
+                    }else {
+                      _process_workflow(instance,i+1);
+                    }
+                }
             });
+
+            /*normalize the file list in a form type*/
+            function _gen_form_data(data){
+              var post_data = new FormData();
+
+              /*The array and object elements should be normalized for Post*/
+              for (var a_k in data) {
+                  if (a_k == 'p-file') {
+                    Array.prototype.forEach.call(data[a_k], function(file) { post_data.append(a_k+'[]', file); });
+                  }else {
+                    if (Array.isArray(data[a_k])) {
+                      //form_data.append(a_k, JSON.stringify(w_elem[a_k]));
+                      // Append files to files array
+                      for (let i = 0; i < data[a_k].length; i++) {
+                        let elem_i = data[a_k][i];
+                        post_data.append(a_k+'[]', elem_i);
+                      }
+                    }else if (data[a_k] instanceof Object) {
+                      post_data.append(a_k, JSON.stringify(w_elem[a_k]));
+                    }else {
+                      post_data.append(a_k, data[a_k]);
+                    }
+                  }
+              }
+              return post_data;
+            }
       }
   }
 

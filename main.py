@@ -79,21 +79,32 @@ def load_workflow():
 
 @app.route('/process', methods = ['POST'])
 def process():
-    id = request.form['id']
-    method = request.form['method']
-    type = request.form['type']
-    param = request.form['param']
-    input = request.form['input']
-    output = request.form['output']
 
-    print("Processing: '"+id+"', of '"+type+"' type. The function/class of it is "+method)
+    posted_data = {"id": None, 'type': None, 'value': None, 'name': None, 'input[]': None, 'output[]': None, 'class': None, 'param': {}};
+    # MUST: id, type, value, name, input, output
+    for k in request.form:
+        if(k in posted_data):
+            posted_data[k] = request.form[k]
+        else:
+            # is a PARAM
+            posted_data["param"][k] = request.form[k]
 
-    if type == "tool":
+
+    #check if also files have been uploaded
+    #this can happen only for 'data' nodes
+    for f_k in request.files:
+        posted_data["param"][f_k] = request.files[f_k]
+
+
+    print("Posted data:")
+    print(posted_data)
+
+    if posted_data["type"] == "tool":
         a_tool = tool.Tool()
-        a_tool.run(id, method, input, param)
-    elif type == "data":
-        a_data = data.Data(id, method)
-
+        #a_tool.run(posted_data)
+    elif posted_data["type"] == "data":
+        a_data = data.Data()
+        a_data.index_new_data(posted_data, posted_data["param"])
 
     return "Processing done !"
 

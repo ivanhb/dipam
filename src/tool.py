@@ -1,7 +1,10 @@
+from src.textAnalysis import TextAnalysis
+
 class Tool(object):
 
 
     def __init__(self):
+        text_handler = TextAnalysis()
         pass
 
     #run a func
@@ -17,4 +20,7 @@ class Tool(object):
 
     #tools
     def lda(self, input_data, param):
+
+        files = []
+        text_handler.lda(files, param)
         return input_data
