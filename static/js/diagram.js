@@ -685,8 +685,10 @@ class dipam_diagram {
 
       //define the node method for both cases
       var a_node_class = null;
+      var a_node_compatible_inputs = [];
       if (a_node._private.data.type == 'tool') {
         a_node_class = a_node_config["function"];
+        a_node_compatible_inputs = a_node_config["compatible_input"];
       }else if (a_node._private.data.type == 'data') {
         a_node_class = a_node_config["data_class"];
       }
@@ -694,6 +696,7 @@ class dipam_diagram {
       //var a_node_to_process = jQuery.extend(true, {}, a_node);
       var a_node_to_process = a_node._private.data;
       a_node_to_process['class'] = a_node_class;
+      a_node_to_process['compatible_input'] = a_node_compatible_inputs;
       a_node_to_process['input'] = this.get_nodes_att_values(this.get_source_nodes(a_node),'id');
       a_node_to_process['output'] = this.get_nodes_att_values(this.get_target_nodes(a_node),'id');
 

@@ -84,7 +84,19 @@ def load_workflow():
 @app.route('/process', methods = ['POST'])
 def process():
 
-    posted_data = {"id": None, 'type': None, 'value': None, 'name': None, 'input[]': None, 'output[]': None, 'class': None, 'param': {}};
+    posted_data = {
+                "id": None,
+                'type': None,
+                'value': None,
+                'name': None,
+                'input[]': None,
+                'output[]': None,
+                'compatible_input[]': None,
+                'class': None,
+                'param': {}
+    };
+
+
     # MUST: id, type, value, name, input, output
     for k in request.form:
 
@@ -107,15 +119,22 @@ def process():
     for f_k in request.files:
         posted_data["param"][f_k] = request.files.getlist(f_k)
 
-
-    #print("Process a '",posted_data["type"],"' with the posted data: ", posted_data)
-
     elem_index = None
     data_entries = []
 
     if posted_data["type"] == "tool":
         elem_index = dipam_linker.index_elem(posted_data["id"], copy_data = True)
-        data_entries = dipam_tool.run(posted_data, elem_index['path'], posted_data["param"])
+
+        #get the files from the index items of the given inputs
+        input_files = {}
+        for id_input in posted_data['input[]']:
+            index_elem = dipam_linker.get_elem(id_input)
+            if index_elem != -1:
+                for comp_input in posted_data["compatible_input[]"]:
+                    if comp_input in index_elem:
+                        input_files[comp_input] = index_elem[comp_input]
+
+        data_entries = dipam_tool.run(posted_data, elem_index['path'], input_files, posted_data["param"])
 
     elif posted_data["type"] == "data":
         elem_index = dipam_linker.index_elem(posted_data["id"])
@@ -126,8 +145,7 @@ def process():
         for d_entry in data_entries:
             dipam_linker.add_entry(posted_data["id"], d_entry)
 
-    dipam_linker.get_index(posted_data["id"])
-    #print("Indexed :", dipam_linker.get_index(posted_data["id"]))
+    print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))
 
     return "Processing done !"
 
