@@ -7,11 +7,15 @@ import csv
 import os
 
 from src import tool
-from src import data
+from src import linker
 
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for
 
 app = Flask(__name__)
+
+
+dipam_linker = linker.Linker()
+dipam_tool = tool.Tool()
 
 #example: /dipam?workflow=WW&?config=CC
 @app.route('/')
@@ -83,28 +87,47 @@ def process():
     posted_data = {"id": None, 'type': None, 'value': None, 'name': None, 'input[]': None, 'output[]': None, 'class': None, 'param': {}};
     # MUST: id, type, value, name, input, output
     for k in request.form:
-        if(k in posted_data):
-            posted_data[k] = request.form[k]
-        else:
-            # is a PARAM
-            posted_data["param"][k] = request.form[k]
+
+        if not k.startswith('p-file'):
+
+            val = request.form[k]
+            if k.endswith('[]'):
+                val = []
+                val = request.form.getlist(k)
+
+            if(k in posted_data):
+                posted_data[k] = val
+            else:
+                # is a PARAM
+                posted_data["param"][k] = val
 
 
     #check if also files have been uploaded
     #this can happen only for 'data' nodes
     for f_k in request.files:
-        posted_data["param"][f_k] = request.files[f_k]
+        posted_data["param"][f_k] = request.files.getlist(f_k)
 
 
-    print("Posted data:")
-    print(posted_data)
+    #print("Process a '",posted_data["type"],"' with the posted data: ", posted_data)
+
+    elem_index = None
+    data_entries = []
 
     if posted_data["type"] == "tool":
-        a_tool = tool.Tool()
-        #a_tool.run(posted_data)
+        elem_index = dipam_linker.index_elem(posted_data["id"], copy_data = True)
+        data_entries = dipam_tool.run(posted_data, elem_index['path'], posted_data["param"])
+
     elif posted_data["type"] == "data":
-        a_data = data.Data()
-        a_data.index_new_data(posted_data, posted_data["param"])
+        elem_index = dipam_linker.index_elem(posted_data["id"])
+        #The data entries in this case are the elements themselfs
+        data_entries.append(dipam_linker.build_data_entry(posted_data))
+
+    if elem_index != None:
+        for d_entry in data_entries:
+            dipam_linker.add_entry(posted_data["id"], d_entry)
+
+    dipam_linker.get_index(posted_data["id"])
+    #print("Indexed :", dipam_linker.get_index(posted_data["id"]))
 
     return "Processing done !"
 

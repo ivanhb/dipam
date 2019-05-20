@@ -683,8 +683,8 @@ class dipam_interface {
     function _process_workflow(instance,i){
 
             var w_elem = workflow_to_process[i];
+            console.log("Process: ", w_elem)
 
-            console.log("Processing: ", workflow_to_process[i]);
             //call the server
             var data_to_post = _gen_form_data(w_elem);
             for (var dp of data_to_post){
@@ -717,7 +717,7 @@ class dipam_interface {
               /*The array and object elements should be normalized for Post*/
               for (var a_k in data) {
                   if (a_k == 'p-file') {
-                    Array.prototype.forEach.call(data[a_k], function(file) { post_data.append(a_k+'[]', file); });
+                    Array.prototype.forEach.call(data[a_k], function(file,index) { post_data.append(a_k+'[]', file);});
                   }else {
                     if (Array.isArray(data[a_k])) {
                       //form_data.append(a_k, JSON.stringify(w_elem[a_k]));

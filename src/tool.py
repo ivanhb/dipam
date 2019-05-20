@@ -2,25 +2,26 @@ from src.textAnalysis import TextAnalysis
 
 class Tool(object):
 
-
     def __init__(self):
+        self.TOOL_HANDLER = 'TextAnalysis'
         text_handler = TextAnalysis()
         pass
 
-    #run a func
-    def run(self, id_name, method, input_data, param = None):
-        res = -1
-        try:
-            res = getattr(self, method)(input_data, param)
-            print("The node:"+id_name+" . Return result: "+res)
-            return res
-        except AttributeError:
-            return res
+    # Run a method from the TOOL_HANDLER module
+    # <node>: The corresponding node
+    # <temp_dir>: the temporal processing directory path
+    # <param>: in case of additional parameters for the method called
+    def run(self, node, temp_dir, param = None):
+        method = node['class']
+        input_data = node['input']
+        output_data = node['output']
 
+        #The corresponding function must return a set of files for each different output_data entry
+        res = getattr(self.TOOL_HANDLER, method)(input_data, output_data, param)
 
-    #tools
-    def lda(self, input_data, param):
+        #Files to write on <temp_dir>
 
-        files = []
-        text_handler.lda(files, param)
-        return input_data
+        #Files to include inside the index as new entries
+        #return this to main.py
+
+        return res
