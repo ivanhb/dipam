@@ -15,46 +15,32 @@ class Linker(object):
         else:
             return -1
 
-    def index_elem(self, id, copy_data = False):
+    def index_elem(self, id):
         if id not in self.index:
             self.index[id] = {}
-            self.index[id]['path'] = None
-            if copy_data:
-                process_dir = self.__create_process_dir(id)
-                self.index[id]['path'] = process_dir
+            self.__create_process_dir(id)
         return self.index[id]
 
     def add_entry(self, id, entry):
 
-        an_index = self.index[id]
+        if id in self.index:
+            d_value = next(iter(entry.items()))[0]
+            self.index[id][d_value] = entry[d_value]
 
-        #add a value to the entry
-        n_value = entry['value']
-        an_index[n_value] = {}
-
-        an_index[n_value]['files'] = entry["files"]
-        #check if files should be copied
-        if an_index["path"] != None:
-            __copy_files(entry["files"], an_index["path"])
-
-        #add the corresponding class value of such data
-        an_index[n_value]['class'] = entry["class"]
-
-        return an_index[n_value]
+        return self.index[id]
 
     def build_data_entry(self, node):
         new_entry = {}
         #the value
-        new_entry['value'] = node["value"]
+        new_entry[node["value"]] = {}
 
         #add the corresponding files
         files = None;
         if 'p-file[]' in node["param"]:
             files = node["param"]['p-file[]']
-        new_entry['files'] = files
-
+        new_entry[node["value"]]['files'] = files
         #the class
-        new_entry['class'] = node["class"]
+        new_entry[node["value"]]['class'] = node["class"]
 
         return new_entry
 
