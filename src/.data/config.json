@@ -30,6 +30,11 @@
             "function": "filter_names",
             "compatible_input": ["d-gen-text"],
             "output": ["d-gen-text"]
+        },
+        "t-save-files": {
+            "label": "Save",
+            "function": "save_file",
+            "compatible_input": ["d-gen-text","d-gen-table"]
         }
   },
   "param": {

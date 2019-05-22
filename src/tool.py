@@ -3,11 +3,11 @@ from src import terminal
 
 class Tool(object):
 
-    def __init__(self, base_path):
-        self.BASE_PATH = base_path
+    def __init__(self):
+        #self.BASE_PATH = base_path
         #initialize all the modules that handle the tool elements
         self.TOOL_HANDLER = textAnalysis.TextAnalysis(["t-topic-lda","t-filter-names"])
-        self.TERMINAL_HANDLER = terminal.Terminal(["t-chart-bar"])
+        self.TERMINAL_HANDLER = terminal.Terminal(["t-chart-bar","t-save-files"])
 
 
     # Run a method from the TOOL_HANDLER module
@@ -37,28 +37,23 @@ class Tool(object):
         #        }
         #}
 
-        print("Tool:",elem_id," With input files:",input_files," Returned: ",res)
+        print("Tool:",elem_id," With input files:",len(input_files)," Returned: ",res)
 
         data_entries = []
         if res != None:
             if "data" in res:
                 for k_data in res["data"]:
                     an_entry = {}
-                    an_entry[k_data] = {'files': []}
+                    an_entry[k_data] = {}
 
                     for key, value in res["data"][k_data].items():
                         f_name = key
                         f_inner_value = value
-                        self.write_file(self.BASE_PATH+"/"+str(elem_id)+"/"+str(f_name), f_inner_value)
-                        an_entry[k_data]["files"].append(f_name)
+                        #self.write_file(self.BASE_PATH+"/"+str(elem_id)+"/"+str(f_name), f_inner_value)
+                        #an_entry[k_data]["files"].append(f_name)
+                        an_entry[k_data][f_name] = f_inner_value
 
                     data_entries.append(an_entry)
 
         #return this to main.py
         return data_entries
-
-
-    def write_file(self, path, file_value):
-        with open(path, 'w') as d_file:
-            d_file.write(file_value)
-        return path

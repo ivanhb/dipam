@@ -14,9 +14,9 @@ from flask import Flask, render_template, request, json, jsonify, redirect, url_
 
 app = Flask(__name__)
 
-
+BASE_PATH = "src/.process-temp"
 dipam_linker = linker.Linker()
-dipam_tool = tool.Tool("src/.process-temp")
+dipam_tool = tool.Tool()
 dipam_data = data.Data()
 #Will store all the FileStorage of the 'data' nodes
 corpus = {}
@@ -104,6 +104,11 @@ def process():
                 'param': {}
     };
 
+    def write_file(path, file_value):
+        with open(path, 'w') as d_file:
+            d_file.write(file_value)
+        return path
+
     #########
     # Populate the 'posted_data' variable
     #########
@@ -153,7 +158,6 @@ def process():
             #is a data file -> Take it from the corpus (Its data is suitable, DIPAM does this on ClientSide)
             if id_input in corpus:
                 d_value = next(iter(corpus[id_input].items()))[0]
-                print(d_value, id_input, corpus)
                 if d_value in input_files:
                     input_files[d_value].extend(corpus[id_input][d_value]["files"])
 
@@ -169,8 +173,9 @@ def process():
                         if comp_input in index_elem:
                             index_elem_data = index_elem[comp_input]
                             #call the data handler to process this type of inputs
-                            input_files[comp_input].extend(dipam_data.handle(index_elem_data['files'], comp_input, file_path = True))
-
+                            for file_k in index_elem_data:
+                                file_path = BASE_PATH+"/"+str(id_input)+"/"+str(file_k)
+                                input_files[comp_input].extend(dipam_data.handle([file_path], comp_input, file_path = True))
 
         #The data entries in this case are the output of the tool
         data_entries = dipam_tool.run(posted_data, input_files, posted_data["param"])
@@ -181,6 +186,11 @@ def process():
             for d_entry in data_entries:
                 #<d_entry> e.g: {'d-gen-text': {'files': ['1.txt', '2.txt']}}
                 dipam_linker.add_entry(posted_data["id"], d_entry)
+                #write entries in dir
+                if len(d_entry.keys()) > 0:
+                    entry_item = next(iter(d_entry.items()))[0]
+                    for a_doc_key in d_entry[entry_item]:
+                        write_file(BASE_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
 
 
     elif posted_data["type"] == "data":

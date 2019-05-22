@@ -13,3 +13,25 @@ class Terminal(object):
         #Build data here
 
         return data_to_return
+
+    def save_file(self, input_files, param):
+        data_to_return = {"data":{}}
+
+        # NO RESTRICTIONS  Takes any input
+
+        #Build data here
+        res_docs = {}
+        i = 0
+        for a_data_value in input_files:
+            res_docs[a_data_value] = {}
+            if a_data_value == "d-gen-text":
+                extension = ".txt"
+            elif a_data_value == "d-gen-text":
+                extension = ".csv"
+            for a_doc in input_files[a_data_value]:
+                res_docs[a_data_value][str(i)+".txt"] = a_doc
+                i += 1
+
+
+        data_to_return["data"] = res_docs
+        return data_to_return
