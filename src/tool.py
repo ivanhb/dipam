@@ -37,7 +37,7 @@ class Tool(object):
         #        }
         #}
 
-        print("Tool:",elem_id," With input files:",len(input_files)," Returned: ",res)
+        #print("Tool:",elem_id," With input files:",len(input_files)," Returned: ",res)
 
         data_entries = []
         if res != None:

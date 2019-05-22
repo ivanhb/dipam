@@ -31,6 +31,7 @@ class TextAnalysis(object):
             #iterate through the array of values given
             documents.append(a_file_value)
 
+        print("LDA Topic Modelling on "+str(len(documents))+ " documents.")
 
         stop = set(stopwords.words('english'))
         exclude = set(string.punctuation)

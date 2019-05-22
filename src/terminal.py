@@ -19,6 +19,8 @@ class Terminal(object):
 
         # NO RESTRICTIONS  Takes any input
 
+        print("Saving files ...")
+
         #Build data here
         res_docs = {}
         i = 0
@@ -26,10 +28,11 @@ class Terminal(object):
             res_docs[a_data_value] = {}
             if a_data_value == "d-gen-text":
                 extension = ".txt"
-            elif a_data_value == "d-gen-text":
+            elif a_data_value == "d-gen-table":
                 extension = ".csv"
+
             for a_doc in input_files[a_data_value]:
-                res_docs[a_data_value][str(i)+".txt"] = a_doc
+                res_docs[a_data_value][str(i)+extension] = a_doc
                 i += 1
 
 
