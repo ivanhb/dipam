@@ -40,10 +40,13 @@ def index():
 
     return render_template('index.html', workflow=workflow_data, config=CONFIG_DATA)
 
-@app.route("/downloadworkflow")
-def download_workflow ():
+@app.route("/download/<id>")
+def download_workflow(id):
     try:
-        return send_file("src/.data/workflow.json", as_attachment=True)
+        if(id == "workflow"):
+            return send_file("src/.data/workflow.json", as_attachment=True)
+        else:
+            return send_file("src/.process-temp/"+id+"/*", as_attachment=True)
     except Exception as e:
         self.log.exception(e)
         self.Error(400)

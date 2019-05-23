@@ -684,17 +684,21 @@ class dipam_interface {
       var workflow_to_process = this.workflow;
       var index_processed = {};
       //process workflow
-      _process_workflow(this,0);
+      _process_workflow(this,0,[]);
 
     }else if (status == 'stop') {
       //Stop the execution and abort all the running functions"
       console.log("Stop the execution and abort all the running functions");
     }
 
-    function _process_workflow(instance,i){
+    function _process_workflow(instance,i,terminals){
 
             var w_elem = workflow_to_process[i];
             console.log("Process: ", w_elem)
+            //check if is a terminal
+            if (w_elem.output.length == 0) {
+              terminals.push(w_elem);
+            }
 
             //call the server
             var data_to_post = _gen_form_data(w_elem);
@@ -709,7 +713,6 @@ class dipam_interface {
               contentType: false,
               type: 'POST',
               success: function(data) {
-                    console.log(data)
                     if (data.startsWith("Error:")) {
                       instance.add_timeline_block(w_elem.id, true);
                     }else {
@@ -718,10 +721,11 @@ class dipam_interface {
                       //process next node
                       if (i == workflow_to_process.length - 1) {
                         console.log("Done All !!");
+                        instance.process_terminals(terminals);
                         instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
                         instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process done";
                       }else {
-                        _process_workflow(instance,i+1);
+                        _process_workflow(instance,i+1,terminals);
                       }
                     }
                 }
@@ -753,6 +757,21 @@ class dipam_interface {
               return post_data;
             }
       }
+  }
+  process_terminals(terminals){
+    for (var i = 0; i < terminals.length; i++) {
+      var node_id = terminals[i].id;
+
+      var dom_elems = document.getElementsByClassName('timeline-block-inner');
+      var last_dom = this.DOMS.WORKFLOW.START_BLOCK;
+      for (var i = 0; i < dom_elems.length; i++) {
+        last_dom = dom_elems[i];
+        if(last_dom.getAttribute('data-value') == node_id){
+          last_dom.setAttribute("href","/download/"+node_id);
+          break;
+        }
+      }
+    }
   }
 
   in_light_node(node_id){
