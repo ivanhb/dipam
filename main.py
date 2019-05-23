@@ -10,7 +10,7 @@ from src import tool
 from src import data
 from src import linker
 
-from flask import Flask, render_template, request, json, jsonify, redirect, url_for
+from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file
 
 app = Flask(__name__)
 
@@ -40,6 +40,13 @@ def index():
 
     return render_template('index.html', workflow=workflow_data, config=CONFIG_DATA)
 
+@app.route("/downloadworkflow")
+def download_workflow ():
+    try:
+        return send_file("src/.data/workflow.json", as_attachment=True)
+    except Exception as e:
+        self.log.exception(e)
+        self.Error(400)
 
 @app.route('/saveworkflow', methods = ['POST'])
 def save_workflow():
@@ -180,6 +187,14 @@ def process():
         #The data entries in this case are the output of the tool
         data_entries = dipam_tool.run(posted_data, input_files, posted_data["param"])
 
+        #check if there were errors
+        if len(data_entries) > 0:
+            print(data_entries[0])
+            if "error" in data_entries[0]:
+                an_error = data_entries[0]["error"]
+                k_error = next(iter(an_error))
+                return "Error:"+an_error[k_error]
+
         #Index the new Tool and its output data
         elem_index = dipam_linker.index_elem(posted_data["id"])
         if elem_index != None:
@@ -190,6 +205,7 @@ def process():
                 if len(d_entry.keys()) > 0:
                     entry_item = next(iter(d_entry.items()))[0]
                     for a_doc_key in d_entry[entry_item]:
+                        #write according to the type of file
                         write_file(BASE_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
 
 
@@ -207,8 +223,7 @@ def process():
         corpus[elem_id][elem_value]["files"] = dipam_data.handle(files, elem_value)
 
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
-
-    return "Processing done !"
+    return "Success:Processing done !"
 
 
 if __name__ == '__main__':

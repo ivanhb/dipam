@@ -57,13 +57,47 @@ class TextAnalysis(object):
         Lda = gensim.models.ldamodel.LdaModel
 
         # Running and Trainign LDA model on the document term matrix.
-        ldamodel = Lda(doc_term_matrix, num_topics=3, id2word = dictionary, passes=50)
+        try:
+            ldamodel = Lda(doc_term_matrix, num_topics=3, id2word = dictionary, passes=50)
+        except ValueError:
+            res_err = {"data":{}}
+            res_err["data"]["error"] = {}
+            res_err["data"]["error"]["ValueError"] = "No/Noncompatible inputs were given to the LDA algorithm"
+            return res_err
 
+        res = ldamodel.print_topics(num_topics=3, num_words=10)
+
+        # populate the files according to the topics found
+        a_tab = []
+        for topic_i in res:
+            # 0: is id, 1: str of all words
+            t_id = topic_i[0]
+            t_words_str = topic_i[1]
+
+            t_words = t_words_str.split(" + ")
+            for a_t_word in t_words:
+                a_t_word_parts = a_t_word.split("*")
+                score = a_t_word_parts[0]
+                the_word = a_t_word_parts[1].replace('"','')
+                a_tab.append([t_id,the_word,score])
+
+        #create the str
+        res_str = ""
+
+        res_str = "topic,word,score" + "\n"
+        for a_row in a_tab:
+            for a_cell in a_row:
+                res_str = res_str + str(a_cell) +","
+            res_str = res_str[:-1] + "\n"
+
+        #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
 
         res_docs = {}
-        res_docs["3topics.txt"] = str(ldamodel.print_topics(num_topics=3, num_words=10))
-
+        res_docs["topics.txt"] = str(res_str)
+        res_csvs = {}
+        res_csvs["topics.csv"] = str(res_str)
 
         #The returned data must include a recognizable key and the data associated to it
         data_to_return["data"]["d-gen-text"] = res_docs
+        data_to_return["data"]["d-gen-table"] = res_csvs
         return data_to_return

@@ -16,20 +16,21 @@ class Data(object):
         data_class = None
         if data_value in self.data_index:
             data_class = self.data_index[data_value]
-            for a_file in files_list:
+            if files_list:
+                for a_file in files_list:
 
-                #open the file to read
-                if file_path:
-                    a_file = open(a_file,"r", encoding='utf-8', errors='ignore')
+                    #open the file to read
+                    if file_path:
+                        a_file = open(a_file,"r", encoding='utf-8', errors='ignore')
 
-                if data_class == 'text':
-                    document.append(self.process_text(a_file))
-                elif data_class == 'table':
-                    document.append(self.process_table(a_file))
+                    if data_class == 'text':
+                        document.append(self.process_text(a_file))
+                    elif data_class == 'table':
+                        document.append(self.process_table(a_file))
 
-                #close the file
-                if file_path:
-                    a_file.close()
+                    #close the file
+                    if file_path:
+                        a_file.close()
 
         return document
 

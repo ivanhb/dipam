@@ -112,6 +112,9 @@ input {
   background-color: #917442;
   margin-right:2px;
 }
+.timeline-block-inner.error-block{
+  background-color: #b32d00;
+}
 #timeline_container{
   position: absolute;
   display:inline-block;
@@ -149,9 +152,16 @@ input {
   border: #917442 solid 2px;
   width: 200px;
 }
-#btn_save_workflow, #btn_load_workflow{
-  border: #917442 solid 1px;
+
+#btn_load_workflow, #btn_save_workflow{
+  font-size: 16px;
+  border: transparent 1px;
+  color: #917442;
 }
+#btn_save_workflow{
+  margin-right: 15px;
+}
+
 
 #workflow_extra{
   top: 70px;
@@ -283,13 +293,10 @@ ul + label{
   color:white;
 }
 
-
-
 .dropdown{
   max-width: 250px;
   min-width: 200px;
 }
-
 
 #null_div{
   position: absolute;

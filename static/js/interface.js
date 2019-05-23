@@ -10,7 +10,7 @@ class dipam_interface {
               "ADD_TOOL_BTN": document.getElementById('add_tool'),
               "ADD_DATA_BTN": document.getElementById('add_data'),
               //undo-redo
-              "UNDO_REDO_CONTAINER": document.getElementById('undo_btn'),
+              "UNDO_REDO_CONTAINER": document.getElementById('diagram_undo_redo'),
               "UNDO_BTN": document.getElementById('undo_btn'),
               "REDO_BTN": document.getElementById('redo_btn'),
               //zoom
@@ -291,6 +291,7 @@ class dipam_interface {
             break;
           case 'save':
             $( "#"+dom_id).on('click', function() {
+              this.setAttribute("href","src/.data/workflow.json");
               interface_instance.reload_control_section(
                   diagram_instance.update_elem(
                     corresponding_elem.data.id,
@@ -634,20 +635,30 @@ class dipam_interface {
 
     function _disable_divs(instance,enable=false){
       var p_event = 'none';
-      var opacity_val = '0.6';
+      var opacity_val = '0.3';
       if (enable) {
         p_event = '';
         opacity_val = '';
       }
 
       instance.DOMS.DIAGRAM.CONTAINER.style["pointer-events"] = p_event;
-      instance.DOMS.DIAGRAM.CONTAINER.style["opacity"] = opacity_val;
+      //instance.DOMS.DIAGRAM.CONTAINER.style["opacity"] = opacity_val;
+      //set all single nodes style
+      var all_nodes = instance.DIAGRAM_INSTANCE_OBJ.get_nodes();
+      for (var i = 0; i < all_nodes.length; i++) {
+        all_nodes[i].style({"opacity" : opacity_val});
+      }
 
       instance.DOMS.DIAGRAM.EDITOR_CONTAINER.style["pointer-events"] = p_event;
-      instance.DOMS.DIAGRAM.EDITOR_CONTAINER.style["opacity"] = opacity_val;
+      //instance.DOMS.DIAGRAM.EDITOR_CONTAINER.style["opacity"] = opacity_val;
+      instance.DOMS.DIAGRAM.ADD_TOOL_BTN.style["opacity"] = opacity_val;
+      instance.DOMS.DIAGRAM.ADD_DATA_BTN.style["opacity"] = opacity_val;
 
-      instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["pointer-events"] = p_event;
-      instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["opacity"] = opacity_val;
+      //instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["pointer-events"] = p_event;
+      //instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["opacity"] = opacity_val;
+
+      instance.DOMS.DIAGRAM.UNDO_REDO_CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.DIAGRAM.UNDO_REDO_CONTAINER.style["opacity"] = opacity_val;
 
       instance.DOMS.CONTROL.NAV_CONTAINER.style["pointer-events"] = p_event;
       instance.DOMS.CONTROL.NAV_CONTAINER.style["opacity"] = opacity_val;
@@ -698,14 +709,20 @@ class dipam_interface {
               contentType: false,
               type: 'POST',
               success: function(data) {
-                    instance.add_timeline_block(w_elem.id);
-                    //process next node
-                    if (i == workflow_to_process.length - 1) {
-                      console.log("Done All !!");
-                      instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
-                      instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process done";
+                    console.log(data)
+                    if (data.startsWith("Error:")) {
+                      instance.add_timeline_block(w_elem.id, true);
                     }else {
-                      _process_workflow(instance,i+1);
+                      instance.in_light_node(w_elem.id);
+                      instance.add_timeline_block(w_elem.id);
+                      //process next node
+                      if (i == workflow_to_process.length - 1) {
+                        console.log("Done All !!");
+                        instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
+                        instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process done";
+                      }else {
+                        _process_workflow(instance,i+1);
+                      }
                     }
                 }
             });
@@ -738,23 +755,36 @@ class dipam_interface {
       }
   }
 
+  in_light_node(node_id){
+    this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(node_id).style({"opacity": "1"})
+  }
+
   //add a html block to timeline and update percentage
-  add_timeline_block(node_id){
+  add_timeline_block(node_id, is_error = false){
+    var error_class = "";
+    if (is_error) {
+      error_class = "error-block"
+    }
     console.log("Add Block !");
     //this.TIMELINE_TEXT.innerHTML = "Workflow Done";
     var block_to_add = document.createElement("div");
-    block_to_add.setAttribute("class", "timeline-block-inner");
+    block_to_add.setAttribute("class", "timeline-block-inner "+error_class);
     block_to_add.setAttribute("data-value", node_id);
 
     var starting_block = this.DOMS.WORKFLOW.START_BLOCK;
     var found = false;
-    for (var i = 0; i < document.getElementsByClassName('timeline-block-inner').length; i++) {
-      if(document.getElementsByClassName('timeline-block-inner')[i].getAttribute('data-value') == node_id){
+
+    var dom_elems = document.getElementsByClassName('timeline-block-inner');
+    var last_dom = this.DOMS.WORKFLOW.START_BLOCK;
+    for (var i = 0; i < dom_elems.length; i++) {
+      last_dom = dom_elems[i];
+      if(last_dom.getAttribute('data-value') == node_id){
         found = true;
       }
     }
     if (!found) {
-      _insert_after(block_to_add,this.DOMS.WORKFLOW.START_BLOCK);
+      //_insert_after(block_to_add,this.DOMS.WORKFLOW.START_BLOCK);
+      _insert_after(block_to_add,last_dom);
     }
 
     function _insert_after(newNode, referenceNode) {
@@ -860,12 +890,15 @@ class dipam_interface {
         }
     });
 
+    /*
     $( "#"+this.DOMS.WORKFLOW.SAVE_BTN.getAttribute('id')).on({
         click: function(e) {
           e.preventDefault();
-          interface_instance.click_save_workflow();
+          //interface_instance.click_save_workflow();
+          //this.setAttribute("href","src/.data/workflow.json");
         }
     });
+    */
 
     $( "#"+this.DOMS.WORKFLOW.LOAD_BTN.getAttribute('id')).on({
         click: function(e) {
