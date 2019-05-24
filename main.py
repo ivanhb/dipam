@@ -1,7 +1,6 @@
 
 import json
 import requests
-import urllib.parse as urlparse
 import re
 import csv
 import os
@@ -71,11 +70,11 @@ def save_workflow():
     jsdata = request.form['workflow_data']
     jsdata = json.loads(jsdata)
     path = request.form['path']
-    fname = request.form['name']
+    fname = "workflow.json"
     load_after = request.form['load']
 
     if (path==""):
-        path = "static/data/workflow/"
+        path = "src/.data/"
 
     new_filename = ""
     if fname == "":
@@ -96,10 +95,7 @@ def save_workflow():
     with open(path + new_filename, 'w') as outfile:
         json.dump(jsdata, outfile)
 
-    if load_after == "on":
-        return redirect(url_for('index'))
-    else:
-        return "Save done !"
+    return "Save done !"
 
 
 @app.route('/loadworkflow', methods = ['POST'])

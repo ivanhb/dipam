@@ -749,5 +749,8 @@ class dipam_diagram {
   zoom_out(){
     this.cy.zoom(this.cy.zoom() - 0.1);
   }
+  fit_diagram(){
+    this.cy.fit();
+  }
 
 }

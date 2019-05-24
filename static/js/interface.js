@@ -29,6 +29,7 @@ class dipam_interface {
               //buttons
               "RUN_BTN": document.getElementById('btn_run_workflow'),
               "SAVE_BTN": document.getElementById('btn_save_workflow'),
+              "SAVE_BTN_DOWNLOAD": document.getElementById('btn_save_workflow_a'),
               "LOAD_BTN": document.getElementById('btn_load_workflow'),
               //timeline
               "TIMELINE_CONTAINER": document.getElementById('timeline_container'),
@@ -549,73 +550,6 @@ class dipam_interface {
       return res_value;
     }
 
-  click_save_workflow(){
-
-    var interface_instance = this;
-    var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-    var diagram_cy = this.DIAGRAM_INSTANCE_CY;
-
-    var workflow_extra_container = this.DOMS.WORKFLOW.EXTRA_CONTAINER;
-
-    workflow_extra_container.style.visibility = 'visible';
-    workflow_extra_container.innerHTML = _save_section();
-
-    $('#btn_dir_select').on({
-        click: function(e) {
-          e.preventDefault();
-          $('#file_to_load').trigger('click');
-        }
-    });
-
-    $('#dir_to_save_in').on({
-        change: function(e) {
-          console.log($('#dir_to_save_in')[0]);
-        }
-    });
-
-    $('#btn_cancel_save').on({
-        click: function(e) {
-          workflow_extra_container.innerHTML =  "";
-          workflow_extra_container.style.visibility = 'hidden';
-        }
-    });
-
-    $('#btn_apply_save').on({
-        click: function(e) {
-          var input_text = document.getElementById("input_workflow_save_name").getAttribute("data-att-value");
-          console.log(input_text);
-          if ((input_text != "" ) && (input_text != null)){
-            var workflow_data = diagram_instance.get_workflow_data();
-            $.post( "/saveworkflow", {
-              workflow_data: JSON.stringify(workflow_data),
-              path: "",
-              name: input_text,
-              load: "off"
-            });
-            interface_instance.DOMS.WORKFLOW.EXTRA_CONTAINER.style.visibility = 'hidden';
-          }else {
-            //params not ok
-          }
-        }
-    });
-
-    function _save_section(){
-      return `<div class="workflow-section-body">
-                  <div class="input-group">
-                        <button id="btn_dir_select" type="button" value="" class="btn btn-default">Choose directory</button>
-                        <input id="dir_to_save_in" type="file" webkitdirectory mozdirectory msdirectory odirectory directory multiple="multiple" style="display: none;"></input>
-                  </div>
-                  <div class="input-group">
-                        <div class="input-group-prepend"><label class="input-group-text">Choose a name: </label></div>
-                        <input id="input_workflow_save_name" type="text"></input>
-                  </div>
-              </div>
-              <div class="workflow-section-foot">
-                    <button id="btn_cancel_save" type="button" value="" class="btn btn-default">Cancel</button>
-                    <button id="btn_apply_save" type="button" value="" class="btn btn-default">Save workflow</button>
-              </div>`;
-    }
-  }
   click_load_workflow(){
 
   }
@@ -921,21 +855,31 @@ class dipam_interface {
     $( "#"+this.DOMS.WORKFLOW.RUN_BTN.getAttribute('id')).on({
         click: function(e) {
               e.preventDefault();
+              diagram_instance.fit_diagram();
               interface_instance.click_run_workflow();
               var status = this.value;
               setTimeout(function(){ interface_instance.handle_workflow(status,diagram_instance.build_nodes_topological_ordering()); }, 2000);
         }
     });
 
-    /*
+
     $( "#"+this.DOMS.WORKFLOW.SAVE_BTN.getAttribute('id')).on({
         click: function(e) {
           e.preventDefault();
           //interface_instance.click_save_workflow();
-          //this.setAttribute("href","src/.data/workflow.json");
+          var workflow_data = diagram_instance.get_workflow_data();
+          $.post( "/saveworkflow", {
+            workflow_data: JSON.stringify(workflow_data),
+            path: "",
+            name: "",
+            load: "off"
+          }).done(function() {
+            interface_instance.DOMS.WORKFLOW.SAVE_BTN_DOWNLOAD.click();
+          });
+
         }
     });
-    */
+
 
     $( "#"+this.DOMS.WORKFLOW.LOAD_BTN.getAttribute('id')).on({
         click: function(e) {
