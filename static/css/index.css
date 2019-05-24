@@ -103,15 +103,41 @@ input {
   font-size: 20px;
   vertical-align: middle;
   padding-top: 100px;
+
 }
 .timeline-block-inner{
   display:inline-block;
-  width:40px;
-  height:40px;
+  min-width:55px;
+  min-height:50px;
   vertical-align: middle;
-  background-color: #917442;
+  border: solid 2px #917442;
   margin-right:2px;
 }
+.timeline-block-inner.tool-block{
+  background-color: #eda43a;
+}
+.timeline-block-inner.data-block{
+  background-color: #84bdd7;
+}
+
+.timeline-block-inner .inner-timeline-block{
+  vertical-align: middle;
+  background-color: #917442;
+  font-size: 20px;
+  padding: 2px;
+  text-align: center;
+  ;
+}
+.timeline-block-inner .inner-timeline-block a{
+ color: wheat;
+}
+.timeline-block-inner .inner-timeline-block a:hover,
+.timeline-block-inner .inner-timeline-block a:focus {
+  color: wheat;
+  border-bottom: transparent;
+}
+
+
 .timeline-block-inner.error-block{
   background-color: #b32d00;
 }

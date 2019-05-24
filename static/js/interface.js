@@ -714,10 +714,10 @@ class dipam_interface {
               type: 'POST',
               success: function(data) {
                     if (data.startsWith("Error:")) {
-                      instance.add_timeline_block(w_elem.id, true);
+                      instance.add_timeline_block(w_elem.id, w_elem.type, true);
                     }else {
                       instance.in_light_node(w_elem.id);
-                      instance.add_timeline_block(w_elem.id);
+                      instance.add_timeline_block(w_elem.id, w_elem.type);
                       //process next node
                       if (i == workflow_to_process.length - 1) {
                         console.log("Done All !!");
@@ -764,12 +764,19 @@ class dipam_interface {
 
       var dom_elems = document.getElementsByClassName('timeline-block-inner');
       var last_dom = this.DOMS.WORKFLOW.START_BLOCK;
-      for (var i = 0; i < dom_elems.length; i++) {
-        last_dom = dom_elems[i];
+      for (var j = 0; j < dom_elems.length; j++) {
+        last_dom = dom_elems[j];
         if(last_dom.getAttribute('data-value') == node_id){
-          last_dom.setAttribute("href","/download/"+node_id);
           break;
         }
+      }
+
+      /*switch according to the terminal tool value*/
+      switch (terminals[i].value) {
+        case "t-save-files":
+          last_dom.innerHTML = "<div class='inner-timeline-block'><a href='"+"/download/"+node_id+"' target='_blank'>Save</a></div>";
+          break;
+        default:
       }
     }
   }
@@ -779,15 +786,15 @@ class dipam_interface {
   }
 
   //add a html block to timeline and update percentage
-  add_timeline_block(node_id, is_error = false){
-    var error_class = "";
+  add_timeline_block(node_id, node_type, is_error = false){
+    var extra_class = node_type+"-block";
     if (is_error) {
-      error_class = "error-block"
+      extra_class = "error-block"
     }
     console.log("Add Block !");
     //this.TIMELINE_TEXT.innerHTML = "Workflow Done";
     var block_to_add = document.createElement("div");
-    block_to_add.setAttribute("class", "timeline-block-inner "+error_class);
+    block_to_add.setAttribute("class", "timeline-block-inner "+extra_class);
     block_to_add.setAttribute("data-value", node_id);
 
     var starting_block = this.DOMS.WORKFLOW.START_BLOCK;

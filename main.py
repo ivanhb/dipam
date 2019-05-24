@@ -5,6 +5,8 @@ import urllib.parse as urlparse
 import re
 import csv
 import os
+from os.path import basename
+import zipfile
 
 from src import tool
 from src import data
@@ -41,15 +43,28 @@ def index():
     return render_template('index.html', workflow=workflow_data, config=CONFIG_DATA)
 
 @app.route("/download/<id>")
-def download_workflow(id):
+def download(id):
+
+    def zipdir(path, ziph):
+        # ziph is zipfile handle
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                abs_path = os.path.join(root, file)
+                if not abs_path.endswith(".zip"):
+                    ziph.write(abs_path,basename(abs_path))
+
     try:
         if(id == "workflow"):
             return send_file("src/.data/workflow.json", as_attachment=True)
         else:
-            return send_file("src/.process-temp/"+id+"/*", as_attachment=True)
+            a_zip_dir = "src/.process-temp/"+id+"/"
+            zipf = zipfile.ZipFile(a_zip_dir+"/"+id+".zip", 'w', zipfile.ZIP_DEFLATED)
+            zipdir(a_zip_dir, zipf)
+            zipf.close()
+
+            return send_file(a_zip_dir+"/"+id+".zip", as_attachment=True)
     except Exception as e:
-        self.log.exception(e)
-        self.Error(400)
+        return e
 
 @app.route('/saveworkflow', methods = ['POST'])
 def save_workflow():
@@ -227,7 +242,6 @@ def process():
 
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
     return "Success:Processing done !"
-
 
 if __name__ == '__main__':
     #app.config['TEMPLATES_AUTO_RELOAD'] = True
