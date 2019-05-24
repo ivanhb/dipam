@@ -183,6 +183,7 @@ input {
   font-size: 16px;
   border: transparent 1px;
   color: #917442;
+  background-color: transparent;
 }
 #btn_save_workflow{
   margin-right: 15px;
@@ -331,4 +332,23 @@ ul + label{
   top: 390px;
   border-right: dotted 4px #917442;
   z-index: -1;
+}
+
+.timeline-block-inner .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: #917442;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+
+  /* Position the tooltip */
+  position: absolute;
+  top: 105%;
+  z-index: 1;
+}
+
+.timeline-block-inner:hover .tooltiptext {
+  visibility: visible;
 }

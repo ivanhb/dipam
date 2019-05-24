@@ -155,7 +155,7 @@ class dipam_interface {
       //now the foot buttons
       var param_btn = {
         'edit': {intro_lbl: 'Edit properties'},
-        'remove': {intro_lbl: 'Remove properties'},
+        'remove': {intro_lbl: 'Remove element'},
       };
       res_str_html = res_str_html + '<div id="control_foot">';
       for (var i = 0; i < foot_buttons.length; i++) {
@@ -714,10 +714,10 @@ class dipam_interface {
               type: 'POST',
               success: function(data) {
                     if (data.startsWith("Error:")) {
-                      instance.add_timeline_block(w_elem.id, w_elem.type, true);
+                      instance.add_timeline_block(w_elem.id, w_elem.type, w_elem.name, true);
                     }else {
                       instance.in_light_node(w_elem.id);
-                      instance.add_timeline_block(w_elem.id, w_elem.type);
+                      instance.add_timeline_block(w_elem.id, w_elem.type, w_elem.name);
                       //process next node
                       if (i == workflow_to_process.length - 1) {
                         console.log("Done All !!");
@@ -774,7 +774,7 @@ class dipam_interface {
       /*switch according to the terminal tool value*/
       switch (terminals[i].value) {
         case "t-save-files":
-          last_dom.innerHTML = "<div class='inner-timeline-block'><a href='"+"/download/"+node_id+"' target='_blank'>Save</a></div>";
+          last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'><a href='"+"/download/"+node_id+"' target='_blank'>Save</a></div>";
           break;
         default:
       }
@@ -786,7 +786,7 @@ class dipam_interface {
   }
 
   //add a html block to timeline and update percentage
-  add_timeline_block(node_id, node_type, is_error = false){
+  add_timeline_block(node_id, node_type, node_name, is_error = false){
     var extra_class = node_type+"-block";
     if (is_error) {
       extra_class = "error-block"
@@ -796,6 +796,8 @@ class dipam_interface {
     var block_to_add = document.createElement("div");
     block_to_add.setAttribute("class", "timeline-block-inner "+extra_class);
     block_to_add.setAttribute("data-value", node_id);
+    block_to_add.innerHTML = '<span class="tooltiptext">'+node_name+'</span>';
+
 
     var starting_block = this.DOMS.WORKFLOW.START_BLOCK;
     var found = false;
