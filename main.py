@@ -211,7 +211,7 @@ def process():
             if "error" in data_entries[0]:
                 an_error = data_entries[0]["error"]
                 k_error = next(iter(an_error))
-                return "Error:"+an_error[k_error]
+                return "Error: "+an_error[k_error]
 
         #Index the new Tool and its output data
         elem_index = dipam_linker.index_elem(posted_data["id"])

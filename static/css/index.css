@@ -105,10 +105,12 @@ input {
   padding-top: 100px;
 
 }
-.timeline-block-inner{
+.timeline-block-inner, .timeline-block-inner-text{
   display:inline-block;
   min-width:55px;
   min-height:50px;
+  max-width:350px;
+  max-height:50px;
   vertical-align: middle;
   border: solid 2px #917442;
   margin-right:2px;
@@ -119,21 +121,26 @@ input {
 .timeline-block-inner.data-block{
   background-color: #84bdd7;
 }
+.timeline-block-inner.text-block{
+  border: none;
+}
+.timeline-block-inner.text-block label{
+  padding-top: 5%;
+}
 
-.timeline-block-inner .inner-timeline-block{
+.timeline-block-inner .inner-timeline-block {
   vertical-align: middle;
-  background-color: #917442;
+  border-bottom: dashed 2px #917442;
   font-size: 20px;
   padding: 2px;
   text-align: center;
-  ;
+
 }
 .timeline-block-inner .inner-timeline-block a{
- color: wheat;
+ color: #7a6238;
 }
 .timeline-block-inner .inner-timeline-block a:hover,
 .timeline-block-inner .inner-timeline-block a:focus {
-  color: wheat;
   border-bottom: transparent;
 }
 
@@ -180,13 +187,20 @@ input {
 }
 
 #btn_load_workflow, #btn_save_workflow{
-  font-size: 16px;
+  font-size: 18px;
   border: transparent 1px;
   color: #917442;
   background-color: transparent;
+  text-decoration: none;
 }
 #btn_save_workflow{
   margin-right: 15px;
+}
+#btn_save_workflow:hover{
+  color: black;
+}
+#btn_load_workflow:hover{
+  color: black;
 }
 
 
@@ -295,11 +309,11 @@ ul + label{
 }
 #diagram_undo_redo *{
   padding-top: 10px;
+  text-decoration: none;
 }
-#diagram_undo_redo > .active > a,
-#diagram_undo_redo > .active > a:hover,
-#diagram_undo_redo > .active > a:focus {
-  border-bottom: solid 2px #82683b;
+#diagram_undo_redo *:hover,
+#diagram_undo_redo *:focus {
+  color: black;
 }
 
 #diagram_zoom{
@@ -318,6 +332,10 @@ ul + label{
 #diagram_zoom *{
   margin: 0 auto;
   color:white;
+  text-decoration: none;
+}
+#diagram_zoom *:hover{
+  color: black;
 }
 
 .dropdown{

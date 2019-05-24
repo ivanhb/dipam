@@ -62,7 +62,7 @@ class TextAnalysis(object):
         except ValueError:
             res_err = {"data":{}}
             res_err["data"]["error"] = {}
-            res_err["data"]["error"]["ValueError"] = "No/Noncompatible inputs were given to the LDA algorithm"
+            res_err["data"]["error"]["ValueError"] = "No or Incompatible data have been given as input to the LDA algorithm"
             return res_err
 
         res = ldamodel.print_topics(num_topics=3, num_words=10)

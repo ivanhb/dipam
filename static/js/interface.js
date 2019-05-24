@@ -714,7 +714,7 @@ class dipam_interface {
               type: 'POST',
               success: function(data) {
                     if (data.startsWith("Error:")) {
-                      instance.add_timeline_block(w_elem.id, w_elem.type, w_elem.name, true);
+                      instance.add_timeline_block(w_elem.id, w_elem.type, w_elem.name, true, data);
                     }else {
                       instance.in_light_node(w_elem.id);
                       instance.add_timeline_block(w_elem.id, w_elem.type, w_elem.name);
@@ -786,7 +786,7 @@ class dipam_interface {
   }
 
   //add a html block to timeline and update percentage
-  add_timeline_block(node_id, node_type, node_name, is_error = false){
+  add_timeline_block(node_id, node_type, node_name, is_error = false, error_msg = ""){
     var extra_class = node_type+"-block";
     if (is_error) {
       extra_class = "error-block"
@@ -813,7 +813,16 @@ class dipam_interface {
     if (!found) {
       //_insert_after(block_to_add,this.DOMS.WORKFLOW.START_BLOCK);
       _insert_after(block_to_add,last_dom);
+      if (is_error) {
+        var err_block_msg = document.createElement("div");
+        err_block_msg.setAttribute("class", "timeline-block-inner text-block");
+        err_block_msg.setAttribute("data-value", node_id);
+        err_block_msg.innerHTML = "<label>"+error_msg+"</label>";
+        _insert_after(err_block_msg,block_to_add);
+      }
     }
+
+
 
     function _insert_after(newNode, referenceNode) {
       referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
