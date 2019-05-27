@@ -14,11 +14,11 @@ class Tool(object):
     # <node>: The corresponding node
     # <temp_dir>: the temporal processing directory path
     # <param>: in case of additional parameters for the method called
-    def run(self, node, input_files, param = None):
-        elem_id = node['id']
-        elem_value = node['value']
-        method = node['class']
-        output_data = node['output[]']
+    def run(self, n_data, n_workflow, n_graph, input_files, param = None):
+        elem_id = n_data['id']
+        elem_value = n_data['value']
+        method = n_workflow['class']
+        output_data = n_workflow['output']
 
         res = None
         if self.TOOL_HANDLER.is_handled(elem_value):

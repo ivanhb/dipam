@@ -110,50 +110,46 @@ class dipam_interface {
         //check is not one of the fixed attributes
         if(fixed_elems.indexOf(k_attribute) == -1){
 
-          var att_val = elem.data[k_attribute];
-          //set the temp value of the section just built
-          this.set_dipam_temp_val(k_attribute,att_val);
-
           //check if is a must-attribute
           switch (k_attribute) {
             case 'name':
               //is an input-box
+              this.set_dipam_temp_val(k_attribute,elem.data.name);
               a_dom_str = _build_a_dom("input-text", elem, k_attribute, {intro_lbl: "Name:"});
               break;
             case 'value':
               //is a dropdown
+              this.set_dipam_temp_val(k_attribute,elem.data.value);
               var res_elem_type = diagram_instance.get_conf_elems(elem.data.type, ['[KEY]','label']);
               a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: "Type:", value: res_elem_type['[KEY]'], label: res_elem_type['label']});
               break;
+
             case 'param':
               //is a param
               var all_param_doms_str = "";
-              for (var k_param in elem.data[k_attribute]) {
-                    console.log(k_param);
+              for (var k_param in elem.data.param) {
                     var para_obj = diagram_instance.get_conf_att("param",k_param, null);
                     var para_val = para_obj.value;
                     if (para_val != -1) {
-
-                        //is a param attribute
                         if (Array.isArray(para_val)) {
                             if (para_val.length == 2) {
                               //is a switch
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("switch", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("switch", elem, k_param, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label}, true);
                             }else if (para_val.length > 2) {
                               //is a dropdown
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-value", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-value", elem, k_param, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label}, true);
                             }
                         }else if (typeof para_val == "string") {
                               //is an input-box
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("input-text", elem, k_attribute, {intro_lbl: para_obj.label, value:""});
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("input-text", elem, k_param, {intro_lbl: para_obj.label, value:""}, true);
                         }else if (para_val instanceof Object) {
                               //is an input-file
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-file", elem, k_attribute, {intro_lbl: para_obj.label, label_handler: true});
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-file", elem, k_param, {intro_lbl: para_obj.label, label_handler: true}, true);
                         }
+                        this.set_dipam_temp_val(k_param,elem.data.param[k_param]);
                    }
               }
               a_dom_str = all_param_doms_str;
-
           }
           res_str_html = res_str_html + a_dom_str;
         }
@@ -174,10 +170,13 @@ class dipam_interface {
       res_str_html = res_str_html + '</div>';
       return res_str_html;
 
-      function _build_a_dom(dom_tag, elem, k_attribute, param = {}){
+      function _build_a_dom(dom_tag, elem, k_attribute, param = {}, is_param = false){
         var a_dom_id = dom_tag;
         var str_html = "";
         var dom_value = elem.data[k_attribute];
+        if (is_param) {
+          dom_value = elem.data.param[k_attribute];
+        }
 
         var extra_dom_label = dom_value;
         if ('label_handler' in param) {
@@ -305,7 +304,6 @@ class dipam_interface {
                     corresponding_elem.data.id,
                     interface_instance.editing("save"))
                   );
-              console.log(interface_instance.temp_dipam_value);
             });
             break;
           //Remove an element from the CY
@@ -512,6 +510,7 @@ class dipam_interface {
             break;
           case 'save':
             editdom.setAttribute('value','editoff');
+            console.log(this.temp_dipam_value);
             res = this.save();
             console.log(res);
             break;
@@ -522,6 +521,7 @@ class dipam_interface {
     }
 
     reload_control_section(new_elem = null){
+      console.log(new_elem);
 
       var active_nav = this.get_active_nav();
 
@@ -553,7 +553,6 @@ class dipam_interface {
         var ele_target_att = obj_dom.getAttribute('data-att-value');
         res_value[ele_target_att] = this.get_dipam_temp_val(ele_target_att);
       }
-      console.log(res_value);
       return res_value;
     }
 
@@ -643,6 +642,10 @@ class dipam_interface {
 
             //call the server
             var data_to_post = _gen_form_data(w_elem);
+            for (var v_p of data_to_post) {
+              console.log("POST:",v_p);
+            }
+
 
             $.ajax({
               url: "/process",
@@ -680,35 +683,35 @@ class dipam_interface {
                 3) The PARAM-ATT: e.g: 'p-file'
                 4) The GRAPH-ATT: e.g: 'position'
               */
-              for (var a_k in data) {
+              for (var an_att in elem_data) {
+                  var list_att = {};
+                  list_att[an_att] = elem_data[an_att];
 
-                  switch (a_k) {
-                    case 'workflow':
+                  if ((an_att == 'workflow') || (an_att == 'param') || (an_att == 'graph')) {
+                    list_att = elem_data[an_att];
+                    for (var v_att in elem_data[an_att]) {
+                      post_data.append(an_att+'[]', v_att);
+                    }
+                  }
 
-                        break;
-                    case 'param':
-
-                        break;
-                    case 'graph':
-
-                        break;
-                    default:
-                        if (a_k == 'p-file') {
-                          Array.prototype.forEach.call(elem_data[a_k], function(file,index) { post_data.append(a_k+'[]', file);});
-                        }else {
-                          if (Array.isArray(elem_data[a_k])) {
-                            //form_data.append(a_k, JSON.stringify(w_elem[a_k]));
-                            // Append files to files array
-                            for (let i = 0; i < elem_data[a_k].length; i++) {
-                              let elem_i = elem_data[a_k][i];
-                              post_data.append(a_k+'[]', elem_i);
-                            }
-                          }else if (elem_data[a_k] instanceof Object) {
-                            post_data.append(a_k, JSON.stringify(w_elem[a_k]));
-                          }else {
-                            post_data.append(a_k, elem_data[a_k]);
-                          }
+                  for (var a_k in list_att) {
+                    var val_of_att = list_att[a_k];
+                    if (a_k == 'p-file') {
+                      Array.prototype.forEach.call(val_of_att, function(file,index) { post_data.append(a_k+'[]', file);});
+                    }else {
+                      if (Array.isArray(val_of_att)) {
+                        //form_data.append(a_k, JSON.stringify(w_elem[a_k]));
+                        // Append files to files array
+                        for (let i = 0; i < val_of_att.length; i++) {
+                          let elem_i = val_of_att[i];
+                          post_data.append(a_k+'[]', elem_i);
                         }
+                      }else if (val_of_att instanceof Object) {
+                        post_data.append(a_k, JSON.stringify(w_elem[a_k]));
+                      }else {
+                        post_data.append(a_k, val_of_att);
+                      }
+                    }
                   }
               }
               return post_data;

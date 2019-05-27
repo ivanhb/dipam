@@ -439,11 +439,16 @@ class dipam_diagram {
     for (var k_data in data) {
       if (d_node._private.data.hasOwnProperty(k_data)) {
         d_node._private.data[k_data] = data[k_data];
+      }else if ('param' in d_node._private.data) {
+        //its a param
+        if (d_node._private.data.param.hasOwnProperty(k_data)) {
+          d_node._private.data.param[k_data] = data[k_data];
+        }
       }
     }
 
     // (2) Its style in the cy diagram
-    console.log(this.adapt_style(d_node));
+    this.adapt_style(d_node);
 
     // (3) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
     this.check_node_compatibility(d_node, true);

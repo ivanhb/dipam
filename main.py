@@ -112,94 +112,125 @@ def load_workflow():
 
 @app.route('/process', methods = ['POST'])
 def process():
-    posted_data = {
-                "id": None,
-                'type': None,
-                'value': None,
-                'name': None,
-                'input[]': None,
-                'output[]': None,
-                'compatible_input[]': None,
-                'class': None,
-                #the above are must attributes
-                'param': {}
-    };
 
     def write_file(path, file_value):
         with open(path, 'w') as d_file:
             d_file.write(file_value)
         return path
 
-    #########
-    # Populate the 'posted_data' variable
-    #########
+    ## FIRST POPULATE THE INNER VARS
+    ################################
+
+    elem_must_att = {
+                "id": None,
+                'type': None,
+                'value': None,
+                'name': None,
+    }
+    elem_workflow_att = {}
+    elem_graph_att = {}
+    elem_param_att = {}
+
+    if 'workflow[]' in request.form:
+        for i_elem in request.form.getlist('workflow[]'):
+            elem_workflow_att[i_elem] = None
+    if 'graph[]' in request.form:
+        for i_elem in request.form.getlist('graph[]'):
+            elem_graph_att[i_elem] = None
+    if 'param[]' in request.form:
+        for i_elem in request.form.getlist('param[]'):
+            elem_param_att[i_elem] = None
+
+
+    def populate_index(normal_k, val):
+        #Check if is a must att
+        if normal_k in elem_must_att:
+            elem_must_att[normal_k] = val
+        #Check if is a workflow att
+        elif normal_k in elem_workflow_att:
+            elem_workflow_att[normal_k] = val
+        #Check if is a graph att
+        elif normal_k in elem_graph_att:
+            elem_graph_att[normal_k] = val
+        #Check if is a param att
+        elif normal_k in elem_param_att:
+            elem_param_att[normal_k] = val
+        else:
+            return -1
+        return val
+
+
+    #Check ordinary form values first
     for k in request.form:
-        #files are treated later
-        if not k.startswith('p-file'):
+        val = request.form[k]
+        if k.endswith('[]'):
+            val = []
+            val = request.form.getlist(k)
+        populate_index(k.replace("[]",""), val)
 
-            val = request.form[k]
-            if k.endswith('[]'):
-                val = []
-                val = request.form.getlist(k)
-
-            if(k in posted_data):
-                posted_data[k] = val
-            else:
-                # is a PARAM
-                posted_data["param"][k] = val
-
-
-    #check if also files have been uploaded
-    #this can happen only for 'data' nodes
-    for f_k in request.files:
-        posted_data["param"][f_k] = request.files.getlist(f_k)
+    #Check if also files have been uploaded
+    for k in request.files:
+        val = request.files.getlist(k)
+        normal_k = k
+        normal_k = normal_k.replace("[]","")
+        populate_index(normal_k, val)
 
 
-    #########
-    # Process the <posted_data>
-    #
+    #print(elem_must_att, elem_workflow_att, elem_graph_att, elem_param_att)
+
+    ## PROCESS THE POSTED ELEMENT
+    ################################
+
     # If is a Tool:
     #   check all the input nodes
     #   take only the compatible data from all the nodes
     #########
-    elem_id = posted_data["id"]
-    elem_value = posted_data["value"]
-    elem_class = posted_data["class"]
+    elem_id = elem_must_att["id"]
+    elem_value = elem_must_att["value"]
+    elem_class = elem_workflow_att["class"]
     elem_index = None
     data_entries = []
 
-    if posted_data["type"] == "tool":
+    if elem_must_att["type"] == "tool":
 
         input_files = {}
-        for comp_input in posted_data["compatible_input[]"]:
-            input_files[comp_input] = []
+        if elem_workflow_att["compatible_input"]:
+            for comp_input in elem_workflow_att["compatible_input"]:
+                input_files[comp_input] = []
 
-        for id_input in posted_data['input[]']:
+        if elem_workflow_att["input"]:
+            for id_input in elem_workflow_att['input']:
 
-            #is a data file -> Take it from the corpus (Its data is suitable, DIPAM does this on ClientSide)
-            if id_input in corpus:
-                d_value = next(iter(corpus[id_input].items()))[0]
-                if d_value in input_files:
-                    input_files[d_value].extend(corpus[id_input][d_value]["files"])
+                #is a data file -> Take it from the corpus (Its data is suitable, DIPAM does this on ClientSide)
+                if id_input in corpus:
+                    d_value = next(iter(corpus[id_input].items()))[0]
+                    if d_value in input_files:
+                        input_files[d_value].extend(corpus[id_input][d_value]["files"])
 
-            #is a tool input -> check the outputs compatible with my inputs
-            else:
-                #ask the linker for its link object
-                index_elem = dipam_linker.get_elem(id_input)
+                #is a tool input -> check the outputs compatible with my inputs
+                else:
+                    #ask the linker for its link object
+                    index_elem = dipam_linker.get_elem(id_input)
 
-                if index_elem != -1:
-                    #check if the input node have compatible data i can take
-                    set_of_files = {}
-                    for comp_input in input_files:
-                        if comp_input in index_elem:
-                            index_elem_data = index_elem[comp_input]
-                            #call the data handler to process this type of inputs
-                            for file_k in index_elem_data:
-                                file_path = BASE_PATH+"/"+str(id_input)+"/"+str(file_k)
-                                input_files[comp_input].extend(dipam_data.handle([file_path], comp_input, file_path = True))
+                    if index_elem != -1:
+                        #check if the input node have compatible data i can take
+                        set_of_files = {}
+                        for comp_input in input_files:
+                            if comp_input in index_elem:
+                                index_elem_data = index_elem[comp_input]
+                                #call the data handler to process this type of inputs
+                                for file_k in index_elem_data:
+                                    file_path = BASE_PATH+"/"+str(id_input)+"/"+str(file_k)
+                                    input_files[comp_input].extend(dipam_data.handle([file_path], comp_input, file_path = True))
 
         #The data entries in this case are the output of the tool
-        data_entries = dipam_tool.run(posted_data, input_files, posted_data["param"])
+        data_entries = dipam_tool.run(
+            elem_must_att,
+            elem_workflow_att,
+            elem_graph_att,
+            input_files,
+            elem_param_att
+        )
 
         #check if there were errors
         if len(data_entries) > 0:
@@ -210,11 +241,11 @@ def process():
                 return "Error: "+an_error[k_error]
 
         #Index the new Tool and its output data
-        elem_index = dipam_linker.index_elem(posted_data["id"])
+        elem_index = dipam_linker.index_elem(elem_must_att["id"])
         if elem_index != None:
             for d_entry in data_entries:
                 #<d_entry> e.g: {'d-gen-text': {'files': ['1.txt', '2.txt']}}
-                dipam_linker.add_entry(posted_data["id"], d_entry)
+                dipam_linker.add_entry(elem_must_att["id"], d_entry)
                 #write entries in dir
                 if len(d_entry.keys()) > 0:
                     entry_item = next(iter(d_entry.items()))[0]
@@ -223,14 +254,14 @@ def process():
                         write_file(BASE_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
 
 
-    elif posted_data["type"] == "data":
+    elif elem_must_att["type"] == "data":
         #data_entries.append(dipam_linker.build_data_entry(posted_data))
         #The data entries in this case are the elements themselfs
         # we read directly these files and save them locally
         #add the corresponding files
         files = None;
-        if 'p-file[]' in posted_data["param"]:
-            files = posted_data["param"]['p-file[]']
+        if 'p-file' in elem_param_att:
+            files = elem_param_att['p-file']
 
         corpus[elem_id] = {}
         corpus[elem_id][elem_value] = {}
