@@ -273,30 +273,19 @@ class dipam_diagram {
   }
 
   get_conf_att(type = null, k_type = null, k_att = null){
-    if (type != null) {
-      if (type in this.CONFIG) {
-
-        if (k_type != null) {
-          if (k_type in this.CONFIG[type]) {
-
-            if (k_att != null) {
-              if (k_att in this.CONFIG[type][k_type]) {
+    if ((type != null) && (type in this.CONFIG)){
+        if ((k_type != null) && (k_type in this.CONFIG[type])) {
+            if ((k_att != null) && (k_att in this.CONFIG[type][k_type])) {
                 return this.CONFIG[type][k_type][k_att];
-              }
             }else {
               return this.CONFIG[type][k_type];
             }
-
-          }
         }else {
           return this.CONFIG[type];
         }
-
-      }
     }else {
       return this.CONFIG;
     }
-
     return -1;
   }
 
@@ -342,7 +331,9 @@ class dipam_diagram {
           node_obj.data.type = n_type;
           node_obj.data.value = type_value;
       }
+
       //check if I should add dynamic fields for the param associated
+      node_obj.data.param = {};
       var my_conf = this.CONFIG[n_type][type_value];
       if ('param' in this.CONFIG[n_type][type_value]) {
         for (var i = 0; i < my_conf.param.length; i++) {
@@ -355,7 +346,7 @@ class dipam_diagram {
               }else if (corresponding_param.value instanceof Object) {
                 corresponding_param_val = JSON.parse(JSON.stringify(corresponding_param.value));
               }
-              node_obj.data[p_key] = corresponding_param_val;
+              node_obj.data.param[p_key] = corresponding_param_val;
             }
           }
         }
@@ -678,7 +669,7 @@ class dipam_diagram {
     while (ids_queue.length > 0) {
       //count--; if (count == 0) {break;}
 
-      console.log(ids_queue.length, ids_queue, topological_ordered_list);
+      //console.log(ids_queue.length, ids_queue, topological_ordered_list);
       var n_id = ids_queue.shift();
       var a_node = this.get_gen_elem_by_id(n_id);
       var a_node_config = this.CONFIG[a_node._private.data.type][a_node._private.data.value];
@@ -695,10 +686,11 @@ class dipam_diagram {
 
       //var a_node_to_process = jQuery.extend(true, {}, a_node);
       var a_node_to_process = a_node._private.data;
-      a_node_to_process['class'] = a_node_class;
-      a_node_to_process['compatible_input'] = a_node_compatible_inputs;
-      a_node_to_process['input'] = this.get_nodes_att_values(this.get_source_nodes(a_node),'id');
-      a_node_to_process['output'] = this.get_nodes_att_values(this.get_target_nodes(a_node),'id');
+      a_node_to_process['workflow'] = {};
+      a_node_to_process.workflow['class'] = a_node_class;
+      a_node_to_process.workflow['compatible_input'] = a_node_compatible_inputs;
+      a_node_to_process.workflow['input'] = this.get_nodes_att_values(this.get_source_nodes(a_node),'id');
+      a_node_to_process.workflow['output'] = this.get_nodes_att_values(this.get_target_nodes(a_node),'id');
 
       if(!(_process_node(a_node_to_process))){
         ids_queue.push(n_id);
@@ -709,7 +701,7 @@ class dipam_diagram {
 
     function _process_node(a_node){
       var add_it = false;
-      var inputs = a_node.input;
+      var inputs = a_node.workflow.input;
 
       //check if all its inputs are inside the index_processed
       var all_processed = true;

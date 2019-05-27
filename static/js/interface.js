@@ -97,7 +97,7 @@ class dipam_interface {
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
       var res_str_html = "";
-      var fixed_elems = ['id','type','source','target'];
+      var fixed_elems = ['id','type','source','target','class','input','output','compatible_input'];
       var foot_buttons = ['edit', 'remove'];
       if (elem.data.type == 'diagram') {
         foot_buttons = ['edit'];
@@ -122,30 +122,37 @@ class dipam_interface {
               break;
             case 'value':
               //is a dropdown
-              var res_elem_type = this.DIAGRAM_INSTANCE_OBJ.get_conf_elems(elem.data.type, ['[KEY]','label']);
+              var res_elem_type = diagram_instance.get_conf_elems(elem.data.type, ['[KEY]','label']);
               a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: "Type:", value: res_elem_type['[KEY]'], label: res_elem_type['label']});
               break;
-            default:
+            case 'param':
               //is a param
-              var para_obj = diagram_instance.get_conf_att("param",k_attribute, null);
-              if (para_obj != -1) {
-                  //is a param attribute
-                  if (Array.isArray(att_val)) {
-                      if (att_val.length == 2) {
-                        //is a switch
-                        a_dom_str = _build_a_dom("switch", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
-                      }else if (att_val.length > 2) {
-                        //is a dropdown
-                        a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
-                      }
-                  }else if (typeof att_val == "string") {
-                        //is an input-box
-                        a_dom_str = _build_a_dom("input-text", elem, k_attribute, {intro_lbl: para_obj.label, value:""});
-                  }else if (att_val instanceof Object) {
-                        //is an input-file
-                        a_dom_str = _build_a_dom("select-file", elem, k_attribute, {intro_lbl: para_obj.label, label_handler: true});
-                  }
-             }
+              var all_param_doms_str = "";
+              for (var k_param in elem.data[k_attribute]) {
+                    console.log(k_param);
+                    var para_obj = diagram_instance.get_conf_att("param",k_param, null);
+                    var para_val = para_obj.value;
+                    if (para_val != -1) {
+
+                        //is a param attribute
+                        if (Array.isArray(para_val)) {
+                            if (para_val.length == 2) {
+                              //is a switch
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("switch", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
+                            }else if (para_val.length > 2) {
+                              //is a dropdown
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-value", elem, k_attribute, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label});
+                            }
+                        }else if (typeof para_val == "string") {
+                              //is an input-box
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("input-text", elem, k_attribute, {intro_lbl: para_obj.label, value:""});
+                        }else if (para_val instanceof Object) {
+                              //is an input-file
+                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-file", elem, k_attribute, {intro_lbl: para_obj.label, label_handler: true});
+                        }
+                   }
+              }
+              a_dom_str = all_param_doms_str;
 
           }
           res_str_html = res_str_html + a_dom_str;
@@ -630,15 +637,12 @@ class dipam_interface {
             var w_elem = workflow_to_process[i];
             console.log("Process: ", w_elem)
             //check if is a terminal
-            if (w_elem.output.length == 0) {
+            if (w_elem.workflow.output.length == 0) {
               terminals.push(w_elem);
             }
 
             //call the server
             var data_to_post = _gen_form_data(w_elem);
-            for (var dp of data_to_post){
-              if(dp[0] == 'p-file[]'){console.log(dp)};
-            }
 
             $.ajax({
               url: "/process",
@@ -666,26 +670,45 @@ class dipam_interface {
             });
 
             /*normalize the file list in a form type*/
-            function _gen_form_data(data){
+            function _gen_form_data(elem_data){
               var post_data = new FormData();
 
               /*The array and object elements should be normalized for Post*/
+              /* The node data are:
+                1) The MUST-ATT: id, name, value, type
+                2) The WORKFLOW-ATT: class, input, output, compatible_input
+                3) The PARAM-ATT: e.g: 'p-file'
+                4) The GRAPH-ATT: e.g: 'position'
+              */
               for (var a_k in data) {
-                  if (a_k == 'p-file') {
-                    Array.prototype.forEach.call(data[a_k], function(file,index) { post_data.append(a_k+'[]', file);});
-                  }else {
-                    if (Array.isArray(data[a_k])) {
-                      //form_data.append(a_k, JSON.stringify(w_elem[a_k]));
-                      // Append files to files array
-                      for (let i = 0; i < data[a_k].length; i++) {
-                        let elem_i = data[a_k][i];
-                        post_data.append(a_k+'[]', elem_i);
-                      }
-                    }else if (data[a_k] instanceof Object) {
-                      post_data.append(a_k, JSON.stringify(w_elem[a_k]));
-                    }else {
-                      post_data.append(a_k, data[a_k]);
-                    }
+
+                  switch (a_k) {
+                    case 'workflow':
+
+                        break;
+                    case 'param':
+
+                        break;
+                    case 'graph':
+
+                        break;
+                    default:
+                        if (a_k == 'p-file') {
+                          Array.prototype.forEach.call(elem_data[a_k], function(file,index) { post_data.append(a_k+'[]', file);});
+                        }else {
+                          if (Array.isArray(elem_data[a_k])) {
+                            //form_data.append(a_k, JSON.stringify(w_elem[a_k]));
+                            // Append files to files array
+                            for (let i = 0; i < elem_data[a_k].length; i++) {
+                              let elem_i = elem_data[a_k][i];
+                              post_data.append(a_k+'[]', elem_i);
+                            }
+                          }else if (elem_data[a_k] instanceof Object) {
+                            post_data.append(a_k, JSON.stringify(w_elem[a_k]));
+                          }else {
+                            post_data.append(a_k, elem_data[a_k]);
+                          }
+                        }
                   }
               }
               return post_data;
