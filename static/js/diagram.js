@@ -295,7 +295,7 @@ class dipam_diagram {
     this.cy.add(node_n);
     this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
   }
-  gen_node_data(n_type) {
+  gen_node_data(n_type, a_value = null) {
     var a_node_data = null;
     if (n_type in this.NODE_DATA) {
       a_node_data = JSON.parse(JSON.stringify(this.NODE_DATA[n_type]));
@@ -324,6 +324,9 @@ class dipam_diagram {
     //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {
       var type_value = Object.keys(this.CONFIG[n_type])[0];
+      if (a_value != null) {
+        type_value = a_value;
+      }
       if (Object.keys(this.CONFIG[n_type]).length > 0){
           var new_id = this.gen_id(n_type);
           node_obj.data.id = new_id;
@@ -351,7 +354,6 @@ class dipam_diagram {
           }
         }
       }
-    console.log(node_obj);
     return node_obj;
   }
 
@@ -421,8 +423,8 @@ class dipam_diagram {
   // (2) Its style in the cy diagram
   // (3) The realtime correlated items (Remove edges in case not suitable anymore)
   // (4) The real time compatible elements of the cy diagram
-  update_elem(id,data){
-
+  update_elem(id, type, value, data){
+    console.log("Data to uodate: ",data);
     //first check if it's the Diagram
     if (id == this.DIAGRAM_GENERAL.data.id) {
       for (var k_data in data) {
@@ -436,15 +438,24 @@ class dipam_diagram {
     var d_node = this.cy.getElementById(id);
 
     // (1) update it's data first
+    var value_updated = false;
     for (var k_data in data) {
-      if (d_node._private.data.hasOwnProperty(k_data)) {
-        d_node._private.data[k_data] = data[k_data];
-      }else if ('param' in d_node._private.data) {
-        //its a param
-        if (d_node._private.data.param.hasOwnProperty(k_data)) {
-          d_node._private.data.param[k_data] = data[k_data];
+      if (data[k_data] != -1) {
+        value_updated = (k_data == "value");
+        if (d_node._private.data.hasOwnProperty(k_data)) {
+          d_node._private.data[k_data] = data[k_data];
+        }else if ('param' in d_node._private.data) {
+          //its a param
+          if (d_node._private.data.param.hasOwnProperty(k_data)) {
+            d_node._private.data.param[k_data] = data[k_data];
+          }
         }
       }
+    }
+    if (value_updated) {
+        var new_node_data = this.gen_node_data(type, value).data;
+        d_node._private.data.value = data.value;
+        d_node._private.data.param = new_node_data.param;
     }
 
     // (2) Its style in the cy diagram

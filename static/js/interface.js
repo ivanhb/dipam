@@ -56,12 +56,12 @@ class dipam_interface {
 
       //The doms that should trigger events
       this.DOM_EVENT_ELEMS = {
-          'edit':{},
-          'remove': {},
-          'cancel': {},
-          'save': {},
-          'select-file': {},
-          'select-value': {}
+          'edit-trigger':{},
+          'remove-trigger': {},
+          'cancel-trigger': {},
+          'save-trigger': {},
+          'select-file-trigger': {},
+          'select-value-trigger': {}
       };
     }
 
@@ -74,7 +74,7 @@ class dipam_interface {
       }
       return -1;
     }
-    reset_dipam_temp_val(key, new_val){
+    reset_dipam_temp_val(){
       this.temp_dipam_value = {};
     }
 
@@ -171,7 +171,8 @@ class dipam_interface {
       return res_str_html;
 
       function _build_a_dom(dom_tag, elem, k_attribute, param = {}, is_param = false){
-        var a_dom_id = dom_tag;
+        var a_dom_id = k_attribute;
+        var a_dom_class = dom_tag + "-trigger";
         var str_html = "";
         var dom_value = elem.data[k_attribute];
         if (is_param) {
@@ -199,7 +200,7 @@ class dipam_interface {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+param.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` save-value custom-select" disabled>`+str_options+`</select>
                 </div>
                 `;
               break;
@@ -210,7 +211,7 @@ class dipam_interface {
                   <div class="input-group-prepend">
                     <label class="input-group-text">`+param.intro_lbl+`</label>
                   </div>
-                  <input data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value" value="`+dom_value+`" data-att-value="`+k_attribute+`" type="text" disabled></input>
+                  <input data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value" value="`+dom_value+`" data-att-value="`+k_attribute+`" class="`+a_dom_class+`" type="text" disabled></input>
                 </div>
                 `;
                 break;
@@ -225,7 +226,7 @@ class dipam_interface {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+param.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` save-value custom-select" disabled>`+str_options+`</select>
 
                       <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_file" style="display: none;" multiple="true"/>
                       <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
@@ -238,14 +239,14 @@ class dipam_interface {
             case 'edit':
                   str_html = str_html + `
                   <div class="foot-dom btn-edit">
-                  <button id="`+dom_tag+`" value="editoff" type="button" data-id="`+elem.data.id+`" class="btn btn-light">
+                  <button id="edit" value="editoff" type="button" data-id="`+elem.data.id+`" class="`+a_dom_class+` btn btn-light">
                   `+param.intro_lbl+`</button></div>`;
                   break;
 
             case 'remove':
                   str_html = str_html + `
                   <div class="foot-dom btn-remove">
-                  <button id="`+dom_tag+`" type="button" data-id="`+elem.data.id+`" class="btn btn-light">
+                  <button id="remove" type="button" data-id="`+elem.data.id+`" class="`+a_dom_class+` btn btn-light">
                   `+param.intro_lbl+`</button></div>`;
                   break;
 
@@ -272,43 +273,49 @@ class dipam_interface {
         elem = elem._private;
       }
       for (var k_dom_event in this.DOM_EVENT_ELEMS) {
-        var event_dom = document.getElementById(k_dom_event);
-        if (event_dom) {
-          this.set_a_dom_event(event_dom, elem, this.DOM_EVENT_ELEMS[k_dom_event]);
+        var list_dom_events = document.getElementsByClassName(k_dom_event);
+        for (var i = 0; i < list_dom_events.length; i++) {
+          this.set_a_dom_event(list_dom_events[i], k_dom_event, elem, this.DOM_EVENT_ELEMS[k_dom_event]);
         }
       }
     }
-    set_a_dom_event(event_dom, corresponding_elem = null, param = {}){
+    set_a_dom_event(event_dom, dom_class, corresponding_elem = null, param = {}){
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
       if ('_private' in corresponding_elem) {
         corresponding_elem = corresponding_elem._private;
       }
-      var dom_id = event_dom.getAttribute('id');
-      switch (dom_id) {
-          case 'edit':
-              $( "#"+dom_id).on('click', function() {
+
+      switch (dom_class) {
+          case 'edit-trigger':
+              $(event_dom).on('click', function() {
+                interface_instance.reset_dipam_temp_val();
                 interface_instance.editing();
               });
               break;
-          case 'cancel':
-              $( "#"+dom_id).on('click', function() {
+          case 'cancel-trigger':
+              $(event_dom).on('click', function() {
                 interface_instance.editing("cancel");
               });
             break;
-          case 'save':
-            $( "#"+dom_id).on('click', function() {
+          case 'save-trigger':
+            $(event_dom).on('click', function() {
               this.setAttribute("href","src/.data/workflow.json");
+
+              var data_to_update = $.extend(true,{},interface_instance.editing("save"));
               interface_instance.reload_control_section(
                   diagram_instance.update_elem(
                     corresponding_elem.data.id,
-                    interface_instance.editing("save"))
+                    corresponding_elem.data.type,
+                    corresponding_elem.data.value,
+                    data_to_update
+                    )
                   );
             });
             break;
           //Remove an element from the CY
-          case 'remove':
-              $( "#"+dom_id).on('click', function() {
+          case 'remove-trigger':
+              $(event_dom).on('click', function() {
                   diagram_instance.remove_elem(corresponding_elem.data.id);
                   interface_instance.removing();
                   interface_instance.show_undo_redo(
@@ -317,21 +324,22 @@ class dipam_interface {
                   );
               });
               break;
-          case 'select-value':
-                $( "#"+dom_id).on('change', function(){
+          case 'select-value-trigger':
+                var dom_id = event_dom.getAttribute('id');
+                $(event_dom).on('change', function(){
                     var arr_option_selected = $("#"+dom_id+" option:selected");
                     if (arr_option_selected.length > 0) {
                       interface_instance.set_dipam_temp_val(this.getAttribute('data-att-value'), arr_option_selected[0].value);
-                    }
+                    };
                 });
                 break;
 
-            case 'select-file':
-                  $( "#"+dom_id).on('change', function(){
+            case 'select-file-trigger':
+                  var dom_id = event_dom.getAttribute('id');
+                  $(event_dom).on('change', function(){
                       var arr_option_selected = $("#"+dom_id+" option:selected");
                       if (arr_option_selected.length > 0) {
                         var opt_value = arr_option_selected[0].value;
-                        console.log($('#'+dom_id+"_"+opt_value));
                         $('#'+dom_id+"_"+opt_value).trigger('click');
                       }
                   });
@@ -412,7 +420,7 @@ class dipam_interface {
     label_handler(dom_id, param){
       var str = "";
       switch (dom_id) {
-        case 'select-file':
+        case 'p-file':
             if (param.value != undefined) {
                     if (param.value.length == 1){
                       str = param.value[0].name;
@@ -476,17 +484,17 @@ class dipam_interface {
       //if i am not yet in editing mode then the edit section should be built first
       if (edit_value == 'editon') {
         var two_buttons_dom = `<span id="edit_buttons" class="foot-dom">
-                               <span><button id='cancel' type='button' class='btn btn-default edit-switch'>Cancel</button></span>
+                               <span><button id='cancel' type='button' class='cancel-trigger btn btn-default edit-switch'>Cancel</button></span>
                                <span>
-                               <button id='save' type='button' class='btn btn-default edit-switch'>Save</button></span>
+                               <button id='save' type='button' class='save-trigger btn btn-default edit-switch'>Save</button></span>
                                </span>`;
         editdom.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.innerHTML;
         //set events
         var corresponding_elem = this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(data_elem_id);
         console.log(corresponding_elem);
 
-        this.set_a_dom_event(document.getElementById("cancel"), corresponding_elem);
-        this.set_a_dom_event(document.getElementById("save"), corresponding_elem);
+        this.set_a_dom_event(document.getElementById("cancel"),"cancel-trigger", corresponding_elem);
+        this.set_a_dom_event(document.getElementById("save"),"save-trigger", corresponding_elem);
 
       }else {
         //I am already in editing mode (the edit section have been already built)
@@ -510,9 +518,7 @@ class dipam_interface {
             break;
           case 'save':
             editdom.setAttribute('value','editoff');
-            console.log(this.temp_dipam_value);
             res = this.save();
-            console.log(res);
             break;
           default:
         }
@@ -531,7 +537,8 @@ class dipam_interface {
         if (new_elem != null) {
           this.build_overview(new_elem);
         }
-        this.DOMS.CONTROL.OVERVIEW_BTN.click();
+        this.click_overview_nav();
+        //this.DOMS.CONTROL.OVERVIEW_BTN.click();
       }else if (active_nav == 'info') {
         //in case an element (node/edge) have been updated/edited
         if (new_elem != null) {
@@ -540,7 +547,8 @@ class dipam_interface {
           }
           this.build_info(new_elem);
         }
-        this.DOMS.CONTROL.INFO_BTN.click();
+        this.click_info_nav();
+        //this.DOMS.CONTROL.INFO_BTN.click();
       }
     }
 
