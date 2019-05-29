@@ -11,6 +11,14 @@ body {
   font-size: 14px;
 }
 
+label p{
+  font-size: 80%;
+}
+.check-value input{
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
 #control {
   position: absolute;
   width: 350px;

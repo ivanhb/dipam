@@ -27,9 +27,9 @@
             "param": ["p-log"],
             "compatible_input": ["d-topics-table"]
         },
-        "t-filter-names": {
-            "label": "Filter names",
-            "function": "filter_names",
+        "t-filter-text": {
+            "label": "Filter the text",
+            "function": "filter_text",
             "param": ["p-filteropt","p-filterregex"],
             "compatible_input": ["d-gen-text"],
             "output": ["d-gen-text"]
@@ -42,32 +42,44 @@
   },
   "param": {
         "p-file":{
+          "handler": "select-file",
           "label": "File/s or Directory",
-          "value": {}
+          "value": {},
+          "init_value": {}
         },
         "p-log":{
+          "handler": "switch-value",
           "label": "Log scale",
           "value_label": ["True","False"],
-          "value": [0,1]
+          "value": [0,1],
+          "init_value": 0
         },
         "p-topic":{
+          "handler": "select-value",
           "label": "Number of topics",
           "value_label": ["2","3","4","5","10","15","20"],
-          "value": [2,3,4,5,10,15,20]
+          "value": [2,3,4,5,10,15,20],
+          "init_value": 2
         },
         "p-numwords":{
+          "handler": "select-value",
           "label": "Number of words",
           "value_label": ["10","15","20","25","30","40","50"],
-          "value": [10,15,20,25,30,40,50]
+          "value": [10,15,20,25,30,40,50],
+          "init_value": 10
         },
         "p-filteropt":{
-          "label": "Filter and remove",
-          "value_label": ["Names"],
-          "value": ["names"]
+          "handler": "check-value",
+          "label": "Filter and remove:",
+          "value_label": ["Names","Footnotes"],
+          "value": ["names","footnotes"],
+          "init_value": ["names"]
         },
         "p-filterregex":{
-          "label": "Specific text (Regular expressions are supported)",
-          "value": ""
+          "handler": "input-text",
+          "label": "Specific text <p> (Regular expressions supported) </p>",
+          "value": "",
+          "init_value": ""
         }
   }
 }

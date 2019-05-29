@@ -61,7 +61,8 @@ class dipam_interface {
           'cancel-trigger': {},
           'save-trigger': {},
           'select-file-trigger': {},
-          'select-value-trigger': {}
+          'select-value-trigger': {},
+          'check-value-trigger': {}
       };
     }
 
@@ -131,22 +132,8 @@ class dipam_interface {
                     var para_obj = diagram_instance.get_conf_att("param",k_param, null);
                     var para_val = para_obj.value;
                     if (para_val != -1) {
-                        if (Array.isArray(para_val)) {
-                            if (para_val.length == 2) {
-                              //is a switch
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("switch", elem, k_param, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label}, true);
-                            }else if (para_val.length > 2) {
-                              //is a dropdown
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-value", elem, k_param, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label}, true);
-                            }
-                        }else if (typeof para_val == "string") {
-                              //is an input-box
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("input-text", elem, k_param, {intro_lbl: para_obj.label, value:""}, true);
-                        }else if (para_val instanceof Object) {
-                              //is an input-file
-                              all_param_doms_str = all_param_doms_str + _build_a_dom("select-file", elem, k_param, {intro_lbl: para_obj.label, label_handler: true}, true);
-                        }
-                        this.set_dipam_temp_val(k_param,elem.data.param[k_param]);
+                      all_param_doms_str = all_param_doms_str + _build_a_dom(para_obj.handler, elem, k_param, {intro_lbl: para_obj.label, value: para_obj.value, label: para_obj.value_label}, true);
+                      this.set_dipam_temp_val(k_param,elem.data.param[k_param]);
                    }
               }
           }
@@ -191,7 +178,7 @@ class dipam_interface {
                   if (param.value[j] == dom_value) {
                     selected_val = "selected";
                   }
-                  str_options = "<option data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+">"+param.label[j]+"</option>"+str_options;
+                  str_options = str_options + "<option data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+">"+param.label[j]+"</option>";
                };
 
                 str_html = str_html + `
@@ -199,10 +186,30 @@ class dipam_interface {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+param.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` save-value custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` att-handler save-value custom-select" disabled>`+str_options+`</select>
                 </div>
                 `;
               break;
+
+        case 'check-value':
+                  var str_options = "";
+                  for (var j = 0; j < param.value.length; j++) {
+                      var selected_val = "";
+                      if (dom_value.indexOf(param.value[j]) != -1) {
+                        selected_val = "checked";
+                      }
+                      str_options = str_options + "<input type='checkbox' class='"+a_dom_class+" att-handler' data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+" disabled>"+param.label[j]+"<br>";
+                   };
+
+                    str_html = str_html + `
+                    <div class="input-group `+dom_tag+`">
+                          <div class="input-group-prepend">
+                            <label class="input-group-text">`+param.intro_lbl+`</label>
+                          </div>
+                          <div data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value">`+str_options+`</div>
+                    </div>
+                    `;
+                  break;
 
           case 'input-text':
                 str_html = str_html + `
@@ -210,7 +217,7 @@ class dipam_interface {
                   <div class="input-group-prepend">
                     <label class="input-group-text">`+param.intro_lbl+`</label>
                   </div>
-                  <input data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value" value="`+dom_value+`" data-att-value="`+k_attribute+`" class="`+a_dom_class+`" type="text" disabled></input>
+                  <input data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value att-handler" value="`+dom_value+`" data-att-value="`+k_attribute+`" class="`+a_dom_class+`" type="text" disabled></input>
                 </div>
                 `;
                 break;
@@ -225,7 +232,7 @@ class dipam_interface {
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+param.intro_lbl+`</label>
                       </div>
-                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` save-value custom-select" disabled>`+str_options+`</select>
+                      <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` att-handler save-value custom-select" disabled>`+str_options+`</select>
 
                       <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_file" style="display: none;" multiple="true"/>
                       <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
@@ -331,7 +338,21 @@ class dipam_interface {
                     };
                 });
                 break;
-
+           case 'check-value-trigger':
+                      $(event_dom).on('change', function(){
+                          var father_id = this.getAttribute('data-select-target');
+                          var check_value = this.getAttribute('value');
+                          var att_key = document.getElementById(father_id).getAttribute('data-att-value');
+                          var a_list = interface_instance.get_dipam_temp_val(att_key);
+                          var index_in_list = a_list.indexOf(check_value);
+                          if (index_in_list == -1) {
+                            a_list.push(check_value);
+                          }else {
+                            a_list.splice(index_in_list, 1);
+                          }
+                          interface_instance.set_dipam_temp_val(att_key, a_list);
+                      });
+                  break;
             case 'select-file-trigger':
                   var dom_id = event_dom.getAttribute('id');
                   $(event_dom).on('change', function(){
@@ -457,7 +478,7 @@ class dipam_interface {
 
     _switch_edit_doms(){
       var current_flag = false;
-      var arr_doms_toedit = document.getElementsByClassName('save-value');
+      var arr_doms_toedit = document.getElementsByClassName('att-handler');
       for (var i = 0; i < arr_doms_toedit.length; i++) {
         if (i == 0) {
            current_flag = arr_doms_toedit[i].disabled;

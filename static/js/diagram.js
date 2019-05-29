@@ -343,11 +343,23 @@ class dipam_diagram {
           var p_key = my_conf.param[i];
           if (p_key in this.CONFIG.param) {
               var corresponding_param = this.CONFIG.param[p_key];
+              var corresponding_param_handler = corresponding_param.handler;
               var corresponding_param_val = null;
-              if (Array.isArray(corresponding_param.value)) {
-                corresponding_param_val = corresponding_param.value[0];
-              }else if (corresponding_param.value instanceof Object) {
-                corresponding_param_val = JSON.parse(JSON.stringify(corresponding_param.value));
+              switch (corresponding_param_handler) {
+                case "select-value":
+                  var init_val_index = corresponding_param.value.indexOf(corresponding_param.init_value);
+                  corresponding_param_val = corresponding_param.value[init_val_index];
+                  break;
+                case "input-text":
+                  corresponding_param_val = corresponding_param.init_value;
+                  break;
+                case "select-file":
+                  corresponding_param_val = JSON.parse(JSON.stringify(corresponding_param.init_value));
+                  break;
+                case "check-value":
+                  corresponding_param_val = corresponding_param.init_value;
+                  break;
+                default:
               }
               node_obj.data.param[p_key] = corresponding_param_val;
             }
