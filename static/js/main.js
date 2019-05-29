@@ -2,6 +2,7 @@
 //load json files
 var workflow = JSON.parse(decode_json(workflow));
 var config = JSON.parse(decode_json(config));
+console.log("Config:",config);
 function decode_json(text){
   //var msg = decodeURIComponent(text.replace(/\+/g, '%20')+'');
   var msg = text;

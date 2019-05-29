@@ -17,13 +17,24 @@ class TextAnalysis(object):
 
     # Each tool defined here must respect the configuration attributes given in the config file
     # the returned output must be same as these defined in the [output] key for the corresponding method
-    def lda(self, input_files, param):
+    def lda(self, input_files, input_file_names, param):
 
         data_to_return = {"data":{}}
         ok_to_process = False
         #Check the MUST Prerequisite
         if "d-gen-text" in input_files:
             ok_to_process = True
+
+        #The params
+        p_num_topics = 5
+        p_num_words = None
+        print(len(input_files),param)
+        if param != None:
+            if "p-topic" in param:
+                p_num_topics = int(param["p-topic"])
+            if "p-numwords" in param:
+                p_num_words = int(param["p-numwords"])
+
 
         #Define the set of documents
         documents = []
@@ -58,14 +69,14 @@ class TextAnalysis(object):
 
         # Running and Trainign LDA model on the document term matrix.
         try:
-            ldamodel = Lda(doc_term_matrix, num_topics=3, id2word = dictionary, passes=50)
+            ldamodel = Lda(doc_term_matrix, num_topics= p_num_topics, id2word = dictionary, passes=50)
         except ValueError:
             res_err = {"data":{}}
             res_err["data"]["error"] = {}
             res_err["data"]["error"]["ValueError"] = "No or Incompatible data have been given as input to the LDA algorithm"
             return res_err
 
-        res = ldamodel.print_topics(num_topics=3, num_words=10)
+        res = ldamodel.print_topics(num_topics= p_num_topics, num_words= p_num_words)
 
         # populate the files according to the topics found
         a_tab = []
@@ -90,14 +101,11 @@ class TextAnalysis(object):
                 res_str = res_str + str(a_cell) +","
             res_str = res_str[:-1] + "\n"
 
-        #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
 
-        res_docs = {}
-        res_docs["topics.txt"] = str(res_str)
+        #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
         res_csvs = {}
         res_csvs["topics.csv"] = str(res_str)
 
         #The returned data must include a recognizable key and the data associated to it
-        data_to_return["data"]["d-gen-text"] = res_docs
-        data_to_return["data"]["d-gen-table"] = res_csvs
+        data_to_return["data"]["d-topics-table"] = res_csvs
         return data_to_return

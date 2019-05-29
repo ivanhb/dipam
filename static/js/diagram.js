@@ -423,7 +423,7 @@ class dipam_diagram {
   // (2) Its style in the cy diagram
   // (3) The realtime correlated items (Remove edges in case not suitable anymore)
   // (4) The real time compatible elements of the cy diagram
-  update_elem(id, type, value, data){
+  update_elem(id, type, data){
     console.log("Data to uodate: ",data);
     //first check if it's the Diagram
     if (id == this.DIAGRAM_GENERAL.data.id) {
@@ -441,7 +441,11 @@ class dipam_diagram {
     var value_updated = false;
     for (var k_data in data) {
       if (data[k_data] != -1) {
-        value_updated = (k_data == "value");
+
+        if (k_data == "value")
+          if (data.value != -1)
+            value_updated = true;
+
         if (d_node._private.data.hasOwnProperty(k_data)) {
           d_node._private.data[k_data] = data[k_data];
         }else if ('param' in d_node._private.data) {
@@ -453,7 +457,7 @@ class dipam_diagram {
       }
     }
     if (value_updated) {
-        var new_node_data = this.gen_node_data(type, value).data;
+        var new_node_data = this.gen_node_data(type, data.value).data;
         d_node._private.data.value = data.value;
         d_node._private.data.param = new_node_data.param;
     }

@@ -14,7 +14,7 @@ class Terminal(object):
 
         return data_to_return
 
-    def save_file(self, input_files, param):
+    def save_file(self, input_files, input_file_names, param):
         data_to_return = {"data":{}}
 
         # NO RESTRICTIONS  Takes any input
@@ -26,15 +26,10 @@ class Terminal(object):
         i = 0
         for a_data_value in input_files:
             res_docs[a_data_value] = {}
-            if a_data_value == "d-gen-text":
-                extension = ".txt"
-            elif a_data_value == "d-gen-table":
-                extension = ".csv"
-
-            for a_doc in input_files[a_data_value]:
-                res_docs[a_data_value][str(i)+extension] = a_doc
-                i += 1
-
+            for f_i in range(0,len(input_files[a_data_value])):
+                a_doc = input_files[a_data_value][f_i]
+                a_doc_name = input_file_names[a_data_value][f_i]
+                res_docs[a_data_value][a_doc_name] = a_doc
 
         data_to_return["data"] = res_docs
         return data_to_return

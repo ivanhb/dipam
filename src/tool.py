@@ -14,7 +14,7 @@ class Tool(object):
     # <node>: The corresponding node
     # <temp_dir>: the temporal processing directory path
     # <param>: in case of additional parameters for the method called
-    def run(self, n_data, n_workflow, n_graph, input_files, param = None):
+    def run(self, n_data, n_workflow, n_graph, input_files, input_file_names, param = None):
         elem_id = n_data['id']
         elem_value = n_data['value']
         method = n_workflow['class']
@@ -22,9 +22,9 @@ class Tool(object):
 
         res = None
         if self.TOOL_HANDLER.is_handled(elem_value):
-            res = getattr(self.TOOL_HANDLER, method)(input_files, param)
+            res = getattr(self.TOOL_HANDLER, method)(input_files, input_file_names, param)
         elif self.TERMINAL_HANDLER.is_handled(elem_value):
-            res = getattr(self.TERMINAL_HANDLER, method)(input_files, param)
+            res = getattr(self.TERMINAL_HANDLER, method)(input_files, input_file_names, param)
 
         #The corresponding function must return a set of files for each different output_data entry
         # <res> example:

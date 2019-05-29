@@ -104,6 +104,7 @@ class dipam_interface {
       }
 
       res_str_html = res_str_html + '<div id="control_mid">';
+      var all_param_doms_str = "";
       for (var k_attribute in elem.data) {
         var a_dom_str = "";
 
@@ -126,7 +127,6 @@ class dipam_interface {
 
             case 'param':
               //is a param
-              var all_param_doms_str = "";
               for (var k_param in elem.data.param) {
                     var para_obj = diagram_instance.get_conf_att("param",k_param, null);
                     var para_val = para_obj.value;
@@ -149,12 +149,11 @@ class dipam_interface {
                         this.set_dipam_temp_val(k_param,elem.data.param[k_param]);
                    }
               }
-              a_dom_str = all_param_doms_str;
           }
           res_str_html = res_str_html + a_dom_str;
         }
       }
-      res_str_html = res_str_html + '</div>';
+      res_str_html = res_str_html + all_param_doms_str + '</div>';
 
       //now the foot buttons
       var param_btn = {
@@ -307,7 +306,6 @@ class dipam_interface {
                   diagram_instance.update_elem(
                     corresponding_elem.data.id,
                     corresponding_elem.data.type,
-                    corresponding_elem.data.value,
                     data_to_update
                     )
                   );

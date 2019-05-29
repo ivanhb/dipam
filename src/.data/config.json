@@ -1,40 +1,43 @@
 {
   "data": {
-        "d-gen-table":{
-            "label": "Table",
+        "d-topics-table":{
+            "label": "Table of topics",
             "data_class": "table",
-            "param": ["p-file"]
+            "param": ["p-file"],
+            "file_name": "topics"
         },
         "d-gen-text":{
             "label": "Text file",
             "data_class": "text",
-            "param": ["p-file"]
+            "param": ["p-file"],
+            "file_name": "doc"
         }
   },
   "tool": {
         "t-topic-lda": {
             "label": "Topic modeling with LDA",
             "function": "lda",
-            "param": ["p-topic"],
+            "param": ["p-topic","p-numwords"],
             "compatible_input": ["d-gen-text"],
-            "output": ["d-gen-table"]
+            "output": ["d-topics-table"]
         },
         "t-chart-bar": {
             "label": "Bar chart",
             "function": "bar_chart",
             "param": ["p-log"],
-            "compatible_input": ["d-gen-table"]
+            "compatible_input": ["d-topics-table"]
         },
         "t-filter-names": {
             "label": "Filter names",
             "function": "filter_names",
+            "param": ["p-filteropt","p-filterregex"],
             "compatible_input": ["d-gen-text"],
             "output": ["d-gen-text"]
         },
         "t-save-files": {
             "label": "Save",
             "function": "save_file",
-            "compatible_input": ["d-gen-text","d-gen-table"]
+            "compatible_input": ["d-gen-text","d-topics-table"]
         }
   },
   "param": {
@@ -48,9 +51,23 @@
           "value": [0,1]
         },
         "p-topic":{
-          "label": "Topic number",
+          "label": "Number of topics",
           "value_label": ["2","3","4","5","10","15","20"],
           "value": [2,3,4,5,10,15,20]
+        },
+        "p-numwords":{
+          "label": "Number of words",
+          "value_label": ["10","15","20","25","30","40","50"],
+          "value": [10,15,20,25,30,40,50]
+        },
+        "p-filteropt":{
+          "label": "Filter and remove",
+          "value_label": ["Names"],
+          "value": ["names"]
+        },
+        "p-filterregex":{
+          "label": "Specific text (Regular expressions are supported)",
+          "value": ""
         }
   }
 }

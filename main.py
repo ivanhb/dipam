@@ -114,6 +114,10 @@ def load_workflow():
 def process():
 
     def write_file(path, file_value):
+
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
         with open(path, 'w') as d_file:
             d_file.write(file_value)
         return path
@@ -194,9 +198,11 @@ def process():
     if elem_must_att["type"] == "tool":
 
         input_files = {}
+        input_file_names = {}
         if elem_workflow_att["compatible_input"]:
             for comp_input in elem_workflow_att["compatible_input"]:
                 input_files[comp_input] = []
+                input_file_names[comp_input] = []
 
         if elem_workflow_att["input"]:
             for id_input in elem_workflow_att['input']:
@@ -206,6 +212,7 @@ def process():
                     d_value = next(iter(corpus[id_input].items()))[0]
                     if d_value in input_files:
                         input_files[d_value].extend(corpus[id_input][d_value]["files"])
+                        input_file_names[d_value].extend(corpus[id_input][d_value]["files_name"])
 
                 #is a tool input -> check the outputs compatible with my inputs
                 else:
@@ -221,7 +228,9 @@ def process():
                                 #call the data handler to process this type of inputs
                                 for file_k in index_elem_data:
                                     file_path = BASE_PATH+"/"+str(id_input)+"/"+str(file_k)
-                                    input_files[comp_input].extend(dipam_data.handle([file_path], comp_input, file_path = True))
+                                    a_data = dipam_data.handle([file_path], comp_input, file_path = True)
+                                    input_files[comp_input].extend(a_data[0])
+                                    input_file_names[comp_input].append(file_k)
 
         #The data entries in this case are the output of the tool
         data_entries = dipam_tool.run(
@@ -229,12 +238,12 @@ def process():
             elem_workflow_att,
             elem_graph_att,
             input_files,
+            input_file_names,
             elem_param_att
         )
 
         #check if there were errors
         if len(data_entries) > 0:
-            print(data_entries[0])
             if "error" in data_entries[0]:
                 an_error = data_entries[0]["error"]
                 k_error = next(iter(an_error))
@@ -263,9 +272,12 @@ def process():
         if 'p-file' in elem_param_att:
             files = elem_param_att['p-file']
 
+        a_data = dipam_data.handle(files, elem_value)
         corpus[elem_id] = {}
         corpus[elem_id][elem_value] = {}
-        corpus[elem_id][elem_value]["files"] = dipam_data.handle(files, elem_value)
+        corpus[elem_id][elem_value]["files"] = a_data[0]
+        corpus[elem_id][elem_value]["files_name"] = a_data[1]
+        print(corpus[elem_id][elem_value])
 
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
     return "Success:Processing done !"
