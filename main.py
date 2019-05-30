@@ -15,30 +15,23 @@ from flask import Flask, render_template, request, json, jsonify, redirect, url_
 
 app = Flask(__name__)
 
-BASE_PATH = "src/.process-temp"
+BASE_PROCESS_PATH = "src/.process-temp"
+BASE_CONFIG_PATH = "src/.data"
+CONFIG_DATA = {}
+
+#Will store all the FileStorage of the 'data' nodes
+corpus = {}
 dipam_linker = linker.Linker()
 dipam_tool = tool.Tool()
 dipam_data = data.Data()
-#Will store all the FileStorage of the 'data' nodes
-corpus = {}
-CONFIG_PATH = "src/.data/config.json"
-CONFIG_DATA = {}
 
 #example: /dipam?workflow=WW&?config=CC
 @app.route('/')
 def index():
     workflow_path = request.args.get('workflow')
-    #config_path = request.args.get('config')
-    #if config_path == None:
-    #    config_path = "src/.data/config.json"
     if workflow_path == None:
         workflow_path = "src/.data/workflow.json"
-
-    #config_data = json.load(open(config_path))
     workflow_data = json.load(open(workflow_path))
-
-    #dipam_data.set_data_index(config_data["data"])
-
     return render_template('index.html', workflow=workflow_data, config=CONFIG_DATA)
 
 @app.route("/download/<id>")
@@ -112,8 +105,8 @@ def load_workflow():
 
 @app.route('/reset')
 def reset_temp_data():
-    for the_file in os.listdir(BASE_PATH):
-        file_path = os.path.join(BASE_PATH, the_file)
+    for the_file in os.listdir(BASE_PROCESS_PATH):
+        file_path = os.path.join(BASE_PROCESS_PATH, the_file)
         try:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
@@ -241,8 +234,8 @@ def process():
                                 index_elem_data = index_elem[comp_input]
                                 #call the data handler to process this type of inputs
                                 for file_k in index_elem_data:
-                                    file_path = BASE_PATH+"/"+str(id_input)+"/"+str(file_k)
-                                    a_data = dipam_data.handle([file_path], comp_input, file_path = True)
+                                    file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+str(file_k)
+                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path")
                                     input_files[comp_input].extend(a_data[0])
                                     input_file_names[comp_input].append(file_k)
 
@@ -274,7 +267,7 @@ def process():
                     entry_item = next(iter(d_entry.items()))[0]
                     for a_doc_key in d_entry[entry_item]:
                         #write according to the type of file
-                        write_file(BASE_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
+                        write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
 
 
     elif elem_must_att["type"] == "data":
@@ -297,7 +290,7 @@ def process():
 
 if __name__ == '__main__':
     #app.config['TEMPLATES_AUTO_RELOAD'] = True
-    CONFIG_DATA = json.load(open(CONFIG_PATH))
+    CONFIG_DATA = json.load(open(BASE_CONFIG_PATH+"/config.json"))
     dipam_data.set_data_index(CONFIG_DATA["data"])
 
     app.run()

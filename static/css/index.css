@@ -34,28 +34,21 @@ label p{
   width: 100%;
 }
 #control_foot{
-  padding-top: 20%;
+  padding-top: 15%;
   margin: 0 auto;
-  border-bottom: solid 2px black;
   width: 80%;
-  text-align: center;
+  height: 20%;
+  border-bottom: solid 3px #917442;
 }
 #control_foot .foot-dom{
-  font-size: 100%;
-  width: auto;
+  display:inline-block;
+}
+#edit_buttons{
+  min-height: 50px;
+  padding-left: 45%;
 }
 #control_foot button:hover{
  color: #82683b;
-}
-
-#control_foot .foot-dom button#edit_cancel:hover{
- color: red;
-}
-#control_foot .foot-dom button#edit_save:hover{
- color: green;
-}
-#control_foot .foot-dom #edit_buttons{
-  padding-left: 120px;
 }
 
 .input-group{

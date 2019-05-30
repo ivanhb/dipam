@@ -493,19 +493,21 @@ class dipam_interface {
     set_edit_section(action = null){
       var res = 1;
       var editdom = document.getElementById('edit');
+      var removedom = document.getElementById('remove');
       var data_elem_id = editdom.getAttribute('data-id');
-      editdom.style.visibility = 'hidden';
+      editdom.style.display = 'none';
+      removedom.style.display = 'none';
 
       var edit_value = editdom.getAttribute('value');
 
       //if i am not yet in editing mode then the edit section should be built first
       if (edit_value == 'editon') {
-        var two_buttons_dom = `<span id="edit_buttons" class="foot-dom">
+        var two_buttons_dom = `<div id="edit_buttons" class="foot-dom">
                                <span><button id='cancel' type='button' class='cancel-trigger btn btn-default edit-switch'>Cancel</button></span>
                                <span>
                                <button id='save' type='button' class='save-trigger btn btn-default edit-switch'>Save</button></span>
-                               </span>`;
-        editdom.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.innerHTML;
+                               </div>`;
+        editdom.parentNode.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.parentNode.innerHTML;
         //set events
         var corresponding_elem = this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(data_elem_id);
         console.log(corresponding_elem);
@@ -525,7 +527,8 @@ class dipam_interface {
         //finish editing the doms
         //editdom.setAttribute('value','editoff');
 
-        editdom.style.visibility = 'visible';
+        editdom.style.display = 'block';
+        removedom.style.display = 'block';
 
         //do the corresponding function corresponding to the choice/action made
         switch (action) {

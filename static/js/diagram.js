@@ -224,15 +224,29 @@ class dipam_diagram {
     // build the nodes
     var diagram_nodes = this.get_nodes();
     for (var i = 0; i < diagram_nodes.length; i++) {
-      workflow_to_save.nodes.push({"data": JSON.parse(JSON.stringify(diagram_nodes[i]._private.data))});
+      workflow_to_save.nodes.push({"data": _normalize_data_to_save(diagram_nodes[i])});
     }
     // build the edges
     var diagram_edges = this.get_edges();
     for (var i = 0; i < diagram_edges.length; i++) {
-      workflow_to_save.edges.push({"data": JSON.parse(JSON.stringify(diagram_edges[i]._private.data))});
+      workflow_to_save.edges.push({"data": _normalize_data_to_save(diagram_edges[i])});
     }
 
     return workflow_to_save;
+
+    function _normalize_data_to_save(an_elem) {
+      var is_node = an_elem.isNode();
+      var res_obj = JSON.parse(JSON.stringify(an_elem._private.data));
+      if ("workflow" in res_obj){
+        delete res_obj["workflow"];
+      }
+      //gen the graph data of elem
+      if (is_node) {
+        an_elem._private.data.graph["position"] = an_elem.position();
+      }
+      return res_obj;
+    }
+
   }
   get_keys(type){
     var res = {'label':[],'value':[]};
