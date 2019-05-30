@@ -642,14 +642,25 @@ class dipam_interface {
 
   //Executes all the workflow
   handle_workflow(status, param){
-    console.log(param);
+    var interface_instance = this;
     if (status == 'run') {
       console.log(param);
       this.workflow = param;
       var workflow_to_process = this.workflow;
       var index_processed = {};
       //process workflow
-      _process_workflow(this,0,[]);
+      $.ajax({
+        url: "/reset",
+        type: 'GET',
+        success: function(data) {
+              console.log("reset temp data");
+              if (data.startsWith("Error:")) {
+                console.log("Could not reset temp data!");
+              }else {
+                _process_workflow(interface_instance,0,[]);
+              }
+          }
+      });
 
     }else if (status == 'stop') {
       //Stop the execution and abort all the running functions"
@@ -667,10 +678,6 @@ class dipam_interface {
 
             //call the server
             var data_to_post = _gen_form_data(w_elem);
-            for (var v_p of data_to_post) {
-              console.log("POST:",v_p);
-            }
-
 
             $.ajax({
               url: "/process",
