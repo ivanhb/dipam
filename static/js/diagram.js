@@ -130,6 +130,7 @@ class dipam_diagram {
                 edges: this.INIT_EDGES
               }
     });
+    this.set_diagram_layout(workflow);
     var cy_undo_redo = this.cy.undoRedo(
         {
               isDebug: true, // Debug mode for console messages
@@ -146,7 +147,21 @@ class dipam_diagram {
     this.get_nodes('tool').style(this.STYLE.node.tool);
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
+  }
 
+  set_diagram_layout(workflow) {
+    var list_nodes = workflow.nodes;
+    for (var i = 0; i < list_nodes.length; i++) {
+
+      if ("graph" in list_nodes[i].data) {
+        if ("position" in list_nodes[i].data.graph) {
+          var a_node = this.cy.nodes('node[id = "'+list_nodes[i].data.id+'"]');
+          var a_pos = JSON.parse(JSON.stringify(list_nodes[i].data.graph.position));
+          a_node.position("x",a_pos.x);
+          a_node.position("y",a_pos.y);
+        }
+      }
+    }
   }
 
   set_events(){
@@ -242,6 +257,9 @@ class dipam_diagram {
       }
       //gen the graph data of elem
       if (is_node) {
+        if (!('graph' in an_elem._private.data)) {
+          an_elem._private.data["graph"] = {};
+        }
         an_elem._private.data.graph["position"] = an_elem.position();
       }
       return res_obj;
