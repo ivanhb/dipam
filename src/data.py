@@ -41,10 +41,11 @@ class Data(object):
 
                     f_id += 1
 
+        print("Documents are:",list_text)
         return (list_text,list_text_name)
 
     def process_text(self,a_file):
-        return a_file.read()
+        return str(a_file.read(),'utf-8',errors='ignore')
 
     def process_table(self,a_file):
         return a_file.read()

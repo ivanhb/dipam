@@ -7,7 +7,7 @@ class TOOL_NAME(object):
     def is_handled(self, t_value):
         return t_value in self.TOOL
 
-    def FUN_NAME(self, input_files, param):
+    def FUN_NAME(self, input_files, input_file_names, param):
         data_to_return = {"data":{}}
 
         #Build your data here

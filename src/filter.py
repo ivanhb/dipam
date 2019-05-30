@@ -1,3 +1,4 @@
+import re
 
 class Filter(object):
 
@@ -7,21 +8,65 @@ class Filter(object):
     def is_handled(self, t_value):
         return t_value in self.TOOL
 
-    def filter_text(self, input_files, param):
+    def filter_text(self, input_files, input_file_names, param):
         data_to_return = {"data":{}}
 
         # Check Restrictions
         if "d-gen-text" in input_files:
             ok_to_process = True
 
-        print("Filter text ...")
+        #Define the set of documents
+        documents = []
+        for a_file_value in input_files["d-gen-text"]:
+            #iterate through the array of values given
+            documents.append(a_file_value)
+        documents_names = []
+        for a_file_name in input_file_names["d-gen-text"]:
+            #iterate through the array of values given
+            documents_names.append(a_file_name)
 
         # Check the given param
         f_macro = []
         f_regex = ""
         if param != None:
-            if "p-topic" in param:
-            if "p-numwords" in param:
+            if "p-filteropt" in param:
+                for f_opt in param["p-filteropt"]:
+                    if f_opt == "names":
+                        pass
+                    elif f_opt == "dates":
+                        documents = self._filter_dates(documents)
+                        pass
+                    elif f_opt == "footnotes":
+                        pass
+            if "p-filterregex" in param:
+                documents = self._filter_by_regex(documents, param["p-filterregex"])
 
+        #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
+        res_filtered = {}
+        for i in range(0,len(documents)):
+            res_filtered["filtered_"+documents_names[i]] = documents[i]
 
+        data_to_return["data"]["d-gen-text"] = res_filtered
+        print("Filtered text ...", res_filtered)
         return data_to_return
+
+    def _filter_dates(self, input_files):
+        DATES_REGEX_list = [
+            "([0-9]{4}/[0-9]{2}/[0-9]{2})",
+            "([0-9]{2}/[0-9]{2}/[0-9]{4})",
+            "([0-9]{4}-[0-9]{2}-[0-9]{2})",
+            "([0-9]{2}-[0-9]{2}-[0-9]{4})"
+        ]
+        d_filtered = []
+        for d in documents:
+            for d_reg_i in DATES_REGEX_list:
+                a_regex = re.compile(d_reg_i)
+                d_filtered.append(re.sub(a_regex,"", d))
+        return d_filtered
+
+    def _filter_by_regex(self, documents, a_regex_str):
+        d_filtered = []
+        a_regex = re.compile(a_regex_str)
+        for d in documents:
+            d_filtered.append(re.sub(a_regex,"", d))
+        return d_filtered

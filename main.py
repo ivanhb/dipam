@@ -277,7 +277,6 @@ def process():
         corpus[elem_id][elem_value] = {}
         corpus[elem_id][elem_value]["files"] = a_data[0]
         corpus[elem_id][elem_value]["files_name"] = a_data[1]
-        print(corpus[elem_id][elem_value])
 
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
     return "Success:Processing done !"

@@ -165,11 +165,6 @@ class dipam_interface {
           dom_value = elem.data.param[k_attribute];
         }
 
-        var extra_dom_label = dom_value;
-        if ('label_handler' in param) {
-          extra_dom_label = interface_instance.label_handler(a_dom_id, {value: dom_value, elem: elem});
-        }
-
         switch (dom_tag) {
           case 'select-value':
               var str_options = "";
@@ -223,6 +218,7 @@ class dipam_interface {
                 break;
 
           case 'select-file':
+                  dom_value = interface_instance.label_handler(a_dom_id, {value: dom_value, elem: elem});
                   var str_options = `<option selected>Select source</option>
                                     <option id='`+a_dom_id+`_optfile' value='file'>File\/s</option>
                                     <option id='`+a_dom_id+`_optdir' value='dir'>Directory</option>`;
@@ -237,7 +233,7 @@ class dipam_interface {
                       <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_file" style="display: none;" multiple="true"/>
                       <input data-id="`+elem.data.id+`" type="file" id="`+a_dom_id+`_dir" style="display: none;" webkitdirectory directory multiple="false"/>
 
-                      <label id="`+a_dom_id+`__lbl" class="input-group-text" value="">`+extra_dom_label+`</label>
+                      <label id="`+a_dom_id+`__lbl" class="input-group-text" value="">`+dom_value+`</label>
                   </div>
                   `;
                   break;
@@ -441,7 +437,9 @@ class dipam_interface {
       switch (dom_id) {
         case 'p-file':
             if (param.value != undefined) {
-                    if (param.value.length == 1){
+                    if (param.value == {}) {
+                      str = "";
+                    }else if (param.value.length == 1){
                       str = param.value[0].name;
                     }else if (param.value.length > 1){
                       str = param.value.length+ " files" ;

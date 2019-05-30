@@ -28,7 +28,6 @@ class TextAnalysis(object):
         #The params
         p_num_topics = 5
         p_num_words = None
-        print(len(input_files),param)
         if param != None:
             if "p-topic" in param:
                 p_num_topics = int(param["p-topic"])

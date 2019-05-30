@@ -1,5 +1,6 @@
 from src import textAnalysis
 from src import terminal
+from src import filter
 
 class Tool(object):
 
@@ -8,6 +9,7 @@ class Tool(object):
         #initialize all the modules that handle the tool elements
         self.TOOL_HANDLER = textAnalysis.TextAnalysis(["t-topic-lda","t-filter-names"])
         self.TERMINAL_HANDLER = terminal.Terminal(["t-chart-bar","t-save-files"])
+        self.FILTER_HANDLER = filter.Filter(["t-filter-text"])
 
 
     # Run a method from the TOOL_HANDLER module
@@ -25,6 +27,8 @@ class Tool(object):
             res = getattr(self.TOOL_HANDLER, method)(input_files, input_file_names, param)
         elif self.TERMINAL_HANDLER.is_handled(elem_value):
             res = getattr(self.TERMINAL_HANDLER, method)(input_files, input_file_names, param)
+        elif self.FILTER_HANDLER.is_handled(elem_value):
+            res = getattr(self.FILTER_HANDLER, method)(input_files, input_file_names, param)
 
         #The corresponding function must return a set of files for each different output_data entry
         # <res> example:
