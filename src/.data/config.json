@@ -73,7 +73,7 @@
           "label": "Filter and remove:",
           "value_label": ["Dates","Footnotes"],
           "value": ["dates","footnotes"],
-          "init_value": ["names"]
+          "init_value": ["dates"]
         },
         "p-filterregex":{
           "handler": "input-text",

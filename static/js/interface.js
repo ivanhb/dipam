@@ -128,6 +128,9 @@ class dipam_interface {
               //is a dropdown
               this.set_dipam_temp_val(k_attribute,elem.data.value);
               var res_elem_type = diagram_instance.get_conf_elems(elem.data.type, ['[KEY]','label']);
+              if (elem.data.type == "edge") {
+                res_elem_type = {'[KEY]': ["edge"],'label': ["Edge"]};
+              }
               a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: "Type:", value: res_elem_type['[KEY]'], label: res_elem_type['label']});
               break;
 

@@ -250,6 +250,8 @@ class dipam_diagram {
     return workflow_to_save;
 
     function _normalize_data_to_save(an_elem, is_node = false) {
+      //check if there is objects also
+
       var res_obj = JSON.parse(JSON.stringify(an_elem._private.data));
       if ("workflow" in res_obj){
         delete res_obj["workflow"];
@@ -478,7 +480,7 @@ class dipam_diagram {
       return this.DIAGRAM_GENERAL;
     }
 
-    var d_node = this.cy.getElementById(id);
+    var d_elem = this.cy.getElementById(id);
 
     // (1) update it's data first
     var value_updated = false;
@@ -489,35 +491,40 @@ class dipam_diagram {
           if (data.value != -1)
             value_updated = true;
 
-        if (d_node._private.data.hasOwnProperty(k_data)) {
-          d_node._private.data[k_data] = data[k_data];
-        }else if ('param' in d_node._private.data) {
+        if (d_elem._private.data.hasOwnProperty(k_data)) {
+          d_elem._private.data[k_data] = data[k_data];
+        }else if ('param' in d_elem._private.data) {
           //its a param
-          if (d_node._private.data.param.hasOwnProperty(k_data)) {
-            d_node._private.data.param[k_data] = data[k_data];
+          if (d_elem._private.data.param.hasOwnProperty(k_data)) {
+            d_elem._private.data.param[k_data] = data[k_data];
           }
         }
       }
     }
     if (value_updated) {
         var new_node_data = this.gen_node_data(type, data.value).data;
-        d_node._private.data.value = data.value;
-        d_node._private.data.param = new_node_data.param;
+        d_elem._private.data.value = data.value;
+        d_elem._private.data.param = new_node_data.param;
     }
 
     // (2) Its style in the cy diagram
-    this.adapt_style(d_node);
+    this.adapt_style(d_elem);
+
+    // (2.1) In case is an Edge then STOP HERE
+    if(d_elem.isEdge()){
+      return d_elem;
+    }
 
     // (3) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
-    this.check_node_compatibility(d_node, true);
+    this.check_node_compatibility(d_elem, true);
 
     // (4) The real time compatible elements of the cy diagram
-    this.check_node_compatibility(d_node);
+    this.check_node_compatibility(d_elem);
 
     //update diagram
     this.cy.style().update();
 
-    return d_node;
+    return d_elem;
   }
 
   //adapt the style to an element:<elem>
