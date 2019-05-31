@@ -64,6 +64,8 @@ class dipam_interface {
           'select-value-trigger': {},
           'check-value-trigger': {}
       };
+
+      this.DIAGRAM_INSTANCE_OBJ.fit_diagram();
     }
 
     set_dipam_temp_val(key, new_val){
