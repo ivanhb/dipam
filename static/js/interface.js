@@ -929,6 +929,7 @@ class dipam_interface {
           e.preventDefault();
           //interface_instance.click_save_workflow();
           var workflow_data = diagram_instance.get_workflow_data();
+          console.log(workflow_data);
           $.post( "/saveworkflow", {
             workflow_data: JSON.stringify(workflow_data),
             path: "",
