@@ -1,6 +1,6 @@
-from src import textAnalysis
-from src import terminal
-from src import filter
+from src.tools import textAnalysis
+from src.tools import terminal
+from src.tools import filter
 
 class Tool(object):
 

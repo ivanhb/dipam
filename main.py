@@ -30,7 +30,7 @@ dipam_data = data.Data()
 def index():
     workflow_path = request.args.get('workflow')
     if workflow_path == None:
-        workflow_path = "src/.data/workflow.json"
+        workflow_path = BASE_CONFIG_PATH+"/workflow.json"
     workflow_data = json.load(open(workflow_path))
     return render_template('index.html', workflow=workflow_data, config=CONFIG_DATA)
 
@@ -47,7 +47,7 @@ def download(id):
 
     try:
         if(id == "workflow"):
-            return send_file("src/.data/workflow.json", as_attachment=True)
+            return send_file(BASE_CONFIG_PATH+"/workflow.json", as_attachment=True)
         else:
             a_zip_dir = "src/.process-temp/"+id+"/"
             zipf = zipfile.ZipFile(a_zip_dir+"/"+id+".zip", 'w', zipfile.ZIP_DEFLATED)
@@ -67,7 +67,7 @@ def save_workflow():
     load_after = request.form['load']
 
     if (path==""):
-        path = "src/.data/"
+        path = BASE_CONFIG_PATH+"/"
 
     new_filename = ""
     if fname == "":
@@ -96,8 +96,7 @@ def load_workflow():
     workflow_file = request.form['workflow_file']
     jsdata = json.loads(workflow_file)
     workflow_fname = "workflow.json"
-    #we can save it in src/.data/workflow.json
-    path = "src/.data/"
+    path = BASE_CONFIG_PATH+"/"
     with open(path + workflow_fname, 'w') as outfile:
         json.dump(jsdata, outfile)
 
