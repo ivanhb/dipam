@@ -23,10 +23,18 @@
           <li><button id="add_tool" type="button" class="btn btn-warning">Add Tool</button></li>
           <li><button id="add_data" type="button" class="btn btn-info">Add Data</button></li>
         </ul>
-        <div id="diagram_undo_redo" class="">
-          <div class="nav-btn"><a id="undo_btn" >&#8404;</a></div>
-          <div class="nav-btn"><a id="redo_btn" >&#8405;</a></div>
-        </div>
+
+        <ul id="diagram_editor_left_side" class="">
+          <li id="diagram_undo_redo" class="">
+            <div class="nav-btn"><a id="undo_btn" >&#8404;</a></div>
+            <div class="nav-btn"><a id="redo_btn" >&#8405;</a></div>
+          </li>
+          <li id="diagram_fit" class=""><a id="fit_btn" >&#1422;</a></li>
+          <li id="diagram_zoom" class="">
+            <div class="nav-btn"><a id="zoom_in_btn" >&#43;</a></div>
+            <div class="nav-btn"><a id="zoom_out_btn" >&#8722;</a></div>
+          </li>
+        </ul>
       </div>
 
       <div id="control">
@@ -40,13 +48,8 @@
       </div>
 
     </span>
+
     <span><div id="cy"></div></span>
-    <div id="diagram_zoom" class="">
-      <div class="nav-btn"><a id="zoom_in_btn" >+</a></div>
-      <!--&#43;-->
-      <div class="nav-btn"><a id="zoom_out_btn" >-</a></div>
-      <!--&#45;-->
-    </div>
 
     <div id="cy_foot">
       <div id="workflow_timeline">

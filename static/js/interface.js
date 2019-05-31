@@ -17,6 +17,9 @@ class dipam_interface {
               "ZOOM_CONTAINER": document.getElementById('diagram_zoom'),
               "ZOOMIN_BTN": document.getElementById('zoom_in_btn'),
               "ZOOMOUT_BTN": document.getElementById('zoom_out_btn'),
+              //fit
+              "FIT_CONTAINER": document.getElementById('diagram_fit'),
+              "FIT_BTN": document.getElementById('fit_btn')
           },
           "CONTROL": {
               "CONTAINER": document.getElementById('control_body'),
@@ -892,13 +895,13 @@ class dipam_interface {
     });
 
     //the undo/redo Nav menu
-    $( "#"+this.DOMS.DIAGRAM.UNDO_BTN.getAttribute('id')).on("click", function() {
+    $(this.DOMS.DIAGRAM.UNDO_BTN).on("click", function() {
       diagram_instance.cy_undo_redo.undo();
       interface_instance.show_undo_redo(
                   diagram_instance.get_undo_redo().isUndoStackEmpty(),
                   diagram_instance.get_undo_redo().isRedoStackEmpty());
     });
-    $( "#"+this.DOMS.DIAGRAM.REDO_BTN.getAttribute('id')).on("click", function() {
+    $(this.DOMS.DIAGRAM.REDO_BTN).on("click", function() {
       diagram_instance.cy_undo_redo.redo();
       interface_instance.show_undo_redo(
                   diagram_instance.get_undo_redo().isUndoStackEmpty(),
@@ -906,16 +909,21 @@ class dipam_interface {
     });
 
     //the zoom in/out Nav menu
-    $( "#"+this.DOMS.DIAGRAM.ZOOMIN_BTN.getAttribute('id')).on("click", function() {
+    $(this.DOMS.DIAGRAM.ZOOMIN_BTN).on("click", function() {
       diagram_instance.zoom_in();
     });
-    $( "#"+this.DOMS.DIAGRAM.ZOOMOUT_BTN.getAttribute('id')).on("click", function() {
+    $(this.DOMS.DIAGRAM.ZOOMOUT_BTN).on("click", function() {
       diagram_instance.zoom_out();
+    });
+
+    //the fit diagram
+    $(this.DOMS.DIAGRAM.FIT_BTN).on("click", function() {
+      diagram_instance.fit_diagram();
     });
 
 
     /*The Workflow buttons and correlated events*/
-    $( "#"+this.DOMS.WORKFLOW.RUN_BTN.getAttribute('id')).on({
+    $(this.DOMS.WORKFLOW.RUN_BTN).on({
         click: function(e) {
               e.preventDefault();
               diagram_instance.fit_diagram();

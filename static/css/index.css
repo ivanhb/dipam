@@ -291,16 +291,46 @@ ul + label{
   font-size:140%;
 }
 
-#diagram_undo_redo{
+
+#diagram_editor_left_side{
   position: absolute;
-  width:30px;
-  left: 318px;
-  padding-left: 5px;
-  padding-right: 0px;
-  top: 100px;
   z-index: 1000;
+  min-height: 300px;
+  left: 318px;
+  top: 80px;
+  list-style-type: none;
+  padding-left: 0px;
+}
+#diagram_editor_left_side li{
+  float:left;
   background-color: #b08c4f;
   border-radius: 0px 20px 20px 0px;
+}
+#diagram_editor_left_side li + li{
+  margin-top: 40px;
+}
+#diagram_editor_left_side li a:hover,
+#diagram_editor_left_side li a:focus {
+  color: black;
+  text-decoration: none;
+}
+
+#diagram_fit{
+  width:25px;
+  font-size: 16pt;
+  text-align: left;
+  padding-top:5%;
+  padding-left:5%;
+}
+#diagram_fit a{
+  color: white;
+}
+
+
+#diagram_undo_redo{
+  width:30px;
+  padding-left: 5px;
+  padding-right: 0px;
 }
 
 #diagram_undo_redo div a{
@@ -312,31 +342,18 @@ ul + label{
   padding-top: 10px;
   text-decoration: none;
 }
-#diagram_undo_redo *:hover,
-#diagram_undo_redo *:focus {
-  color: black;
-}
 
 #diagram_zoom{
-  position: absolute;
   width:30px;
-  left: 350px;
   padding-left: 5px;
-  padding-right: 0px;
-  top: 300px;
-  z-index: 1000;
-  background-color: #b08c4f;
-  font-size:180%;
-  border-radius: 0px 20px 20px 0px;
+  font-size:16pt;
   color: white;
 }
 #diagram_zoom *{
   margin: 0 auto;
   color:white;
   text-decoration: none;
-}
-#diagram_zoom *:hover{
-  color: black;
+  font-weight: 900;
 }
 
 .dropdown{
