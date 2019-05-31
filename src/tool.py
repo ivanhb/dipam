@@ -24,10 +24,13 @@ class Tool(object):
 
         res = None
         if self.TOOL_HANDLER.is_handled(elem_value):
+            print("Text tool running ...")
             res = getattr(self.TOOL_HANDLER, method)(input_files, input_file_names, param)
         elif self.TERMINAL_HANDLER.is_handled(elem_value):
+            print("Terminal tool running ...")
             res = getattr(self.TERMINAL_HANDLER, method)(input_files, input_file_names, param)
         elif self.FILTER_HANDLER.is_handled(elem_value):
+            print("Filtering tool running ...")
             res = getattr(self.FILTER_HANDLER, method)(input_files, input_file_names, param)
 
         #The corresponding function must return a set of files for each different output_data entry
@@ -57,7 +60,7 @@ class Tool(object):
                         #an_entry[k_data]["files"].append(f_name)
                         an_entry[k_data][f_name] = f_inner_value
 
-                    data_entries.append(an_entry)
+                        data_entries.append(an_entry)
 
         #return this to main.py
         return data_entries

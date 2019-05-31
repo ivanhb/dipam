@@ -23,8 +23,9 @@ class Linker(object):
     def add_entry(self, id, entry):
 
         if id in self.index:
-            d_value = next(iter(entry.items()))[0]
-            self.index[id][d_value] = entry[d_value]
+            for an_inner_entry in entry:
+                d_value = entry[an_inner_entry]
+                self.index[id][an_inner_entry] = d_value
 
         return self.index[id]
 

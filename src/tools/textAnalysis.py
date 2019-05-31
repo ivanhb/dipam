@@ -6,6 +6,7 @@ import string
 # Importing Gensim
 import gensim
 from gensim import corpora
+from gensim.models.coherencemodel import CoherenceModel
 
 class TextAnalysis(object):
 
@@ -41,8 +42,6 @@ class TextAnalysis(object):
             #iterate through the array of values given
             documents.append(a_file_value)
 
-        print("LDA Topic Modelling on "+str(len(documents))+ " documents.")
-
         stop = set(stopwords.words('english'))
         exclude = set(string.punctuation)
         lemma = WordNetLemmatizer()
@@ -76,6 +75,9 @@ class TextAnalysis(object):
             return res_err
 
         res = ldamodel.print_topics(num_topics= p_num_topics, num_words= p_num_words)
+        # Get the Coherence value
+        cm = CoherenceModel(model=ldamodel, corpus=doc_term_matrix, coherence='u_mass')
+        coherence = cm.get_coherence()
 
         # populate the files according to the topics found
         a_tab = []
@@ -104,7 +106,10 @@ class TextAnalysis(object):
         #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
         res_csvs = {}
         res_csvs["topics.csv"] = str(res_str)
+        res_coherence = {}
+        res_coherence["coherence.txt"] = str(coherence)
 
         #The returned data must include a recognizable key and the data associated to it
         data_to_return["data"]["d-topics-table"] = res_csvs
+        data_to_return["data"]["d-coherence"] = res_coherence
         return data_to_return

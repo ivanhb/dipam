@@ -219,11 +219,12 @@ def process():
                         input_files[d_value].extend(corpus[id_input][d_value]["files"])
                         input_file_names[d_value].extend(corpus[id_input][d_value]["files_name"])
 
+                    print(" -> inputs from data: ", input_files.keys())
                 #is a tool input -> check the outputs compatible with my inputs
                 else:
                     #ask the linker for its link object
                     index_elem = dipam_linker.get_elem(id_input)
-
+                    print(" -> inputs from tool: ", index_elem.keys())
                     if index_elem != -1:
                         #check if the input node have compatible data i can take
                         set_of_files = {}
@@ -237,6 +238,7 @@ def process():
                                     input_files[comp_input].extend(a_data[0])
                                     input_file_names[comp_input].append(file_k)
 
+        print("Input: ",input_files.keys())
         #The data entries in this case are the output of the tool
         data_entries = dipam_tool.run(
             elem_must_att,
@@ -246,6 +248,7 @@ def process():
             input_file_names,
             elem_param_att
         )
+        print("Output: ",len(data_entries))
 
         #check if there were errors
         if len(data_entries) > 0:
@@ -262,11 +265,14 @@ def process():
                 dipam_linker.add_entry(elem_must_att["id"], d_entry)
                 #write entries in dir
                 if len(d_entry.keys()) > 0:
-                    entry_item = next(iter(d_entry.items()))[0]
-                    for a_doc_key in d_entry[entry_item]:
-                        #write according to the type of file
-                        write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
+                    for entry_item in d_entry:
+                        #entry_item = next(iter(d_entry.items()))[0]
+                        for a_doc_key in d_entry[entry_item]:
+                            #write according to the type of file
+                            write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
 
+        print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]).keys())
+        print("\n\n")
 
     elif elem_must_att["type"] == "data":
         #data_entries.append(dipam_linker.build_data_entry(posted_data))

@@ -7,15 +7,19 @@ class TOOL_NAME(object):
     def is_handled(self, t_value):
         return t_value in self.TOOL
 
+    # Each function defined must return data which include a recognizable key
+    # as defined in the config.json file
+    #
+    # e.g:
+    # {
+    #    "d-gen-text": {"0.txt": "HI","1.txt":"BYE" ...}
+    #   ...
+    # }
     def FUN_NAME(self, input_files, input_file_names, param):
         data_to_return = {"data":{}}
 
-        #Build your data here
-        #The returned data must include a recognizable key and the data associated to it
-        # e.g: data_to_return
-        # {
-        #    "d-gen-text": {"0": "HI","1":"BYE" ...}
-        #   ...
-        # }
+        # 1) Check if the input data type compatibilities and needed are given
+        # 2) Check if there are some parameters in <param>
+        # 3) Process the data and return it
 
         return data_to_return

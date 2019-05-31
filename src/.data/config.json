@@ -11,6 +11,12 @@
             "data_class": "text",
             "param": ["p-file"],
             "file_name": "doc"
+        },
+        "d-coherence":{
+            "label": "Topic coherence value",
+            "data_class": "text",
+            "param": ["p-file"],
+            "file_name": "coherence"
         }
   },
   "tool": {
@@ -19,7 +25,7 @@
             "function": "lda",
             "param": ["p-topic","p-numwords"],
             "compatible_input": ["d-gen-text"],
-            "output": ["d-topics-table"]
+            "output": ["d-topics-table","d-coherence"]
         },
         "t-chart-bar": {
             "label": "Bar chart",
@@ -37,7 +43,7 @@
         "t-save-files": {
             "label": "Save",
             "function": "save_file",
-            "compatible_input": ["d-gen-text","d-topics-table"]
+            "compatible_input": ["d-gen-text","d-topics-table","d-coherence"]
         }
   },
   "param": {

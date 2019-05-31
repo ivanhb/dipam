@@ -19,8 +19,6 @@ class Terminal(object):
 
         # NO RESTRICTIONS  Takes any input
 
-        print("Saving files ...")
-
         #Build data here
         res_docs = {}
         i = 0
