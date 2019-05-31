@@ -35,11 +35,11 @@ class Filter(object):
                         pass
                     elif f_opt == "dates":
                         documents = self._filter_dates(documents)
-                        pass
                     elif f_opt == "footnotes":
                         pass
             if "p-filterregex" in param:
                 documents = self._filter_by_regex(documents, param["p-filterregex"])
+
 
         #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
         res_filtered = {}
@@ -47,10 +47,9 @@ class Filter(object):
             res_filtered["filtered_"+documents_names[i]] = documents[i]
 
         data_to_return["data"]["d-gen-text"] = res_filtered
-        print("Filtered text ...", res_filtered)
         return data_to_return
 
-    def _filter_dates(self, input_files):
+    def _filter_dates(self, documents):
         DATES_REGEX_list = [
             "([0-9]{4}/[0-9]{2}/[0-9]{2})",
             "([0-9]{2}/[0-9]{2}/[0-9]{4})",
@@ -61,7 +60,8 @@ class Filter(object):
         for d in documents:
             for d_reg_i in DATES_REGEX_list:
                 a_regex = re.compile(d_reg_i)
-                d_filtered.append(re.sub(a_regex,"", d))
+                d = re.sub(a_regex,"", d)
+            d_filtered.append(d)
         return d_filtered
 
     def _filter_by_regex(self, documents, a_regex_str):

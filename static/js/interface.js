@@ -630,8 +630,11 @@ class dipam_interface {
       instance.DOMS.DIAGRAM.ADD_TOOL_BTN.style["opacity"] = opacity_val;
       instance.DOMS.DIAGRAM.ADD_DATA_BTN.style["opacity"] = opacity_val;
 
-      //instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["pointer-events"] = p_event;
-      //instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["opacity"] = opacity_val;
+      instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.DIAGRAM.ZOOM_CONTAINER.style["opacity"] = opacity_val;
+
+      instance.DOMS.DIAGRAM.FIT_CONTAINER.style["pointer-events"] = p_event;
+      instance.DOMS.DIAGRAM.FIT_CONTAINER.style["opacity"] = opacity_val;
 
       instance.DOMS.DIAGRAM.UNDO_REDO_CONTAINER.style["pointer-events"] = p_event;
       instance.DOMS.DIAGRAM.UNDO_REDO_CONTAINER.style["opacity"] = opacity_val;
