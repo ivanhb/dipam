@@ -23,17 +23,28 @@ class TextAnalysis(object):
         data_to_return = {"data":{}}
         ok_to_process = False
         #Check the MUST Prerequisite
+        # Check Restrictions
         if "d-gen-text" in input_files:
-            ok_to_process = True
+            if len(input_files["d-gen-text"]):
+                ok_to_process = True
+
+        if not ok_to_process:
+            res_err = {"data":{}}
+            res_err["data"]["error"] = {}
+            res_err["data"]["error"]["ValueError"] = "Input data missing!"
+            return res_err
 
         #The params
         p_num_topics = 5
         p_num_words = None
+        p_stopwords = None
         if param != None:
             if "p-topic" in param:
                 p_num_topics = int(param["p-topic"])
             if "p-numwords" in param:
                 p_num_words = int(param["p-numwords"])
+            if "p-defstopwords" in param:
+                p_stopwords = str(param["p-defstopwords"])
 
 
         #Define the set of documents
@@ -42,17 +53,32 @@ class TextAnalysis(object):
             #iterate through the array of values given
             documents.append(a_file_value)
 
-        stop = set(stopwords.words('english'))
-        exclude = set(string.punctuation)
-        lemma = WordNetLemmatizer()
 
-        def clean(doc):
+        def clean(doc, p_stopwords, d_stopwords):
+            stop = set()
+            if p_stopwords != "none":
+                stop = set(stopwords.words(p_stopwords))
+                stop.union(d_stopwords)
             stop_free = " ".join([i for i in doc.lower().split() if i not in stop])
+            exclude = set(string.punctuation)
             punc_free = ''.join(ch for ch in stop_free if ch not in exclude)
+            lemma = WordNetLemmatizer()
             normalized = " ".join(lemma.lemmatize(word) for word in punc_free.split())
             return normalized
 
-        doc_clean = [clean(str(doc)).split() for doc in documents]
+        def read_stopwords_data(list_data):
+            res = []
+            for a_tab in list_data:
+                for row in a_tab:
+                    res.append(row[0])
+            return res
+
+        stopwords_data = set()
+        if "d-stopwords" in input_files:
+            if len(input_files["d-stopwords"]):
+                stopwords_data = set(read_stopwords_data(input_files["d-stopwords"]))
+
+        doc_clean = [clean(str(doc), p_stopwords, stopwords_data).split() for doc in documents]
 
 
         # Creating the term dictionary of our courpus, where every unique term is assigned an index.
@@ -71,7 +97,7 @@ class TextAnalysis(object):
         except ValueError:
             res_err = {"data":{}}
             res_err["data"]["error"] = {}
-            res_err["data"]["error"]["ValueError"] = "No or Incompatible data have been given as input to the LDA algorithm"
+            res_err["data"]["error"]["ValueError"] = "Incompatible data have been given as input to the LDA algorithm"
             return res_err
 
         res = ldamodel.print_topics(num_topics= p_num_topics, num_words= p_num_words)
@@ -80,12 +106,11 @@ class TextAnalysis(object):
         coherence = cm.get_coherence()
 
         # populate the files according to the topics found
-        a_tab = []
+        a_tab = [["topic","word","score"]]
         for topic_i in res:
             # 0: is id, 1: str of all words
             t_id = topic_i[0]
             t_words_str = topic_i[1]
-
             t_words = t_words_str.split(" + ")
             for a_t_word in t_words:
                 a_t_word_parts = a_t_word.split("*")
@@ -93,19 +118,9 @@ class TextAnalysis(object):
                 the_word = a_t_word_parts[1].replace('"','')
                 a_tab.append([t_id,the_word,score])
 
-        #create the str
-        res_str = ""
-
-        res_str = "topic,word,score" + "\n"
-        for a_row in a_tab:
-            for a_cell in a_row:
-                res_str = res_str + str(a_cell) +","
-            res_str = res_str[:-1] + "\n"
-
-
         #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
         res_csvs = {}
-        res_csvs["topics.csv"] = str(res_str)
+        res_csvs["topics.csv"] = a_tab
         res_coherence = {}
         res_coherence["coherence.txt"] = str(coherence)
 

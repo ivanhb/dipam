@@ -7,13 +7,19 @@ class Data(object):
         #self.data_index["d-gen-text"] = "text"
         #self.data_index["d-gen-table"] = "table"
 
+    def get_data_index(self, d_key):
+        if d_key in self.data_index:
+            return self.data_index[d_key]
+        else:
+            return None
+
     def set_data_index(self, data_config):
         for k_data in data_config:
             self.data_index[k_data] = {}
             self.data_index[k_data]['data_class'] = data_config[k_data]["data_class"]
             self.data_index[k_data]['file_name'] = data_config[k_data]["file_name"]
 
-    def handle(self, files_list, data_value, file_type = "file"):
+    def handle(self, files_list, data_value, file_type = "file", param = None):
         list_text = []
         list_text_name = []
         data_class = None
@@ -35,7 +41,7 @@ class Data(object):
 
                     f_id += 1
 
-        return (list_text,list_text_name)
+        return (list_text,list_text_name, data_class)
 
     def read_input(self,a_file, file_type):
         res = None
@@ -52,5 +58,14 @@ class Data(object):
     def process_text(self,an_input):
         return an_input
 
-    def process_table(self,an_input):
-        return an_input
+    def process_table(self,an_input, with_header = False):
+        res_matrix = []
+        rows = an_input.split("\n")
+
+        starting_i = 0
+        if with_header:
+            starting_i = 1
+        for i in range(starting_i,len(rows)):
+            r = rows[i]
+            res_matrix.append(r.split(","))
+        return res_matrix

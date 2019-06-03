@@ -342,10 +342,17 @@ class dipam_diagram {
       data: a_node_data
     };
 
-    //generate position (NOTE: width and height are not correct)
-    var info_box = this.DIAGRAM_CONTAINER.getBoundingClientRect();
-    node_obj.position.x = info_box.x;
-    node_obj.position.y = info_box.y + info_box.height/2;
+
+    //var info_box = this.DIAGRAM_CONTAINER.getBoundingClientRect();
+    //node_obj.position.x = info_box.x;
+    //node_obj.position.y = info_box.y + info_box.height/2;
+
+    //try with the pan value
+    //this.fit_diagram();
+    var info_box = this.cy.extent();
+    node_obj.position.x = info_box.x1 + Math.abs(info_box.x1/3);
+    node_obj.position.y = info_box.y1 + Math.abs(info_box.y1/2);
+
     for (var i = 0; i < this.cy.nodes().length; i++) {
       var a_node_added = this.cy.nodes()[i];
       if((a_node_added.position('x') == node_obj.position.x) && (a_node_added.position('y') == node_obj.position.y)){

@@ -12,8 +12,12 @@ from src import data
 from src import linker
 
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file
+#from flask.ext.cache import Cache
+#cache = Cache()
 
+#cache.clear()
 app = Flask(__name__)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 BASE_PROCESS_PATH = "src/.process-temp"
 BASE_CONFIG_PATH = "src/.data"
@@ -118,7 +122,19 @@ def reset_temp_data():
 @app.route('/process', methods = ['POST'])
 def process():
 
-    def write_file(path, file_value):
+    def write_file(path, file_value, file_type):
+
+        #build string according to file type
+        if file_type == "table":
+            str_table = ""
+            #file_value is a matrix
+            for row in file_value:
+                for cell in row:
+                    str_table += str(cell) + ","
+                str_table = str_table[:-1]
+                str_table += "\n"
+            str_table = str_table[:-1]
+            file_value = str_table
 
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
@@ -219,12 +235,12 @@ def process():
                         input_files[d_value].extend(corpus[id_input][d_value]["files"])
                         input_file_names[d_value].extend(corpus[id_input][d_value]["files_name"])
 
-                    print(" -> inputs from data: ", input_files.keys())
+                    #print(" -> inputs from data: ", input_files.keys())
                 #is a tool input -> check the outputs compatible with my inputs
                 else:
                     #ask the linker for its link object
                     index_elem = dipam_linker.get_elem(id_input)
-                    print(" -> inputs from tool: ", index_elem.keys())
+                    #print(" -> inputs from tool: ", index_elem.keys())
                     if index_elem != -1:
                         #check if the input node have compatible data i can take
                         set_of_files = {}
@@ -234,11 +250,11 @@ def process():
                                 #call the data handler to process this type of inputs
                                 for file_k in index_elem_data:
                                     file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+str(file_k)
-                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path")
+                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path", param = None)
                                     input_files[comp_input].extend(a_data[0])
                                     input_file_names[comp_input].append(file_k)
 
-        print("Input: ",input_files.keys())
+        #print("Input: ",input_files.keys())
         #The data entries in this case are the output of the tool
         data_entries = dipam_tool.run(
             elem_must_att,
@@ -248,7 +264,7 @@ def process():
             input_file_names,
             elem_param_att
         )
-        print("Output: ",len(data_entries))
+        #print("Output: ",len(data_entries))
 
         #check if there were errors
         if len(data_entries) > 0:
@@ -269,10 +285,11 @@ def process():
                         #entry_item = next(iter(d_entry.items()))[0]
                         for a_doc_key in d_entry[entry_item]:
                             #write according to the type of file
-                            write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key])
+                            f_data_type = dipam_data.get_data_index(entry_item)["data_class"]
+                            write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key], f_data_type)
 
-        print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]).keys())
-        print("\n\n")
+        #print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]).keys())
+        #print("\n\n")
 
     elif elem_must_att["type"] == "data":
         #data_entries.append(dipam_linker.build_data_entry(posted_data))
@@ -288,6 +305,7 @@ def process():
         corpus[elem_id][elem_value] = {}
         corpus[elem_id][elem_value]["files"] = a_data[0]
         corpus[elem_id][elem_value]["files_name"] = a_data[1]
+        corpus[elem_id][elem_value]["data_class"] = a_data[2]
 
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
     return "Success:Processing done !"

@@ -371,7 +371,6 @@ class dipam_interface {
 
                   $( "#"+dom_id+"_file").on('change', function(){
                     var data_att_value = this.files;
-                    console.log(data_att_value);
                     if(data_att_value){
                         var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
@@ -381,7 +380,6 @@ class dipam_interface {
                   });
                   $( "#"+dom_id+"_dir").on('change', function(){
                     var data_att_value = this.files;
-                    console.log(data_att_value);
                     if(data_att_value){
                         var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
                         a_dom_obj_lbl.innerHTML = corresponding_lbl;
@@ -518,7 +516,7 @@ class dipam_interface {
         editdom.parentNode.parentNode.innerHTML = two_buttons_dom + editdom.parentNode.parentNode.innerHTML;
         //set events
         var corresponding_elem = this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(data_elem_id);
-        console.log(corresponding_elem);
+        //console.log(corresponding_elem);
 
         this.set_a_dom_event(document.getElementById("cancel"),"cancel-trigger", corresponding_elem);
         this.set_a_dom_event(document.getElementById("save"),"save-trigger", corresponding_elem);
@@ -555,7 +553,6 @@ class dipam_interface {
     }
 
     reload_control_section(new_elem = null){
-      console.log(new_elem);
 
       var active_nav = this.get_active_nav();
 
@@ -658,7 +655,6 @@ class dipam_interface {
   handle_workflow(status, param){
     var interface_instance = this;
     if (status == 'run') {
-      console.log(param);
       this.workflow = param;
       var workflow_to_process = this.workflow;
       var index_processed = {};
@@ -667,7 +663,7 @@ class dipam_interface {
         url: "/reset",
         type: 'GET',
         success: function(data) {
-              console.log("reset temp data");
+              //console.log("reset temp data");
               if (data.startsWith("Error:")) {
                 console.log("Could not reset temp data!");
               }else {
@@ -778,9 +774,15 @@ class dipam_interface {
       }
 
       /*switch according to the terminal tool value*/
+      var a_linker_dom = null;
       switch (terminals[i].value) {
         case "t-save-files":
-          last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'><a href='"+"/download/"+node_id+"' target='_blank'>Save</a></div>";
+          a_linker_dom = document.createElement("a");
+          a_linker_dom.setAttribute("value",node_id);
+          a_linker_dom.target = "_blank";
+          a_linker_dom.innerHTML = "Save";
+          a_linker_dom.href = "/download/"+node_id;
+          last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
           break;
         default:
       }
@@ -797,7 +799,6 @@ class dipam_interface {
     if (is_error) {
       extra_class = "error-block"
     }
-    console.log("Add Block !");
     //this.TIMELINE_TEXT.innerHTML = "Workflow Done";
     var block_to_add = document.createElement("div");
     block_to_add.setAttribute("class", "timeline-block-inner "+extra_class);
@@ -945,7 +946,7 @@ class dipam_interface {
           e.preventDefault();
           //interface_instance.click_save_workflow();
           var workflow_data = diagram_instance.get_workflow_data();
-          console.log(workflow_data);
+          //console.log(workflow_data);
           $.post( "/saveworkflow", {
             workflow_data: JSON.stringify(workflow_data),
             path: "",
@@ -992,6 +993,7 @@ class dipam_interface {
         //nodes on click handler
         diagram_cy.nodes().on('click', function(e){
             console.log("Node clicked !", this);
+            console.log(diagram_instance);
             diagram_instance.click_elem_style(this,'node');
             diagram_instance.check_node_compatibility(this);
             interface_instance.click_on_node(this);

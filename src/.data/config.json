@@ -17,14 +17,20 @@
             "data_class": "text",
             "param": ["p-file"],
             "file_name": "coherence"
+        },
+        "d-stopwords":{
+            "label": "List of stopwords",
+            "data_class": "table",
+            "param": ["p-file"],
+            "file_name": "stopwords"
         }
   },
   "tool": {
         "t-topic-lda": {
             "label": "Topic modeling with LDA",
             "function": "lda",
-            "param": ["p-topic","p-numwords"],
-            "compatible_input": ["d-gen-text"],
+            "param": ["p-topic","p-numwords","p-defstopwords"],
+            "compatible_input": ["d-gen-text","d-stopwords"],
             "output": ["d-topics-table","d-coherence"]
         },
         "t-chart-bar": {
@@ -61,10 +67,9 @@
           "init_value": 0
         },
         "p-topic":{
-          "handler": "select-value",
+          "handler": "input-text",
           "label": "Number of topics",
-          "value_label": ["2","3","4","5","10","15","20"],
-          "value": [2,3,4,5,10,15,20],
+          "value": "2",
           "init_value": 2
         },
         "p-numwords":{
@@ -86,6 +91,13 @@
           "label": "Specific text <p> (Regular expressions supported) </p>",
           "value": "",
           "init_value": ""
+        },
+        "p-defstopwords":{
+          "handler": "select-value",
+          "label": "Stopwwords language",
+          "value_label": ["None","Arabic","Azerbaijani","Danish","Dutch","English","Finnish","French","German","Greek","Hungarian","Indonesian","Italian","Kazakh","Nepali","Norwegian","Portuguese","Romanian","Russian","Spanish","Swedish","Turkish"],
+          "value": ["none","arabic","azerbaijani","danish","dutch","english","finnish","french","german","greek","hungarian","indonesian","italian","kazakh","nepali","norwegian","portuguese","romanian","russian","spanish","swedish","turkish"],
+          "init_value": "none"
         }
   }
 }

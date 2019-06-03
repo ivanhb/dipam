@@ -131,11 +131,13 @@ input {
 
 .timeline-block-inner .inner-timeline-block {
   vertical-align: middle;
-  border-bottom: dashed 2px #917442;
   font-size: 20px;
   padding: 2px;
   text-align: center;
-
+  background-color: white;
+  border-top: solid 0.5px #7a6238;
+  border-bottom: solid 0.5px #7a6238;
+  margin-top: 8%;
 }
 .timeline-block-inner .inner-timeline-block a{
  color: #7a6238;

@@ -2,8 +2,8 @@
 //load json files
 var workflow = JSON.parse(decode_json(workflow));
 var config = JSON.parse(decode_json(config));
-console.log("Config:",config);
-console.log("Workflow:",workflow);
+//console.log("Config:",config);
+//console.log("Workflow:",workflow);
 
 function decode_json(text){
   //var msg = decodeURIComponent(text.replace(/\+/g, '%20')+'');
@@ -13,7 +13,6 @@ function decode_json(text){
   msg = dom.body.textContent;
   msg = msg.replace(/'/g, '"');
   msg = msg.replace('\\', "\\\\");
-  console.log(msg);
   return msg;
 }
 

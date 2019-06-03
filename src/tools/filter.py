@@ -12,8 +12,16 @@ class Filter(object):
         data_to_return = {"data":{}}
 
         # Check Restrictions
+        ok_to_process = False
         if "d-gen-text" in input_files:
-            ok_to_process = True
+            if len(input_files["d-gen-text"]):
+                ok_to_process = True
+
+        if not ok_to_process:
+            res_err = {"data":{}}
+            res_err["data"]["error"] = {}
+            res_err["data"]["error"]["ValueError"] = "Input data missing!"
+            return res_err
 
         #Define the set of documents
         documents = []
