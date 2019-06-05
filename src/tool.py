@@ -4,63 +4,32 @@ from src.tools import filter
 
 class Tool(object):
 
-    def __init__(self):
-        #self.BASE_PATH = base_path
+    def __init__(self, tool_config):
+
+        self.tool_index = tool_config
+
         #initialize all the modules that handle the tool elements
-        self.TOOL_HANDLER = textAnalysis.TextAnalysis(["t-topic-lda","t-filter-names"])
-        self.TERMINAL_HANDLER = terminal.Terminal(["t-chart-bar","t-save-files"])
-        self.FILTER_HANDLER = filter.Filter(["t-filter-text"])
+        self.tool_handler = {}
+        self.tool_handler["TextAnalysis"] = textAnalysis.TextAnalysis()
+        self.tool_handler["Filter"] = filter.Filter()
+        self.tool_handler["Terminal"] = terminal.Terminal()
 
 
-    # Run a method from the TOOL_HANDLER module
-    # <node>: The corresponding node
-    # <temp_dir>: the temporal processing directory path
-    # <param>: in case of additional parameters for the method called
-    def run(self, n_data, n_workflow, n_graph, input_files, input_file_names, param = None):
+    def run(self, n_data, n_workflow, n_graph, input_files, param = None):
         elem_id = n_data['id']
         elem_value = n_data['value']
         method = n_workflow['class']
         output_data = n_workflow['output']
 
-        res = None
-        if self.TOOL_HANDLER.is_handled(elem_value):
-            print("Text tool running ...")
-            res = getattr(self.TOOL_HANDLER, method)(input_files, input_file_names, param)
-        elif self.TERMINAL_HANDLER.is_handled(elem_value):
-            print("Terminal tool running ...")
-            res = getattr(self.TERMINAL_HANDLER, method)(input_files, input_file_names, param)
-        elif self.FILTER_HANDLER.is_handled(elem_value):
-            print("Filtering tool running ...")
-            res = getattr(self.FILTER_HANDLER, method)(input_files, input_file_names, param)
-
-        #The corresponding function must return a set of files for each different output_data entry
-        # <res> example:
-        #res = {
-        #        "data": {
-        #                "d-gen-text": {
-        #                    "1.txt" : "hi",
-        #                    "2.txt" : "bye"
-        #                }
-        #        }
-        #}
-
-        #print("Tool:",elem_id," With input files:",len(input_files)," Returned: ",res)
-
-        data_entries = []
-        if res != None:
-            if "data" in res:
-                for k_data in res["data"]:
-                    an_entry = {}
-                    an_entry[k_data] = {}
-
-                    for key, value in res["data"][k_data].items():
-                        f_name = key
-                        f_inner_value = value
-                        #self.write_file(self.BASE_PATH+"/"+str(elem_id)+"/"+str(f_name), f_inner_value)
-                        #an_entry[k_data]["files"].append(f_name)
-                        an_entry[k_data][f_name] = f_inner_value
-
-                        data_entries.append(an_entry)
+        res = {}
+        if elem_value in self.tool_index:
+            tool_conf = self.tool_index[elem_value]
+            if tool_conf["class"] in self.tool_handler:
+                print("Running a "+str(tool_conf["class"])+" tool ...")
+                res = getattr(self.tool_handler[tool_conf["class"]],method)(input_files, param)
+        else:
+            #Tool not handled
+            res["data"]["error"] = "Tool not handled!"
 
         #return this to main.py
-        return data_entries
+        return res["data"]

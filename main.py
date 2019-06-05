@@ -25,9 +25,9 @@ CONFIG_DATA = {}
 
 #Will store all the FileStorage of the 'data' nodes
 corpus = {}
-dipam_linker = linker.Linker()
-dipam_tool = tool.Tool()
-dipam_data = data.Data()
+dipam_linker = None
+dipam_tool = None
+dipam_data = None
 
 #example: /dipam?workflow=WW&?config=CC
 @app.route('/')
@@ -121,6 +121,20 @@ def reset_temp_data():
 
 @app.route('/process', methods = ['POST'])
 def process():
+
+    def check_extension(file_type, file_name = None):
+        extension = "txt"
+        if file_type == "table":
+            extension = "csv"
+
+        if file_name:
+            res = file_name
+            file_name_parts = file_name.split(".")
+            if(file_name_parts[-1] != extension):
+                res = res +"."+ extension
+            return res
+        return extension
+
 
     def write_file(path, file_value, file_type):
 
@@ -219,11 +233,9 @@ def process():
     if elem_must_att["type"] == "tool":
 
         input_files = {}
-        input_file_names = {}
         if elem_workflow_att["compatible_input"]:
             for comp_input in elem_workflow_att["compatible_input"]:
-                input_files[comp_input] = []
-                input_file_names[comp_input] = []
+                input_files[comp_input] = {}
 
         if elem_workflow_att["input"]:
             for id_input in elem_workflow_att['input']:
@@ -232,10 +244,8 @@ def process():
                 if id_input in corpus:
                     d_value = next(iter(corpus[id_input].items()))[0]
                     if d_value in input_files:
-                        input_files[d_value].extend(corpus[id_input][d_value]["files"])
-                        input_file_names[d_value].extend(corpus[id_input][d_value]["files_name"])
+                        input_files[d_value] = corpus[id_input][d_value]["files"]
 
-                    #print(" -> inputs from data: ", input_files.keys())
                 #is a tool input -> check the outputs compatible with my inputs
                 else:
                     #ask the linker for its link object
@@ -248,45 +258,47 @@ def process():
                             if comp_input in index_elem:
                                 index_elem_data = index_elem[comp_input]
                                 #call the data handler to process this type of inputs
+                                print(index_elem_data)
                                 for file_k in index_elem_data:
-                                    file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+str(file_k)
+                                    #<file_k> : is the name of the file
+                                    file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+file_k
                                     a_data = dipam_data.handle([file_path], comp_input, file_type = "path", param = None)
-                                    input_files[comp_input].extend(a_data[0])
-                                    input_file_names[comp_input].append(file_k)
 
-        #print("Input: ",input_files.keys())
+                                    for a_doc_k in a_data[0]:
+                                        input_files[comp_input][file_k] = a_data[0][a_doc_k]
+
+
         #The data entries in this case are the output of the tool
         data_entries = dipam_tool.run(
             elem_must_att,
             elem_workflow_att,
             elem_graph_att,
             input_files,
-            input_file_names,
             elem_param_att
         )
         #print("Output: ",len(data_entries))
 
         #check if there were errors
-        if len(data_entries) > 0:
-            if "error" in data_entries[0]:
-                an_error = data_entries[0]["error"]
-                k_error = next(iter(an_error))
-                return "Error: "+an_error[k_error]
+        if "error" in data_entries:
+            return "Error: "+str(data_entries["error"])
+
 
         #Index the new Tool and its output data
         elem_index = dipam_linker.index_elem(elem_must_att["id"])
         if elem_index != None:
-            for d_entry in data_entries:
-                #<d_entry> e.g: {'d-gen-text': {'files': ['1.txt', '2.txt']}}
-                dipam_linker.add_entry(elem_must_att["id"], d_entry)
+            for d_key, d_val in data_entries.items():
                 #write entries in dir
-                if len(d_entry.keys()) > 0:
-                    for entry_item in d_entry:
-                        #entry_item = next(iter(d_entry.items()))[0]
-                        for a_doc_key in d_entry[entry_item]:
-                            #write according to the type of file
-                            f_data_type = dipam_data.get_data_index(entry_item)["data_class"]
-                            write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+str(a_doc_key), d_entry[entry_item][a_doc_key], f_data_type)
+                updated_data_entries = {}
+                for f_key, f_val in d_val.items():
+                    f_data_type = dipam_data.get_data_index(d_key)["data_class"]
+                    f_name_normalized = check_extension(f_data_type, f_key)
+                    write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+f_name_normalized, f_val, f_data_type)
+                    updated_data_entries[f_name_normalized] = f_val
+
+                #And index the new files
+                d_data_item = {}
+                d_data_item[d_key] = updated_data_entries
+                dipam_linker.add_entry(elem_must_att["id"], d_key ,updated_data_entries)
 
         #print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]).keys())
         #print("\n\n")
@@ -301,11 +313,11 @@ def process():
             files = elem_param_att['p-file']
 
         a_data = dipam_data.handle(files, elem_value)
+
         corpus[elem_id] = {}
         corpus[elem_id][elem_value] = {}
         corpus[elem_id][elem_value]["files"] = a_data[0]
-        corpus[elem_id][elem_value]["files_name"] = a_data[1]
-        corpus[elem_id][elem_value]["data_class"] = a_data[2]
+        corpus[elem_id][elem_value]["data_class"] = a_data[1]
 
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
     return "Success:Processing done !"
@@ -313,6 +325,9 @@ def process():
 if __name__ == '__main__':
     #app.config['TEMPLATES_AUTO_RELOAD'] = True
     CONFIG_DATA = json.load(open(BASE_CONFIG_PATH+"/config.json"))
-    dipam_data.set_data_index(CONFIG_DATA["data"])
+
+    dipam_linker = linker.Linker()
+    dipam_tool = tool.Tool(CONFIG_DATA["tool"])
+    dipam_data = data.Data(CONFIG_DATA["data"])
 
     app.run()

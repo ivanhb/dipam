@@ -6,6 +6,12 @@
             "param": ["p-file"],
             "file_name": "topics"
         },
+        "d-doc-topics":{
+            "label": "Document topics",
+            "data_class": "table",
+            "param": ["p-file"],
+            "file_name": "doctopics"
+        },
         "d-gen-text":{
             "label": "Text file",
             "data_class": "text",
@@ -13,10 +19,16 @@
             "file_name": "doc"
         },
         "d-coherence":{
-            "label": "Topic coherence value",
+            "label": "LDA coherence value",
             "data_class": "text",
             "param": ["p-file"],
             "file_name": "coherence"
+        },
+        "d-perplexity":{
+            "label": "LDA perplexity value",
+            "data_class": "text",
+            "param": ["p-file"],
+            "file_name": "perplexity"
         },
         "d-stopwords":{
             "label": "List of stopwords",
@@ -28,19 +40,22 @@
   "tool": {
         "t-topic-lda": {
             "label": "Topic modeling with LDA",
+            "class": "TextAnalysis",
             "function": "lda",
             "param": ["p-topic","p-numwords","p-defstopwords"],
             "compatible_input": ["d-gen-text","d-stopwords"],
-            "output": ["d-topics-table","d-coherence"]
+            "output": ["d-topics-table","d-coherence","d-perplexity","d-doc-topics"]
         },
         "t-chart-bar": {
             "label": "Bar chart",
+            "class": "Terminal",
             "function": "bar_chart",
             "param": ["p-log"],
             "compatible_input": ["d-topics-table"]
         },
         "t-filter-text": {
             "label": "Filter the text",
+            "class": "Filter",
             "function": "filter_text",
             "param": ["p-filteropt","p-filterregex"],
             "compatible_input": ["d-gen-text"],
@@ -48,14 +63,21 @@
         },
         "t-save-files": {
             "label": "Save",
+            "class": "Terminal",
             "function": "save_file",
-            "compatible_input": ["d-gen-text","d-topics-table","d-coherence"]
+            "compatible_input": ["d-gen-text","d-topics-table","d-coherence","d-perplexity","d-doc-topics"]
+        },
+        "t-doctopics-view": {
+            "label": "Visualize document topics",
+            "class": "Terminal",
+            "function": "doc_topics_barchart",
+            "compatible_input": ["d-doc-topics"]
         }
   },
   "param": {
         "p-file":{
           "handler": "select-file",
-          "label": "File/s or Directory",
+          "label": "File/s or Directory:",
           "value": {},
           "init_value": {}
         },
@@ -68,13 +90,13 @@
         },
         "p-topic":{
           "handler": "input-text",
-          "label": "Number of topics",
+          "label": "Number of topics:",
           "value": "2",
           "init_value": 2
         },
         "p-numwords":{
           "handler": "select-value",
-          "label": "Number of words",
+          "label": "Number of words:",
           "value_label": ["10","15","20","25","30","40","50"],
           "value": [10,15,20,25,30,40,50],
           "init_value": 10
@@ -82,19 +104,19 @@
         "p-filteropt":{
           "handler": "check-value",
           "label": "Filter and remove:",
-          "value_label": ["Dates","Footnotes"],
-          "value": ["dates","footnotes"],
+          "value_label": ["Dates","References","Header"],
+          "value": ["dates","references","header"],
           "init_value": ["dates"]
         },
         "p-filterregex":{
           "handler": "input-text",
-          "label": "Specific text <p> (Regular expressions supported) </p>",
+          "label": "Specific text <p> (Regular expressions supported, try it on <a target=&quot;_blank&quot; href=https://regex101.com>the online demo</a>) </p>",
           "value": "",
           "init_value": ""
         },
         "p-defstopwords":{
           "handler": "select-value",
-          "label": "Stopwwords language",
+          "label": "Stopwwords language:",
           "value_label": ["None","Arabic","Azerbaijani","Danish","Dutch","English","Finnish","French","German","Greek","Hungarian","Indonesian","Italian","Kazakh","Nepali","Norwegian","Portuguese","Romanian","Russian","Spanish","Swedish","Turkish"],
           "value": ["none","arabic","azerbaijani","danish","dutch","english","finnish","french","german","greek","hungarian","indonesian","italian","kazakh","nepali","norwegian","portuguese","romanian","russian","spanish","swedish","turkish"],
           "init_value": "none"

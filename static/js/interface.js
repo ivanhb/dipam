@@ -992,8 +992,7 @@ class dipam_interface {
     function _elem_onclick_handle(){
         //nodes on click handler
         diagram_cy.nodes().on('click', function(e){
-            console.log("Node clicked !", this);
-            console.log(diagram_instance);
+            console.log("Node clicked !", this._private.data.id,this);
             diagram_instance.click_elem_style(this,'node');
             diagram_instance.check_node_compatibility(this);
             interface_instance.click_on_node(this);
@@ -1001,7 +1000,7 @@ class dipam_interface {
 
         //edges on click handler
         diagram_cy.edges().on('click', function(e){
-            console.log("Edge clicked !", this);
+            console.log("Edge clicked !", this._private.data.id,this);
             diagram_instance.click_elem_style(this,'edge');
             interface_instance.click_on_edge(this);
         });

@@ -54,6 +54,7 @@ label p{
 .input-group{
   font-size:120%;
   padding-left: 50px;
+  max-width: 90%;
 }
 .input-group
 select, .dropdown-toggle{

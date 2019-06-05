@@ -20,14 +20,11 @@ class Linker(object):
             self.__create_process_dir(id)
         return self.index[id]
 
-    def add_entry(self, id, entry):
-
+    def add_entry(self, id, data_key, list_data_obj):
         if id in self.index:
-            for an_inner_entry in entry:
-                d_value = entry[an_inner_entry]
-                self.index[id][an_inner_entry] = d_value
-
-        return self.index[id]
+            self.index[id][data_key] = set(list_data_obj.keys())
+            return self.index[id][data_key]
+        return -1
 
     def build_data_entry(self, node):
         new_entry = {}
@@ -75,8 +72,8 @@ class Linker(object):
 
     def __text_file(self, files, dir):
         for f in files:
-            copyfile(f, dir+"/"+f.name+".txt")
+            copyfile(f, dir+"/"+f.name)
 
     def __table_file(self):
         for f in files:
-            copyfile(f, dir+"/"+f.name+".csv")
+            copyfile(f, dir+"/"+f.name)

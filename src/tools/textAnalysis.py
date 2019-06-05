@@ -8,17 +8,18 @@ import gensim
 from gensim import corpora
 from gensim.models.coherencemodel import CoherenceModel
 
+# Plotting tools
+import pyLDAvis
+import pyLDAvis.gensim  # don't skip this
+
 class TextAnalysis(object):
 
-    def __init__(self, tool_list):
-        self.TOOL = tool_list
-
-    def is_handled(self, t_value):
-        return t_value in self.TOOL
+    def __init__(self):
+        pass
 
     # Each tool defined here must respect the configuration attributes given in the config file
     # the returned output must be same as these defined in the [output] key for the corresponding method
-    def lda(self, input_files, input_file_names, param):
+    def lda(self, input_files, param):
 
         data_to_return = {"data":{}}
         ok_to_process = False
@@ -30,8 +31,7 @@ class TextAnalysis(object):
 
         if not ok_to_process:
             res_err = {"data":{}}
-            res_err["data"]["error"] = {}
-            res_err["data"]["error"]["ValueError"] = "Input data missing!"
+            res_err["data"]["error"] = "Input data missing!"
             return res_err
 
         #The params
@@ -48,10 +48,10 @@ class TextAnalysis(object):
 
 
         #Define the set of documents
-        documents = []
-        for a_file_value in input_files["d-gen-text"]:
+        documents = {}
+        for file_k in input_files["d-gen-text"]:
             #iterate through the array of values given
-            documents.append(a_file_value)
+            documents[file_k] =  input_files["d-gen-text"][file_k]
 
 
         def clean(doc, p_stopwords, d_stopwords):
@@ -78,8 +78,9 @@ class TextAnalysis(object):
             if len(input_files["d-stopwords"]):
                 stopwords_data = set(read_stopwords_data(input_files["d-stopwords"]))
 
-        doc_clean = [clean(str(doc), p_stopwords, stopwords_data).split() for doc in documents]
 
+        doc_clean = [clean(str(documents[doc_k]), p_stopwords, stopwords_data).split() for doc_k in documents]
+        doc_names = [doc_k for doc_k in documents]
 
         # Creating the term dictionary of our courpus, where every unique term is assigned an index.
         dictionary = corpora.Dictionary(doc_clean)
@@ -94,13 +95,15 @@ class TextAnalysis(object):
         # Running and Trainign LDA model on the document term matrix.
         try:
             ldamodel = Lda(doc_term_matrix, num_topics= p_num_topics, id2word = dictionary, passes=50)
-        except ValueError:
+        except:
             res_err = {"data":{}}
-            res_err["data"]["error"] = {}
-            res_err["data"]["error"]["ValueError"] = "Incompatible data have been given as input to the LDA algorithm"
+            res_err["data"]["error"] = "Incompatible data have been given as input to the LDA algorithm"
             return res_err
 
         res = ldamodel.print_topics(num_topics= p_num_topics, num_words= p_num_words)
+
+        # Get the Perplexity value
+        perplexity = ldamodel.log_perplexity(doc_term_matrix)
         # Get the Coherence value
         cm = CoherenceModel(model=ldamodel, corpus=doc_term_matrix, coherence='u_mass')
         coherence = cm.get_coherence()
@@ -118,13 +121,30 @@ class TextAnalysis(object):
                 the_word = a_t_word_parts[1].replace('"','')
                 a_tab.append([t_id,the_word,score])
 
-        #numpy.savetxt("foo.csv", numpy.asarray(a_tab), delimiter=",")
-        res_csvs = {}
-        res_csvs["topics.csv"] = a_tab
-        res_coherence = {}
-        res_coherence["coherence.txt"] = str(coherence)
+        try:
+            all_topics = ldamodel.get_document_topics(doc_term_matrix, minimum_probability=0, per_word_topics=True)
+        except Exception as e:
+            print(e)
+
+        tab_doc_topics = []
+        doc_index = 0
+        for doc_topics, word_topics, phi_values in all_topics:
+            if doc_index == 0:
+                header = ["doc"]
+                for t_i in range(0,len(doc_topics)):
+                    header.append("topic-"+str(t_i))
+                tab_doc_topics.append(header)
+
+            doc_topic_val = [doc_names[doc_index]]
+            for d_t in doc_topics:
+                doc_topic_val.append(d_t[1])
+
+            tab_doc_topics.append(doc_topic_val)
+            doc_index = doc_index + 1
 
         #The returned data must include a recognizable key and the data associated to it
-        data_to_return["data"]["d-topics-table"] = res_csvs
-        data_to_return["data"]["d-coherence"] = res_coherence
+        data_to_return["data"]["d-topics-table"] = {"topics": a_tab}
+        data_to_return["data"]["d-coherence"] = {"coherence": str(coherence)}
+        data_to_return["data"]["d-perplexity"] = {"perplexity": str(perplexity)}
+        data_to_return["data"]["d-doc-topics"] = {"doctopics": tab_doc_topics}
         return data_to_return
