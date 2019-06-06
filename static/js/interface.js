@@ -784,6 +784,13 @@ class dipam_interface {
           a_linker_dom.href = "/download/"+node_id;
           last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
           break;
+        case "t-doctopics-view":
+          a_linker_dom = document.createElement("a");
+          a_linker_dom.setAttribute("value",node_id);
+          a_linker_dom.innerHTML = "Show";
+          a_linker_dom.href = "/show/"+node_id+"?type=img";
+          last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
+          break;
         default:
       }
     }

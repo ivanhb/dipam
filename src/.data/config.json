@@ -35,6 +35,18 @@
             "data_class": "table",
             "param": ["p-file"],
             "file_name": "stopwords"
+        },
+        "d-chartimg":{
+            "label": "A chart image",
+            "data_class": "img",
+            "param": ["p-file"],
+            "file_name": "chart"
+        },
+        "d-chartlegend":{
+            "label": "A chart legend",
+            "data_class": "table",
+            "param": ["p-file"],
+            "file_name": "legend"
         }
   },
   "tool": {
@@ -71,7 +83,8 @@
             "label": "Visualize document topics",
             "class": "Terminal",
             "function": "doc_topics_barchart",
-            "compatible_input": ["d-doc-topics"]
+            "compatible_input": ["d-doc-topics"],
+            "output": ["d-chartimg","d-chartlegend"]
         }
   },
   "param": {

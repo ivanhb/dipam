@@ -5,6 +5,7 @@ import re
 import csv
 import os, shutil
 from os.path import basename
+from shutil import copyfile
 import zipfile
 
 from src import tool
@@ -28,6 +29,12 @@ corpus = {}
 dipam_linker = None
 dipam_tool = None
 dipam_data = None
+
+#Handled extensions
+FILE_TYPE = {}
+FILE_TYPE["img"] = ["png"]
+FILE_TYPE["text"] = ["txt"]
+FILE_TYPE["table"] = ["csv"]
 
 #example: /dipam?workflow=WW&?config=CC
 @app.route('/')
@@ -61,6 +68,30 @@ def download(id):
             return send_file(a_zip_dir+"/"+id+".zip", as_attachment=True)
     except Exception as e:
         return e
+
+@app.route("/show")
+def show():
+    elem_id = request.args.get('id')
+    elem_type = request.args.get('type')
+
+    tool_process_dir = "src/.process-temp/"+elem_id+"/"
+    wanted_type = []
+    list_type = elem_type.split(",")
+    for f_type in FILE_TYPE:
+        if f_type in list_type:
+            wanted_type.extend(FILE_TYPE[f_type])
+
+    res_files = []
+    for root, dirs, files in os.walk(tool_process_dir):
+        for file in files:
+            for a_type in wanted_type:
+                if file.endswith(a_type):
+                    res_files.append(tool_process_dir+file)
+
+    #return res_files
+    return_res = {'file': res_files}
+    return json.dumps(return_res)
+
 
 @app.route('/saveworkflow', methods = ['POST'])
 def save_workflow():
@@ -123,21 +154,28 @@ def reset_temp_data():
 def process():
 
     def check_extension(file_type, file_name = None):
-        extension = "txt"
+        extension = None
         if file_type == "table":
             extension = "csv"
+        elif file_type == "text":
+            extension = "txt"
 
         if file_name:
             res = file_name
-            file_name_parts = file_name.split(".")
-            if(file_name_parts[-1] != extension):
-                res = res +"."+ extension
+            if extension:
+                file_name_parts = file_name.split(".")
+                if(file_name_parts[-1] != extension):
+                    res = res +"."+ extension
             return res
         return extension
 
 
     def write_file(path, file_value, file_type):
 
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
+        write_on_file = False
         #build string according to file type
         if file_type == "table":
             str_table = ""
@@ -149,12 +187,21 @@ def process():
                 str_table += "\n"
             str_table = str_table[:-1]
             file_value = str_table
+            write_on_file = True
 
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
+        elif file_type == "text":
+            write_on_file = True
 
-        with open(path, 'w') as d_file:
-            d_file.write(file_value)
+        elif file_type == "img":
+            #copy the picture from the .tmp/ directory to the tool dir
+            copyfile(file_value, path)
+            os.remove(file_value)
+
+
+        if write_on_file:
+            with open(path, 'w') as d_file:
+                d_file.write(file_value)
+
         return path
 
     ## FIRST POPULATE THE INNER VARS
@@ -250,7 +297,7 @@ def process():
                 else:
                     #ask the linker for its link object
                     index_elem = dipam_linker.get_elem(id_input)
-                    #print(" -> inputs from tool: ", index_elem.keys())
+                    print(" -> inputs from tool: ", index_elem.keys())
                     if index_elem != -1:
                         #check if the input node have compatible data i can take
                         set_of_files = {}
@@ -258,7 +305,6 @@ def process():
                             if comp_input in index_elem:
                                 index_elem_data = index_elem[comp_input]
                                 #call the data handler to process this type of inputs
-                                print(index_elem_data)
                                 for file_k in index_elem_data:
                                     #<file_k> : is the name of the file
                                     file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+file_k

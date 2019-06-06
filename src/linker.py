@@ -22,7 +22,10 @@ class Linker(object):
 
     def add_entry(self, id, data_key, list_data_obj):
         if id in self.index:
-            self.index[id][data_key] = set(list_data_obj.keys())
+            if data_key not in self.index[id]:
+                self.index[id][data_key] = set()
+            for file_name in set(list_data_obj.keys()):
+                self.index[id][data_key].add(file_name)
             return self.index[id][data_key]
         return -1
 
