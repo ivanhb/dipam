@@ -69,12 +69,13 @@ def download(id):
     except Exception as e:
         return e
 
-@app.route("/show")
-def show():
+@app.route("/gettoolfile")
+def gettoolfile():
     elem_id = request.args.get('id')
     elem_type = request.args.get('type')
+    res_type = request.args.get('result')
 
-    tool_process_dir = "src/.process-temp/"+elem_id+"/"
+    tool_process_dir = BASE_PROCESS_PATH+"/"+elem_id+"/"
     wanted_type = []
     list_type = elem_type.split(",")
     for f_type in FILE_TYPE:
@@ -90,7 +91,10 @@ def show():
 
     #return res_files
     return_res = {'file': res_files}
-    return json.dumps(return_res)
+    if res_type == "file":
+        return send_file(res_files[0], as_attachment=False)
+    else:
+        return json.dumps(return_res)
 
 
 @app.route('/saveworkflow', methods = ['POST'])
@@ -139,6 +143,7 @@ def load_workflow():
 
 @app.route('/reset')
 def reset_temp_data():
+    dipam_linker.reset()
     for the_file in os.listdir(BASE_PROCESS_PATH):
         file_path = os.path.join(BASE_PROCESS_PATH, the_file)
         try:

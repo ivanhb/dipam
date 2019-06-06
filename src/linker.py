@@ -8,6 +8,9 @@ class Linker(object):
         self.process_dir = "src/.process-temp/"
         self.index = {}
 
+    def reset(self):
+        self.index = {}
+
     def get_elem(self, id):
         if id in self.index:
             return self.index[id]

@@ -761,6 +761,7 @@ class dipam_interface {
       }
   }
   process_terminals(terminals){
+    var interface_instance = this;
     for (var i = 0; i < terminals.length; i++) {
       var node_id = terminals[i].id;
 
@@ -784,12 +785,15 @@ class dipam_interface {
           a_linker_dom.href = "/download/"+node_id;
           last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
           break;
+
         case "t-doctopics-view":
           a_linker_dom = document.createElement("a");
           a_linker_dom.setAttribute("value",node_id);
           a_linker_dom.innerHTML = "Show";
-          a_linker_dom.href = "/show/"+node_id+"?type=img";
+          a_linker_dom.href = "/gettoolfile?id="+node_id+"&type=img&result=file";
+          a_linker_dom.setAttribute("data-lightbox",node_id);
           last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
+          //$.get( "/gettoolfile?id="+node_id+"&type=img&result=file").done(function(res) {interface_instance.build_linker_timelineblock(node_id,res)});
           break;
         default:
       }
