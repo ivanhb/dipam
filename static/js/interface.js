@@ -127,11 +127,11 @@ class dipam_interface {
             case 'value':
               //is a dropdown
               this.set_dipam_temp_val(k_attribute,elem.data.value);
-              var res_elem_type = diagram_instance.get_conf_elems(elem.data.type, ['[KEY]','label']);
+              var res_elem_type = diagram_instance.get_conf_elems(elem.data.type, ['[KEY]','label','class_label']);
               if (elem.data.type == "edge") {
-                res_elem_type = {'[KEY]': ["edge"],'label': ["Edge"]};
+                res_elem_type = {'[KEY]': ["edge"],'label': ["Edge"],'class_label':["General"]};
               }
-              a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: "Type:", value: res_elem_type['[KEY]'], label: res_elem_type['label']});
+              a_dom_str = _build_a_dom("select-value", elem, k_attribute, {intro_lbl: "Type:", value: res_elem_type['[KEY]'], label: res_elem_type['label'], class_label: res_elem_type['class_label']});
               break;
 
             case 'param':
@@ -175,23 +175,43 @@ class dipam_interface {
 
         switch (dom_tag) {
           case 'select-value':
-              var str_options = "";
-              for (var j = 0; j < param.value.length; j++) {
-                  var selected_val = "";
-                  if (param.value[j] == dom_value) {
-                    selected_val = "selected";
-                  }
-                  str_options = str_options + "<option data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+">"+param.label[j]+"</option>";
-               };
+              var list_class_label = new Set(param.class_label);
+              if (list_class_label.size == 0) {
+                list_class_label.add("all");
+              }
 
-                str_html = str_html + `
-                <div class="input-group `+dom_tag+`">
+              var str_options = "";
+              for (let a_class_label of list_class_label) {
+                if (a_class_label != "all") {
+                  str_options = str_options + "<optgroup label='"+a_class_label+"'>";
+                }
+                for (var j = 0; j < param.value.length; j++) {
+                    var add_it = false;
+                    if (a_class_label == "all") {
+                      add_it = true;
+                    }else if (param.class_label[j] == a_class_label){
+                      add_it = true;
+                    }
+
+                    if (add_it) {
+                        var selected_val = "";
+                        if (param.value[j] == dom_value) {
+                          selected_val = "selected";
+                        }
+                        str_options = str_options + "<option data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+">"+param.label[j]+"</option>";
+                    }
+
+                };
+                str_options = str_options + "</optgroup>";
+              }
+
+              str_html = str_html + `
+              <div class="input-group `+dom_tag+`">
                       <div class="input-group-prepend">
                         <label class="input-group-text">`+param.intro_lbl+`</label>
                       </div>
                       <select data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="`+a_dom_class+` att-handler save-value custom-select" disabled>`+str_options+`</select>
-                </div>
-                `;
+              </div>`;
               break;
 
         case 'check-value':

@@ -1,87 +1,92 @@
 {
   "data": {
         "d-topics-table":{
-            "label": "Table of topics",
+            "label": "Topic Words table",
             "data_class": "table",
             "param": ["p-file"],
-            "file_name": "topics"
+            "file_name": "topics",
+            "class_label": "LDA"
         },
         "d-doc-topics":{
-            "label": "Document topics",
+            "label": "Document topics table",
             "data_class": "table",
             "param": ["p-file"],
-            "file_name": "doctopics"
+            "file_name": "doctopics",
+            "class_label": "LDA"
         },
         "d-gen-text":{
-            "label": "Text file",
+            "label": "General Text",
             "data_class": "text",
             "param": ["p-file"],
-            "file_name": "doc"
+            "file_name": "doc",
+            "class_label": "General"
         },
         "d-coherence":{
             "label": "LDA coherence value",
             "data_class": "text",
             "param": ["p-file"],
-            "file_name": "coherence"
+            "file_name": "coherence",
+            "class_label": "LDA"
         },
         "d-perplexity":{
             "label": "LDA perplexity value",
             "data_class": "text",
             "param": ["p-file"],
-            "file_name": "perplexity"
+            "file_name": "perplexity",
+            "class_label": "LDA"
         },
         "d-stopwords":{
             "label": "List of stopwords",
             "data_class": "table",
             "param": ["p-file"],
-            "file_name": "stopwords"
+            "file_name": "stopwords",
+            "class_label": "LDA"
         },
         "d-chartimg":{
             "label": "A chart image",
             "data_class": "img",
             "param": ["p-file"],
-            "file_name": "chart"
+            "file_name": "chart",
+            "class_label": "General"
         },
         "d-chartlegend":{
             "label": "A chart legend",
             "data_class": "table",
             "param": ["p-file"],
-            "file_name": "legend"
+            "file_name": "legend",
+            "class_label": "General"
         }
   },
   "tool": {
         "t-topic-lda": {
             "label": "Topic modeling with LDA",
+            "class_label": "Text-Analysis",
             "class": "TextAnalysis",
             "function": "lda",
             "param": ["p-topic","p-numwords","p-defstopwords"],
             "compatible_input": ["d-gen-text","d-stopwords"],
             "output": ["d-topics-table","d-coherence","d-perplexity","d-doc-topics"]
         },
-        "t-chart-bar": {
-            "label": "Bar chart",
-            "class": "Terminal",
-            "function": "bar_chart",
-            "param": ["p-log"],
-            "compatible_input": ["d-topics-table"]
-        },
         "t-filter-text": {
             "label": "Filter the text",
             "class": "Filter",
+            "class_label": "Filter",
             "function": "filter_text",
             "param": ["p-filteropt","p-filterregex"],
             "compatible_input": ["d-gen-text"],
             "output": ["d-gen-text"]
         },
         "t-save-files": {
-            "label": "Save",
+            "label": "Save files",
             "class": "Terminal",
+            "class_label": "Terminal",
             "function": "save_file",
             "compatible_input": ["d-gen-text","d-topics-table","d-coherence","d-perplexity","d-doc-topics"]
         },
         "t-doctopics-view": {
             "label": "Visualize document topics",
             "class": "Terminal",
+            "class_label": "Terminal",
             "function": "doc_topics_barchart",
             "compatible_input": ["d-doc-topics"],
             "output": ["d-chartimg","d-chartlegend"]
