@@ -12,13 +12,18 @@ from src import tool
 from src import data
 from src import linker
 
-from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file
+from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file, after_this_request
+from werkzeug.utils import secure_filename
 #from flask.ext.cache import Cache
 #cache = Cache()
 
 #cache.clear()
 app = Flask(__name__)
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+#app.config['DEBUG'] = True
+#app.debug = True
+app.config.update(
+    SEND_FILE_MAX_AGE_DEFAULT=True
+)
 
 BASE_PROCESS_PATH = "src/.process-temp"
 BASE_CONFIG_PATH = "src/.data"
@@ -44,6 +49,13 @@ def index():
         workflow_path = BASE_CONFIG_PATH+"/workflow.json"
     workflow_data = json.load(open(workflow_path))
     return render_template('index.html', workflow=workflow_data, config=CONFIG_DATA)
+
+@app.route('/upload', methods = ['POST'])
+def upload():
+    #Check if also files have been uploaded
+    for k in request.files:
+        val = request.files.getlist(k)
+    return "Success:uploaded"
 
 @app.route("/download/<id>")
 def download(id):
@@ -71,6 +83,12 @@ def download(id):
 
 @app.route("/gettoolfile")
 def gettoolfile():
+    @after_this_request
+    def add_header(response):
+        #response.headers['X-UA-Compatible'] = 'IE=Edge,chrome=1'
+        response.headers['Cache-Control'] = 'public, max-age=0'
+        return response
+
     elem_id = request.args.get('id')
     elem_type = request.args.get('type')
     res_type = request.args.get('result')
@@ -100,6 +118,7 @@ def gettoolfile():
 @app.route('/saveworkflow', methods = ['POST'])
 def save_workflow():
     jsdata = request.form['workflow_data']
+    print(jsdata)
     jsdata = json.loads(jsdata)
     path = request.form['path']
     fname = "workflow.json"

@@ -112,7 +112,7 @@ class TextAnalysis(object):
         a_tab = [["topic","word","score"]]
         for topic_i in res:
             # 0: is id, 1: str of all words
-            t_id = topic_i[0]
+            t_id = topic_i[0] + 1
             t_words_str = topic_i[1]
             t_words = t_words_str.split(" + ")
             for a_t_word in t_words:
@@ -132,7 +132,7 @@ class TextAnalysis(object):
             if doc_index == 0:
                 header = ["doc"]
                 for t_i in range(0,len(doc_topics)):
-                    header.append("topic-"+str(t_i))
+                    header.append("Topic #"+str(t_i+1))
                 tab_doc_topics.append(header)
 
             doc_topic_val = [doc_names[doc_index]]

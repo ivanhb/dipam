@@ -89,7 +89,15 @@
             "class_label": "Terminal",
             "function": "doc_topics_barchart",
             "compatible_input": ["d-doc-topics"],
-            "output": ["d-chartimg","d-chartlegend"]
+            "output": ["d-chartimg"]
+        },
+        "t-topics-view": {
+            "label": "Visualize topics words",
+            "class": "Terminal",
+            "class_label": "Terminal",
+            "function": "topics_words_list",
+            "compatible_input": ["d-topics-table"],
+            "output": ["d-chartimg"]
         }
   },
   "param": {

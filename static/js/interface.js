@@ -49,6 +49,7 @@ class dipam_interface {
         this.overview_section_elem = {};
 
         this.workflow = null;
+        this.request_status_on = true;
     }
 
     set_corresponding_diagram(diagram){
@@ -339,7 +340,32 @@ class dipam_interface {
                     corresponding_elem.data.type,
                     data_to_update
                     )
-                  );
+              );
+
+              //Check if there are also files in the saved params
+              //in this case upload them to server and save them
+              var post_data = new FormData();
+              for (var k_att in data_to_update) {
+                if (k_att == 'p-file') {
+                  Array.prototype.forEach.call(data_to_update[k_att], function(file,index) { post_data.append(k_att+'[]', file);});
+                  for (var i = 0; i < data_to_update[k_att].length; i++) {
+                    var file_att = {};
+                    file_att["lastModified"] = data_to_update[k_att][i]["lastModified"];
+                    file_att["name"] = data_to_update[k_att][i]["name"];
+                    file_att["size"] = data_to_update[k_att][i]["size"];
+                    post_data.append(k_att+'-att[]', JSON.stringify(file_att));
+                  }
+                }
+              }
+
+              $.ajax({
+                url: "/upload",
+                data: post_data,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function(data) {}
+              });
             });
             break;
           //Remove an element from the CY
@@ -390,6 +416,7 @@ class dipam_interface {
                   var a_dom_obj_lbl = document.getElementById(dom_id+"__lbl");
 
                   $( "#"+dom_id+"_file").on('change', function(){
+                    console.log(this.value);
                     var data_att_value = this.files;
                     if(data_att_value){
                         var corresponding_lbl = interface_instance.label_handler(dom_id, {value: data_att_value, elem: corresponding_elem} );
@@ -617,10 +644,16 @@ class dipam_interface {
   click_run_workflow(){
 
     if (this.DOMS.WORKFLOW.RUN_BTN.value == 'stop') {
+      this.request_status_on = true;
+
       _disable_divs(this,false);
       this.DOMS.WORKFLOW.RUN_BTN.value = 'run';
       this.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Stop process";
     }else {
+      /*stop all pending requests*/
+      window.stop();
+      this.request_status_on = false;
+
       _disable_divs(this,true);
       this.DOMS.WORKFLOW.RUN_BTN.value = 'stop';
       this.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Run workflow";
@@ -802,7 +835,7 @@ class dipam_interface {
           a_linker_dom.setAttribute("value",node_id);
           a_linker_dom.target = "_blank";
           a_linker_dom.innerHTML = "Save";
-          a_linker_dom.href = "/download/"+node_id;
+          a_linker_dom.href = "/download/"+node_id+"?time="+(new Date().getTime()).toString();
           last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
           break;
 
@@ -810,7 +843,17 @@ class dipam_interface {
           a_linker_dom = document.createElement("a");
           a_linker_dom.setAttribute("value",node_id);
           a_linker_dom.innerHTML = "Show";
-          a_linker_dom.href = "/gettoolfile?id="+node_id+"&type=img&result=file";
+          a_linker_dom.href = "/gettoolfile?id="+node_id+"&type=img&result=file&time="+(new Date().getTime()).toString();
+          a_linker_dom.setAttribute("data-lightbox",node_id);
+          last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
+          //$.get( "/gettoolfile?id="+node_id+"&type=img&result=file").done(function(res) {interface_instance.build_linker_timelineblock(node_id,res)});
+          break;
+
+        case "t-topics-view":
+          a_linker_dom = document.createElement("a");
+          a_linker_dom.setAttribute("value",node_id);
+          a_linker_dom.innerHTML = "Show";
+          a_linker_dom.href = "/gettoolfile?id="+node_id+"&type=img&result=file&time="+(new Date().getTime()).toString();
           a_linker_dom.setAttribute("data-lightbox",node_id);
           last_dom.innerHTML = last_dom.innerHTML + "<div class='inner-timeline-block'>"+a_linker_dom.outerHTML+"</div>";
           //$.get( "/gettoolfile?id="+node_id+"&type=img&result=file").done(function(res) {interface_instance.build_linker_timelineblock(node_id,res)});
@@ -971,14 +1014,13 @@ class dipam_interface {
         }
     });
 
-
     $( "#"+this.DOMS.WORKFLOW.SAVE_BTN.getAttribute('id')).on({
         click: function(e) {
           e.preventDefault();
           //interface_instance.click_save_workflow();
           var workflow_data = diagram_instance.get_workflow_data();
-          //console.log(workflow_data);
-          $.post( "/saveworkflow", {
+          console.log(workflow_data);
+          $.post( "/saveworkflow"+"?time="+(new Date().getTime()).toString(), {
             workflow_data: JSON.stringify(workflow_data),
             path: "",
             name: "",
@@ -986,7 +1028,6 @@ class dipam_interface {
           }).done(function() {
             interface_instance.DOMS.WORKFLOW.SAVE_BTN_DOWNLOAD.click();
           });
-
         }
     });
 

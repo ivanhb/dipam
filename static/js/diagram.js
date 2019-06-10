@@ -251,8 +251,20 @@ class dipam_diagram {
 
     function _normalize_data_to_save(an_elem, is_node = false) {
       //check if there is objects also
+      console.log(an_elem._private.data)
+      /*
+      if ("param" in an_elem._private.data) {
+        if ("p-file" in an_elem._private.data.param) {
+          for (var i = 0; i < an_elem._private.data.param["p-file"].length; i++) {
+            console.log(an_elem._private.data.param["p-file"][i].name);
+          }
+        }
+      }
+      */
 
-      var res_obj = JSON.parse(JSON.stringify(an_elem._private.data));
+      //var res_obj = JSON.parse(JSON.stringify(an_elem._private.data));
+      var res_obj = an_elem._private.data;
+
       if ("workflow" in res_obj){
         delete res_obj["workflow"];
       }
