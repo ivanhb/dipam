@@ -15,7 +15,7 @@ class Data(object):
         else:
             return None
 
-    def handle(self, files_list, data_value, file_type = "file", param = None):
+    def handle(self, files_list, data_value, file_type = "file", param = None, tmp_folder = None):
         list_docs_obj = {}
         data_class = None
         if data_value in self.data_index:
@@ -29,13 +29,15 @@ class Data(object):
                     elif file_type == "file":
                         file_name = a_file.filename
 
-                    a_doc = self.read_input(a_file, file_type)
-
-                    list_docs_obj[file_name] = None
-                    if data_class == 'text':
-                        list_docs_obj[file_name] = self.process_text(a_doc)
-                    elif data_class == 'table':
-                        list_docs_obj[file_name] = self.process_table(a_doc)
+                    if data_class == 'img':
+                        list_docs_obj[file_name] = self.process_img(file_name, tmp_folder)
+                    else:
+                        a_doc = self.read_input(a_file, file_type)
+                        list_docs_obj[file_name] = None
+                        if data_class == 'text':
+                            list_docs_obj[file_name] = self.process_text(a_doc)
+                        elif data_class == 'table':
+                            list_docs_obj[file_name] = self.process_table(a_doc)
 
         return (list_docs_obj, data_class)
 
@@ -50,6 +52,9 @@ class Data(object):
         else:
             res = a_file
         return res
+
+    def process_img(self, img_file_name, base_tmp_path):
+        return base_tmp_path+"/"+img_file_name
 
     def process_text(self,an_input):
         return an_input

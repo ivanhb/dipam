@@ -150,6 +150,7 @@ class dipam_interface {
         }
       }
       res_str_html = res_str_html + all_param_doms_str + '</div>';
+      console.log(this.temp_dipam_value);
 
       //now the foot buttons
       var param_btn = {
@@ -217,12 +218,13 @@ class dipam_interface {
 
         case 'check-value':
                   var str_options = "";
+                  console.log(param.value,dom_value);
                   for (var j = 0; j < param.value.length; j++) {
                       var selected_val = "";
                       if (dom_value.indexOf(param.value[j]) != -1) {
                         selected_val = "checked";
                       }
-                      str_options = str_options + "<input type='checkbox' class='"+a_dom_class+" att-handler' data-select-target='"+a_dom_id+"' value='"+param.value[j]+"' "+selected_val+" disabled>"+param.label[j]+"<br>";
+                      str_options = str_options + "<input type='checkbox' class='"+a_dom_class+" att-handler' data-select-target='"+a_dom_id+"' data-value-index='"+j+"' value='"+param.value[j]+"' "+selected_val+" disabled>"+param.label[j]+"<br>";
                    };
 
                     str_html = str_html + `
@@ -389,17 +391,17 @@ class dipam_interface {
                 });
                 break;
            case 'check-value-trigger':
-                      $(event_dom).on('change', function(){
+                      $(event_dom).on('click', function(){
                           var father_id = this.getAttribute('data-select-target');
                           var check_value = this.getAttribute('value');
                           var att_key = document.getElementById(father_id).getAttribute('data-att-value');
-                          var a_list = interface_instance.get_dipam_temp_val(att_key);
-                          var index_in_list = a_list.indexOf(check_value);
-                          if (index_in_list == -1) {
-                            a_list.push(check_value);
-                          }else {
-                            a_list.splice(index_in_list, 1);
+
+                          var a_list = [];
+                          var list_checked = $(".check-value-trigger:checked");
+                          for (var l = 0; l < list_checked.length; l++) {
+                            a_list.push(list_checked[l].getAttribute('value'));
                           }
+
                           interface_instance.set_dipam_temp_val(att_key, a_list);
                       });
                   break;
@@ -642,27 +644,35 @@ class dipam_interface {
 
 
   click_run_workflow(){
+    var new_status = -1;
+    var new_lbl_status = -1;
+    var workflow_status = this.DOMS.WORKFLOW.RUN_BTN.value;
 
-    if (this.DOMS.WORKFLOW.RUN_BTN.value == 'stop') {
-      this.request_status_on = true;
-
-      _disable_divs(this,false);
-      this.DOMS.WORKFLOW.RUN_BTN.value = 'run';
-      this.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Stop process";
-    }else {
-      /*stop all pending requests*/
-      window.stop();
-      this.request_status_on = false;
-
+    if (workflow_status == 'ready') {
       _disable_divs(this,true);
-      this.DOMS.WORKFLOW.RUN_BTN.value = 'stop';
-      this.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Run workflow";
+      new_status = 'run';
+      new_lbl_status = "Stop process";
+
+    }else if (workflow_status == 'run') {
+      _disable_divs(this,true);
+      new_status = 'stop';
+      new_lbl_status = "Process stopped";
+
+    }else if (workflow_status == 'stop') {
+      _disable_divs(this,false);
+      new_status = "ready";
+      new_lbl_status = "Run workflow";
+
     }
 
-    function _disable_divs(instance,enable=false){
+    this.DOMS.WORKFLOW.RUN_BTN.value = new_status;
+    this.DOMS.WORKFLOW.RUN_BTN.innerHTML = new_lbl_status;
+    return new_status;
+
+    function _disable_divs(instance,disable){
       var p_event = 'none';
       var opacity_val = '0.3';
-      if (enable) {
+      if (!(disable)) {
         p_event = '';
         opacity_val = '';
       }
@@ -696,7 +706,7 @@ class dipam_interface {
       instance.DOMS.CONTROL.CONTAINER.style["opacity"] = opacity_val;
 
       //instance.TIMELINE_CONTAINER.innerHTML = "";
-      if (enable) {
+      if (!(disable)) {
         [...document.getElementsByClassName('timeline-block-inner')].map(n => n && n.remove());
       }
       //instance.TIMELINE_TEXT.innerHTML = "Workflow timeline ...";
@@ -708,9 +718,13 @@ class dipam_interface {
   handle_workflow(status, param){
     var interface_instance = this;
     if (status == 'run') {
+      this.request_status_on = true;
       this.workflow = param;
       var workflow_to_process = this.workflow;
       var index_processed = {};
+      var terminals = this.DIAGRAM_INSTANCE_OBJ.get_terminal_tools();
+      console.log(terminals);
+
       //process workflow
       $.ajax({
         url: "/reset",
@@ -720,14 +734,19 @@ class dipam_interface {
               if (data.startsWith("Error:")) {
                 console.log("Could not reset temp data!");
               }else {
-                _process_workflow(interface_instance,0,[]);
+                _process_workflow(interface_instance,0,terminals);
               }
           }
       });
 
     }else if (status == 'stop') {
-      //Stop the execution and abort all the running functions"
-      console.log("Stop the execution and abort all the running functions");
+      //Stop the execution and abort all the running functions
+      window.stop();
+      this.request_status_on = false;
+      console.log("Process stopped!");
+    }else if (status == 'ready') {
+      this.request_status_on = true;
+      console.log("Ready again!");
     }
 
     function _process_workflow(instance,i,terminals){
@@ -735,9 +754,6 @@ class dipam_interface {
             var w_elem = workflow_to_process[i];
             console.log("Process: ", w_elem)
             //check if is a terminal
-            if (w_elem.workflow.output.length == 0) {
-              terminals.push(w_elem);
-            }
 
             //call the server
             var data_to_post = _gen_form_data(w_elem);
@@ -760,8 +776,14 @@ class dipam_interface {
                         instance.process_terminals(terminals);
                         instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
                         instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process done";
+                        instance.DOMS.WORKFLOW.RUN_BTN.value = "stop";
                       }else {
-                        _process_workflow(instance,i+1,terminals);
+                        if (instance.request_status_on) {
+                          _process_workflow(instance,i+1,terminals);
+                        }else {
+                          instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
+                          instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process Stopped";
+                        }
                       }
                     }
                 }
@@ -1008,8 +1030,7 @@ class dipam_interface {
         click: function(e) {
               e.preventDefault();
               diagram_instance.fit_diagram();
-              interface_instance.click_run_workflow();
-              var status = this.value;
+              var status = interface_instance.click_run_workflow();
               setTimeout(function(){ interface_instance.handle_workflow(status,diagram_instance.build_nodes_topological_ordering()); }, 2000);
         }
     });

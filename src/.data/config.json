@@ -81,7 +81,7 @@
             "class": "Terminal",
             "class_label": "Terminal",
             "function": "save_file",
-            "compatible_input": ["d-gen-text","d-topics-table","d-coherence","d-perplexity","d-doc-topics"]
+            "compatible_input": ["d-gen-text","d-topics-table","d-coherence","d-perplexity","d-doc-topics","d-chartimg"]
         },
         "t-doctopics-view": {
             "label": "Visualize document topics",
@@ -132,7 +132,7 @@
           "label": "Filter and remove:",
           "value_label": ["Dates","References","Header"],
           "value": ["dates","references","header"],
-          "init_value": ["dates"]
+          "init_value": [0,0,0]
         },
         "p-filterregex":{
           "handler": "input-text",

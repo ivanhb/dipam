@@ -134,7 +134,7 @@ class Terminal(object):
                     row = a_tab[row_index]
                     if (int(row[0]) == int(t+1)):
                         top_words.append(row[1:])
-                print("Topic",t+1,"with ",num_top_words," : ",top_words)
+                #print("Topic",t+1,"with ",num_top_words," : ",top_words)
 
                 for i in range(0,len(top_words)):
                     word = top_words[i][0]

@@ -292,6 +292,27 @@ class dipam_diagram {
   get_data_keys(){
   }
 
+  get_terminal_tools(){
+    var arr = []
+    if (this.CONFIG.hasOwnProperty("tool")) {
+      for (var a_k in this.CONFIG.tool) {
+        if (this.CONFIG.tool[a_k].class == "Terminal") {
+          arr.push(a_k);
+        }
+      }
+    }
+
+    var res = [];
+    var all_nodes = this.get_nodes();
+    for (var i = 0; i < all_nodes.length; i++) {
+      if(arr.indexOf(all_nodes[i]._private.data.value) != -1){
+        res.push({"id":all_nodes[i]._private.data.id, "value": all_nodes[i]._private.data.value});
+      }
+    }
+
+    return res;
+  }
+
   //<type>: 'data', 'tool', 'param'
   get_conf_elems(type, values) {
       var res = {};
@@ -409,7 +430,13 @@ class dipam_diagram {
                   corresponding_param_val = JSON.parse(JSON.stringify(corresponding_param.init_value));
                   break;
                 case "check-value":
-                  corresponding_param_val = corresponding_param.init_value;
+                  var check_val_list = [];
+                  for (var j = 0; j < corresponding_param.init_value.length; j++) {
+                    if(corresponding_param.init_value[j] == 1){
+                       check_val_list.push(corresponding_param.value[j]);
+                    }
+                  }
+                  corresponding_param_val = check_val_list;
                   break;
                 default:
               }

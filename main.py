@@ -4,6 +4,7 @@ import requests
 import re
 import csv
 import os, shutil
+import time
 from os.path import basename
 from shutil import copyfile
 import zipfile
@@ -26,6 +27,7 @@ app.config.update(
 )
 
 BASE_PROCESS_PATH = "src/.process-temp"
+BASE_TMP_PATH = "src/.tmp"
 BASE_CONFIG_PATH = "src/.data"
 CONFIG_DATA = {}
 
@@ -172,6 +174,15 @@ def reset_temp_data():
         except Exception as e:
             return "Error:"+e
 
+    for the_file in os.listdir(BASE_TMP_PATH):
+        file_path = os.path.join(BASE_TMP_PATH, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            return "Error:"+e
+
     return "Success:Processing done !"
 
 @app.route('/process', methods = ['POST'])
@@ -183,6 +194,8 @@ def process():
             extension = "csv"
         elif file_type == "text":
             extension = "txt"
+        elif file_type == "img":
+            extension = "png"
 
         if file_name:
             res = file_name
@@ -217,9 +230,11 @@ def process():
             write_on_file = True
 
         elif file_type == "img":
+            print(path, file_value, file_type)
             #copy the picture from the .tmp/ directory to the tool dir
             copyfile(file_value, path)
-            os.remove(file_value)
+            #time.sleep(5)
+            #os.remove(file_value)
 
 
         if write_on_file:
@@ -321,7 +336,7 @@ def process():
                 else:
                     #ask the linker for its link object
                     index_elem = dipam_linker.get_elem(id_input)
-                    print(" -> inputs from tool: ", index_elem.keys())
+                    print(" -> inputs from tool: ", index_elem)
                     if index_elem != -1:
                         #check if the input node have compatible data i can take
                         set_of_files = {}
@@ -332,7 +347,7 @@ def process():
                                 for file_k in index_elem_data:
                                     #<file_k> : is the name of the file
                                     file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+file_k
-                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path", param = None)
+                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path", param = None, tmp_folder = BASE_TMP_PATH)
 
                                     for a_doc_k in a_data[0]:
                                         input_files[comp_input][file_k] = a_data[0][a_doc_k]
@@ -346,7 +361,7 @@ def process():
             input_files,
             elem_param_att
         )
-        #print("Output: ",len(data_entries))
+        print("Output: ",data_entries)
 
         #check if there were errors
         if "error" in data_entries:
@@ -365,12 +380,11 @@ def process():
                     write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+f_name_normalized, f_val, f_data_type)
                     updated_data_entries[f_name_normalized] = f_val
 
+                print("updated_data_entries:",updated_data_entries)
                 #And index the new files
-                d_data_item = {}
-                d_data_item[d_key] = updated_data_entries
                 dipam_linker.add_entry(elem_must_att["id"], d_key ,updated_data_entries)
 
-        #print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]).keys())
+        print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]))
         #print("\n\n")
 
     elif elem_must_att["type"] == "data":

@@ -48,23 +48,26 @@ class Filter(object):
 
     def _filter_header(self, documents):
         REGEX_list = [
+            "(.+)Abstract"
         ]
         d_filtered = {}
         for doc_k in documents:
             doc_val = documents[doc_k]
             for d_reg_i in REGEX_list:
-                a_regex = re.compile(d_reg_i)
+                a_regex = re.compile(d_reg_i,re.DOTALL)
                 doc_val = re.sub(a_regex,"",doc_val)
             d_filtered[doc_k] = doc_val
         return d_filtered
 
     def _filter_references(self, documents):
-        REGEX_list = []
+        REGEX_list = [
+            "References(.+)"
+        ]
         d_filtered = {}
         for doc_k in documents:
             doc_val = documents[doc_k]
             for d_reg_i in REGEX_list:
-                a_regex = re.compile(d_reg_i)
+                a_regex = re.compile(d_reg_i,re.DOTALL)
                 doc_val = re.sub(a_regex,"",doc_val)
             d_filtered[doc_k] = doc_val
         return d_filtered
