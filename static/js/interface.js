@@ -780,9 +780,6 @@ class dipam_interface {
                       }else {
                         if (instance.request_status_on) {
                           _process_workflow(instance,i+1,terminals);
-                        }else {
-                          instance.DOMS.WORKFLOW.END_BLOCK.style.visibility = 'visible';
-                          instance.DOMS.WORKFLOW.RUN_BTN.innerHTML = "Process Stopped";
                         }
                       }
                     }
