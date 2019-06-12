@@ -681,7 +681,7 @@ class dipam_interface {
     }else if (workflow_status == 'run') {
       _disable_divs(this,true);
       new_status = 'stop';
-      new_lbl_status = "Process stopped";
+      new_lbl_status = "Reset";
 
     }else if (workflow_status == 'stop') {
       _disable_divs(this,false);
