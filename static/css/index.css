@@ -206,6 +206,13 @@ input {
   border: #917442 solid 2px;
   width: 200px;
 }
+#btn_run_workflow:hover,
+#btn_run_workflow:focus
+{
+  color: white;
+  background-color: #917442;
+}
+
 
 #btn_load_workflow, #btn_save_workflow{
   font-size: 18px;
