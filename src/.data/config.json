@@ -15,10 +15,17 @@
             "class_label": "LDA"
         },
         "d-gen-text":{
-            "label": "General Text",
+            "label": "Textual document/s",
             "data_class": "text",
             "param": ["p-file"],
             "file_name": "doc",
+            "class_label": "General"
+        },
+        "d-gen-pdf":{
+            "label": "PDF document/s",
+            "data_class": "pdf",
+            "param": ["p-file"],
+            "file_name": "pdf_doc",
             "class_label": "General"
         },
         "d-coherence":{
@@ -82,6 +89,14 @@
             "class_label": "Terminal",
             "function": "save_file",
             "compatible_input": ["d-gen-text","d-topics-table","d-coherence","d-perplexity","d-doc-topics","d-chartimg"]
+        },
+        "t-convert-pdftotext": {
+            "label": "Convert PDF document/s to text",
+            "class": "Convert",
+            "class_label": "Converter",
+            "function": "pdf_to_text",
+            "compatible_input": ["d-gen-pdf"],
+            "output": ["d-gen-text"]
         },
         "t-doctopics-view": {
             "label": "Visualize document topics",

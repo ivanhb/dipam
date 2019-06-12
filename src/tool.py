@@ -1,6 +1,7 @@
 from src.tools import textAnalysis
 from src.tools import terminal
 from src.tools import filter
+from src.tools import convert
 
 class Tool(object):
 
@@ -13,6 +14,7 @@ class Tool(object):
         self.tool_handler["TextAnalysis"] = textAnalysis.TextAnalysis()
         self.tool_handler["Filter"] = filter.Filter()
         self.tool_handler["Terminal"] = terminal.Terminal()
+        self.tool_handler["Convert"] = convert.Convert()
 
 
     def run(self, n_data, n_workflow, n_graph, input_files, param = None):

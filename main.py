@@ -38,6 +38,7 @@ dipam_data = None
 
 #Handled extensions
 FILE_TYPE = {}
+FILE_TYPE["pdf"] = ["pdf"]
 FILE_TYPE["img"] = ["png"]
 FILE_TYPE["text"] = ["txt"]
 FILE_TYPE["table"] = ["csv"]
@@ -194,6 +195,8 @@ def process():
             extension = "txt"
         elif file_type == "img":
             extension = "png"
+        elif file_type == "pdf":
+            extension = "pdf"
 
         if file_name:
             res = file_name
@@ -228,6 +231,11 @@ def process():
             write_on_file = True
 
         elif file_type == "img":
+            #copy the picture from the .tmp/ directory to the tool dir
+            copyfile(file_value, path)
+            #time.sleep(5)
+            #os.remove(file_value)
+        elif file_type == "pdf":
             #copy the picture from the .tmp/ directory to the tool dir
             copyfile(file_value, path)
             #time.sleep(5)
@@ -393,7 +401,7 @@ def process():
         if 'p-file' in elem_param_att:
             files = elem_param_att['p-file']
 
-        a_data = dipam_data.handle(files, elem_value)
+        a_data = dipam_data.handle(files, elem_value, file_type = "file", param = None, tmp_folder = BASE_TMP_PATH)
 
         corpus[elem_id] = {}
         corpus[elem_id][elem_value] = {}

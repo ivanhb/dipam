@@ -1,3 +1,4 @@
+import pdftotext
 
 class Data(object):
 
@@ -31,6 +32,8 @@ class Data(object):
 
                     if data_class == 'img':
                         list_docs_obj[file_name] = self.process_img(file_name, tmp_folder)
+                    elif data_class == 'pdf':
+                        list_docs_obj[file_name] = self.process_pdf(file_name, a_file)
                     else:
                         a_doc = self.read_input(a_file, file_type)
                         list_docs_obj[file_name] = None
@@ -55,6 +58,13 @@ class Data(object):
 
     def process_img(self, img_file_name, base_tmp_path):
         return base_tmp_path+"/"+img_file_name
+
+    def process_pdf(self, pdf_file_name, a_pdf_file):
+        #the other approach
+        #a_pdf_file.save(base_tmp_path)
+        a_text_file = pdftotext.PDF(a_pdf_file)
+        a_text_file = " ".join(a_text_file)
+        return a_text_file
 
     def process_text(self,an_input):
         return an_input
