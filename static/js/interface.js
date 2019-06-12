@@ -92,15 +92,15 @@ class dipam_interface {
         this.overview_section_elem['elem_class'] = elem_class;
     }
 
-    build_info(elem, elem_class= 'nodes') {
+    build_info(elem, elem_class= 'nodes', update_control_params = false) {
       if('_private' in elem)
         elem = elem._private;
-      this.info_section_html = this.build_control_section(elem);
+      this.info_section_html = this.build_control_section(elem, update_control_params);
       this.info_section_elem['elem'] = elem;
       this.info_section_elem['elem_class'] = elem_class;
     }
 
-    build_control_section(elem){
+    build_control_section(elem, update_control_params = false){
       var interface_instance = this;
       var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
       var res_str_html = "";
@@ -145,11 +145,20 @@ class dipam_interface {
                       this.set_dipam_temp_val(k_param,elem.data.param[k_param]);
                    }
               }
+              if (update_control_params) {
+                var control_param_sec = document.getElementsByClassName("control-params");
+                if (control_param_sec.length > 0) {
+                  control_param_sec = control_param_sec[0];
+                }else {
+                  return -1;
+                }
+                control_param_sec.innerHTML = all_param_doms_str;
+              }
           }
           res_str_html = res_str_html + a_dom_str;
         }
       }
-      res_str_html = res_str_html + all_param_doms_str + '</div>';
+      res_str_html = res_str_html + "<div class='control-params'>"+ all_param_doms_str + '</div></div>';
       console.log(this.temp_dipam_value);
 
       //now the foot buttons
@@ -172,7 +181,11 @@ class dipam_interface {
         var str_html = "";
         var dom_value = elem.data[k_attribute];
         if (is_param) {
+          a_dom_class = a_dom_class+" "+ "param-att";
           dom_value = elem.data.param[k_attribute];
+        }
+        if (k_attribute == "value") {
+          a_dom_class = a_dom_class+" "+ "data-elem-value";
         }
 
         switch (dom_tag) {
@@ -224,7 +237,7 @@ class dipam_interface {
                       if (dom_value.indexOf(param.value[j]) != -1) {
                         selected_val = "checked";
                       }
-                      str_options = str_options + "<input type='checkbox' class='"+a_dom_class+" att-handler' data-select-target='"+a_dom_id+"' data-value-index='"+j+"' value='"+param.value[j]+"' "+selected_val+" disabled>"+param.label[j]+"<br>";
+                      str_options = str_options + "<input type='checkbox' class='"+a_dom_class+" att-handler' data-select-target='"+a_dom_id+"' data-value-index='"+j+"' "+selected_val+" value='"+param.value[j]+"' disabled>"+param.label[j]+"<br>";
                    };
 
                     str_html = str_html + `
@@ -232,7 +245,7 @@ class dipam_interface {
                           <div class="input-group-prepend">
                             <label class="input-group-text">`+param.intro_lbl+`</label>
                           </div>
-                          <div data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value">`+str_options+`</div>
+                          <div data-att-value="`+k_attribute+`" data-id="`+elem.data.id+`" id="`+a_dom_id+`" class="save-value check-input-group">`+str_options+`</div>
                     </div>
                     `;
                   break;
@@ -387,6 +400,18 @@ class dipam_interface {
                     var arr_option_selected = $("#"+dom_id+" option:selected");
                     if (arr_option_selected.length > 0) {
                       interface_instance.set_dipam_temp_val(this.getAttribute('data-att-value'), arr_option_selected[0].value);
+                      var is_data_elem_value = ($("#"+dom_id+".data-elem-value").length > 0);
+                      //in case is a value update the param section
+                      if (is_data_elem_value) {
+                        var data_to_update = $.extend(true,{},interface_instance.editing("save"));
+                        interface_instance.reload_control_section(
+                            diagram_instance.update_elem(
+                              corresponding_elem.data.id,
+                              corresponding_elem.data.type,
+                              data_to_update
+                            ), true
+                        );
+                      }
                     };
                 });
                 break;
@@ -601,7 +626,7 @@ class dipam_interface {
       return res;
     }
 
-    reload_control_section(new_elem = null){
+    reload_control_section(new_elem = null, update_control_params = false){
 
       var active_nav = this.get_active_nav();
 
@@ -619,7 +644,7 @@ class dipam_interface {
           if ('_private' in new_elem) {
             new_elem = new_elem._private;
           }
-          this.build_info(new_elem);
+          this.build_info(new_elem, update_control_params);
         }
         this.click_info_nav();
         //this.DOMS.CONTROL.INFO_BTN.click();
@@ -704,6 +729,12 @@ class dipam_interface {
 
       instance.DOMS.CONTROL.CONTAINER.style["pointer-events"] = p_event;
       instance.DOMS.CONTROL.CONTAINER.style["opacity"] = opacity_val;
+
+      var control_inputs = document.getElementsByClassName('check-value-trigger');
+      console.log(control_inputs);
+      for (var i = 0; i < control_inputs.length; i++) {
+        control_inputs[i].disabled = true;
+      }
 
       //instance.TIMELINE_CONTAINER.innerHTML = "";
       if (!(disable)) {
@@ -1094,7 +1125,7 @@ class dipam_interface {
             diagram_instance.click_elem_style(this,'edge');
             interface_instance.click_on_edge(this);
         });
-      }
+    }
 
   }
 }
