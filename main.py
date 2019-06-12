@@ -14,7 +14,6 @@ from src import data
 from src import linker
 
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file, after_this_request
-from werkzeug.utils import secure_filename
 #from flask.ext.cache import Cache
 #cache = Cache()
 
@@ -120,7 +119,6 @@ def gettoolfile():
 @app.route('/saveworkflow', methods = ['POST'])
 def save_workflow():
     jsdata = request.form['workflow_data']
-    print(jsdata)
     jsdata = json.loads(jsdata)
     path = request.form['path']
     fname = "workflow.json"
@@ -230,7 +228,6 @@ def process():
             write_on_file = True
 
         elif file_type == "img":
-            print(path, file_value, file_type)
             #copy the picture from the .tmp/ directory to the tool dir
             copyfile(file_value, path)
             #time.sleep(5)
@@ -336,7 +333,7 @@ def process():
                 else:
                     #ask the linker for its link object
                     index_elem = dipam_linker.get_elem(id_input)
-                    print(" -> inputs from tool: ", index_elem)
+                    #print(" -> inputs from tool: ", index_elem)
                     if index_elem != -1:
                         #check if the input node have compatible data i can take
                         set_of_files = {}
@@ -361,7 +358,7 @@ def process():
             input_files,
             elem_param_att
         )
-        print("Output: ",data_entries)
+        #print("Output: ",data_entries)
 
         #check if there were errors
         if "error" in data_entries:
@@ -380,11 +377,11 @@ def process():
                     write_file(BASE_PROCESS_PATH+"/"+str(elem_id)+"/"+f_name_normalized, f_val, f_data_type)
                     updated_data_entries[f_name_normalized] = f_val
 
-                print("updated_data_entries:",updated_data_entries)
+                #print("updated_data_entries:",updated_data_entries)
                 #And index the new files
                 dipam_linker.add_entry(elem_must_att["id"], d_key ,updated_data_entries)
 
-        print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]))
+        #print("I am linked: ",dipam_linker.get_elem(elem_must_att["id"]))
         #print("\n\n")
 
     elif elem_must_att["type"] == "data":

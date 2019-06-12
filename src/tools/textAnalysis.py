@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 import string
@@ -9,8 +7,8 @@ from gensim import corpora
 from gensim.models.coherencemodel import CoherenceModel
 
 # Plotting tools
-import pyLDAvis
-import pyLDAvis.gensim  # don't skip this
+#import pyLDAvis
+#import pyLDAvis.gensim  # don't skip this
 
 class TextAnalysis(object):
 

@@ -30,15 +30,16 @@ class Filter(object):
         f_regex = ""
         if param != None:
             if "p-filteropt" in param:
-                for f_opt in param["p-filteropt"]:
-                    if f_opt == "names":
-                        pass
-                    elif f_opt == "dates":
-                        documents = self._filter_dates(documents)
-                    elif f_opt == "references":
-                        documents = self._filter_references(documents)
-                    elif f_opt == "header":
-                        documents = self._filter_header(documents)
+                if param["p-filteropt"]:
+                    for f_opt in param["p-filteropt"]:
+                        if f_opt == "names":
+                            pass
+                        elif f_opt == "dates":
+                            documents = self._filter_dates(documents)
+                        elif f_opt == "references":
+                            documents = self._filter_references(documents)
+                        elif f_opt == "header":
+                            documents = self._filter_header(documents)
 
             if "p-filterregex" in param:
                 documents = self._filter_by_regex(documents, param["p-filterregex"])
