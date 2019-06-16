@@ -1,4 +1,4 @@
-<img src="doc/logo.svg" alt="drawing" width="350"/>
+<img src="doc/logov2.svg" alt="drawing" width="350"/>
 
 ### A Dashboard Interface for Python-based Applications Mashup 
 
