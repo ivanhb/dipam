@@ -2,4 +2,4 @@
 
 ### A Dashboard Interface for Python-based Applications Mashup 
 
-A Web-based application for mashing up Python-based Applications. Created for mashing up automatic text analysis tools and create a customizable visual workflow. This application is linked to the [CATARSI Project](https://centri.unibo.it/dharc/en/research/projects-at-dh-arc#catarsi)
+A Web-based application for mashing up Python-based Applications. Its fully configurable and customisable for any type of applications and methods handled by Python.3.7. This application has been created for the [CATARSI Project](https://centri.unibo.it/dharc/en/research/projects-at-dh-arc#catarsi), its first child project is called [MATAO: a Mashup-app for Automatic Text Analysis Operations](https://github.com/catarsi/matao).
