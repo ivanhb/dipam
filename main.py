@@ -2,6 +2,7 @@
 import json
 import requests
 import re
+import sys
 import csv
 import os, shutil
 import time
@@ -16,6 +17,8 @@ from src import linker
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file, after_this_request
 #from flask.ext.cache import Cache
 #cache = Cache()
+import webbrowser
+from threading import Timer
 
 #cache.clear()
 app = Flask(__name__)
@@ -25,9 +28,13 @@ app.config.update(
     SEND_FILE_MAX_AGE_DEFAULT=True
 )
 
-BASE_PROCESS_PATH = "src/.process-temp"
-BASE_TMP_PATH = "src/.tmp"
-BASE_CONFIG_PATH = "src/.data"
+SCRIPT_PATH = ""
+if (len(sys.argv) > 1):
+    SCRIPT_PATH = str(sys.argv[1])
+
+BASE_PROCESS_PATH = SCRIPT_PATH+"/src/.process-temp"
+BASE_TMP_PATH = SCRIPT_PATH+"/src/.tmp"
+BASE_CONFIG_PATH = SCRIPT_PATH+"/src/.data"
 CONFIG_DATA = {}
 
 #Will store all the FileStorage of the 'data' nodes
@@ -42,6 +49,22 @@ FILE_TYPE["pdf"] = ["pdf"]
 FILE_TYPE["img"] = ["png"]
 FILE_TYPE["text"] = ["txt"]
 FILE_TYPE["table"] = ["csv"]
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
+@app.route('/shutdown')
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
+
+
+@app.route('/status')
+def status():
+    return "Online\n"
 
 #example: /dipam?workflow=WW&?config=CC
 @app.route('/')
@@ -74,7 +97,7 @@ def download(id):
         if(id == "workflow"):
             return send_file(BASE_CONFIG_PATH+"/workflow.json", as_attachment=True)
         else:
-            a_zip_dir = "src/.process-temp/"+id+"/"
+            a_zip_dir = BASE_PROCESS_PATH+"/"+id+"/"
             zipf = zipfile.ZipFile(a_zip_dir+"/"+id+".zip", 'w', zipfile.ZIP_DEFLATED)
             zipdir(a_zip_dir, zipf)
             zipf.close()
@@ -352,7 +375,7 @@ def process():
                                 for file_k in index_elem_data:
                                     #<file_k> : is the name of the file
                                     file_path = BASE_PROCESS_PATH+"/"+str(id_input)+"/"+file_k
-                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path", param = None, tmp_folder = BASE_TMP_PATH)
+                                    a_data = dipam_data.handle([file_path], comp_input, file_type = "path", param = None)
 
                                     for a_doc_k in a_data[0]:
                                         input_files[comp_input][file_k] = a_data[0][a_doc_k]
@@ -401,7 +424,7 @@ def process():
         if 'p-file' in elem_param_att:
             files = elem_param_att['p-file']
 
-        a_data = dipam_data.handle(files, elem_value, file_type = "file", param = None, tmp_folder = BASE_TMP_PATH)
+        a_data = dipam_data.handle(files, elem_value, file_type = "file", param = None)
 
         corpus[elem_id] = {}
         corpus[elem_id][elem_value] = {}
@@ -411,12 +434,59 @@ def process():
     #print(posted_data["id"]," index is: " ,dipam_linker.get_elem(posted_data["id"]))9
     return "Success:Processing done !"
 
+def open_browser():
+    dipam_url = "http://127.0.0.1:5000/"
+    browser_path = [
+        "chrome",
+        "google-chrome",
+        "chromium",
+        "chromium-browser",
+        'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s'
+    ]
+
+    def rec_open(url,index):
+        if index >= len(browser_path):
+            return False
+
+        try:
+            browse = webbrowser.get(browser_path[index]).open(dipam_url)
+        except Exception as e:
+            browse = False
+        if not browse:
+            rec_open(url,index + 1)
+        else:
+            print(browser_path[index])
+            return True
+
+        return True
+
+    def search_chrome_in_windows(a_root):
+        dir_path = os.path.dirname(a_root)
+        for root, dirs, files in os.walk(dir_path):
+            for file in files:
+                if file.startswith('chrome.exe'):
+                    return root+'/'+str(file)
+        return False
+
+    if not rec_open(dipam_url,0):
+        system_root = os.path.abspath(os.sep)
+        if(system_root != "/"):
+            browser_path_win = search_chrome_in_windows(system_root)
+            if browser_path_win != False:
+                webbrowser.get(browser_path_win+" %s").open(dipam_url)
+                return(browser_path_win)
+
+        webbrowser.open(dipam_url)
+        return("Default browser")
+
+
 if __name__ == '__main__':
     #app.config['TEMPLATES_AUTO_RELOAD'] = True
     CONFIG_DATA = json.load(open(BASE_CONFIG_PATH+"/config.json"))
 
-    dipam_linker = linker.Linker()
-    dipam_tool = tool.Tool(CONFIG_DATA["tool"])
-    dipam_data = data.Data(CONFIG_DATA["data"])
+    dipam_linker = linker.Linker(BASE_PROCESS_PATH)
+    dipam_tool = tool.Tool(CONFIG_DATA["tool"], BASE_TMP_PATH)
+    dipam_data = data.Data(CONFIG_DATA["data"], BASE_TMP_PATH)
 
+    Timer(1, open_browser).start();
     app.run()
