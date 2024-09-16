@@ -33,6 +33,7 @@ from flask import Flask, render_template, request, json, jsonify, redirect, url_
 # DIPAM core modules
 from app.lib.flaskwebgui import FlaskUI
 from app.base.core import DIPAM_CONFIG
+from app.base.core import DIPAM_RUNTIME
 import app.base.util as util
 
 # -----------
@@ -42,44 +43,45 @@ import app.base.util as util
 DIPAM_APP_DIR = "./dipam"
 DIPAM_SRC_DIR = "./src"
 
+
+# DIPAM config and global variables
+dipam_config = DIPAM_CONFIG(  DIPAM_SRC_DIR+"/app/base/config.yaml"  )
+dipam_runtime = None
+dipam_units = {}
+
+
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024    # 500 Mb limit
 app.config.update(
     SEND_FILE_MAX_AGE_DEFAULT=True
 )
 
-#example: /dipam?workflow=WW&?config=CC
 @app.route('/')
 def index():
     workflow_path = DIPAM_APP_DIR+"/runtime/workflow.json"
     workflow_data = json.dumps(json.load(open(workflow_path)))
-    return render_template('index.html', workflow=workflow_data, config=json.dumps(CONFIG_DATA), port=5000, type="browser")
+    return render_template('index.html', workflow=workflow_data, config={}, port=5000, type="browser")
 
+@app.route('/api/new_data_unit/<class_name>')
+def new_data_unit(class_name):
+    _d = dipam_runtime.create_new_data(class_name)
+    print(_d.id)
 
 if __name__ == '__main__':
 
-    # Get DIPAM config
-    dipam_config = DIPAM_CONFIG(  DIPAM_SRC_DIR+"/app/base/config.yaml"  )
 
+    dipam_runtime = DIPAM_RUNTIME(
 
-    # Build DIPAM units: data, tools, params
-    """
-    dipam_units = {
-        "data": {
-            <DIPAM_UNIT.CLASS_NAME_1>: <PATH_PY_MODULE_1>,
-            <DIPAM_UNIT.CLASS_NAME_2>: <PATH_PY_MODULE_2>,
-            ...
-            <DIPAM_UNIT.CLASS_NAME_3>: <PATH_PY_MODULE_3>,
-        },
-        "tool": ...,
-        "param": ...
-    }
-    """
-    dipam_units = {
-        "data": dipam_config.get_enabled_data_units(),
-        #"tool": dipam_config.get_enabled_tool_units(),
-        #"param": dipam_config.get_enabled_param_units()
-    }
+        # DIPAM CONFIG
+        dipam_config,
+
+        # DIPAM UNITS
+        {
+            "data": dipam_config.get_enabled_data_units(),
+            #"tool": dipam_config.get_enabled_tool_units(),
+            #"param": dipam_config.get_enabled_param_units()
+        }
+    )
 
     # to create an instance
     #print( util.create_instance("src/app/data/enabled/d_table.py","D_CSV" ) )

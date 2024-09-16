@@ -12,15 +12,18 @@ D_TABLE extends D_DIPAM_UNIT
 class D_TABLE(D_DIPAM_UNIT):
 
     def __init__(self,
-        file_path = None
+        num_id
     ):
 
         super().__init__(
-            label = "Table",
-            description = "A general table",
-            family = "Common data",
-            extension = ["csv","tsv"],
-            file_path = file_path
+            num_id = num_id,
+            id = "d_table",
+            label = "Dipam Table",
+            description = "A dipam table type of data",
+            family = "General",
+            file_extension = ["csv","tsv"],
+            value_type = None,
+            value = None
         )
 
 

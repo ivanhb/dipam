@@ -3,6 +3,7 @@ import subprocess
 import sys
 import os
 import shutil
+import json
 
 INSTALL_DIR = "."
 
@@ -89,6 +90,17 @@ def set_defaults(app_base, app_dir_runtime):
     source = os.path.join(app_base, "workflow.json")
     dest = os.path.join(app_dir_runtime, "workflow.json")
     shutil.copy(source,dest)
+
+    # Create a runtime index
+    dest = os.path.join(app_dir_runtime, "index.json")
+    with open(dest, 'w') as file:
+        index = {
+            "data": 0,
+            "tool": 0,
+            "param": 0
+        }
+        json_data = json.dumps(index)
+        file.write(json_data)
 
 def main():
 

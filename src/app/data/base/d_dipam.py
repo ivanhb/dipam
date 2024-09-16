@@ -1,13 +1,8 @@
-from app.base.core import DIPAM_IO
 
 class D_DIPAM_UNIT:
     def __init__(
             self,
-
-            # DIPAM core elements
-            dipam_io = None,
-
-            # Data unit
+            num_id = 1,
             id = "d_dipam",
             label = "Dipam data title",
             description = "A description of the Dipam data",
@@ -27,7 +22,7 @@ class D_DIPAM_UNIT:
         value: the corresponding value
         """
 
-        self.id = id
+        self.id = id + "_"+str(num_id)
         self.label = label
         self.description = description
         self.family = family
@@ -35,9 +30,22 @@ class D_DIPAM_UNIT:
         self.file_extension = file_extension
         self.value_type = value_type
         self.value = value
-
         self.error = D_DIPAM_ERROR()
-        self.dipam_io = dipam_io
+
+    def backend2view(arg):
+        data = {
+            "id": self.id,
+            "label": self.label,
+            "description": self.description,
+            "family": self.family,
+            "error": self.error,
+            "value": self.value
+        }
+        json_data = json.dumps(data)
+        return json_data
+
+    def view2backend(arg):
+        pass
 
     def read(self):
         """
@@ -94,7 +102,7 @@ class D_DIPAM_UNIT:
         [OPT] overwrite self.error in case of error
         """
 
-    def write(self, s, store_type):
+    def write(self, s, store_type, dipam_io):
         """
         Write the contents of <s> into a file(s) or value
         :params:
@@ -110,9 +118,9 @@ class D_DIPAM_UNIT:
                 f_storage = []
                 if store_type.endswith("MULTI"):
                     for _v in self.value:
-                        f_storage.append( self.dipam_io.save_d_tmp(self.id, _v, self.file_extension) )
+                        f_storage.append( dipam_io.save_d_tmp(self.id, _v, self.file_extension) )
                 elif store_type.startswith("ONE"):
-                    f_storage.append( self.dipam_io.save_d_tmp(self.id, self.value, self.file_extension) )
+                    f_storage.append( dipam_io.save_d_tmp(self.id, self.value, self.file_extension) )
 
                 return f_storage, self.error
 

@@ -1,7 +1,7 @@
 import importlib.util
 import os
 
-def create_instance(file_path, class_name):
+def create_instance(file_path, class_name, *args):
     """
     Create an instance of the specified class from a given file.
 
@@ -24,7 +24,7 @@ def create_instance(file_path, class_name):
     if hasattr(module, class_name):
         cls = getattr(module, class_name)
         # Create an instance of the class
-        return cls()
+        return cls(*args)
     else:
         print(f"Class {class_name} not found in {file_path}.")
         return None

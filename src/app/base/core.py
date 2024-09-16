@@ -2,6 +2,44 @@ import yaml
 import os
 import re
 import ast
+import json
+import app.base.util as util
+
+class DIPAM_RUNTIME:
+
+    def __init__(
+        self,
+        dipam_config,
+        dipam_units
+    ):
+        self.config = dipam_config
+        self.units = dipam_units
+        self.data = []
+        self.tool = []
+        self.param = []
+
+    def create_new_data(self, c_name):
+        runtime_index = self.get_runtime_index()
+        runtime_index["data"] += 1
+        d_unit = util.create_instance(
+            self.units["data"][c_name],
+            c_name,
+            runtime_index["data"]
+        )
+        self.set_runtime_index(runtime_index)
+        return d_unit
+
+    def get_runtime_index(self):
+        dir = self.config.get_config_value("dirs.dipam_runtime")
+        with open(os.path.join(dir, "index.json"), 'r') as file:
+            data = json.load(file)
+        return data
+
+    def set_runtime_index(self, runtime_index):
+        dir = self.config.get_config_value("dirs.dipam_runtime")
+        with open(os.path.join(dir, "index.json"), 'w') as json_file:
+            json.dump(runtime_index, json_file, indent=4)
+
 
 class DIPAM_CONFIG:
 
@@ -91,8 +129,6 @@ class DIPAM_CONFIG:
     def get_param_enabled_classes(self):
         dir = self.get_config_value("dirs.src_main")
         return self.get_classes_in_dir(dir+"/param/enabled")
-
-
 
 class DIPAM_IO:
 
