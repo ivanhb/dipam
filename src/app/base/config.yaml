@@ -1,0 +1,4 @@
+dirs:
+  - src_main: src/app
+  - tmp_d_write: .tmp/runtime/tmp_d_write
+  - tmp_d_read: .tmp/runtime/tmp_d_read
