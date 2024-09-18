@@ -38,12 +38,15 @@ class dipam_interface {
               "OPT_TRIGGER": document.getElementById('list_options_trigger'),
               "OPT_LIST": document.getElementById('list_options'),
               "RUN_BTN": document.getElementById('btn_run_workflow'),
-              "UPDATE_TOOL_BTN": document.getElementById('btn_update_tool'),
               "HELP_TOOL_BTN": document.getElementById('btn_help_tool'),
               "SAVE_BTN": document.getElementById('btn_save_workflow'),
               "SAVE_BTN_DOWNLOAD": document.getElementById('btn_save_workflow_a'),
-              "LOAD_BTN": document.getElementById('btn_load_workflow'),
-              "SHUTDOWN_BTN": document.getElementById('shutdown_btn'),
+              "EXPORT_BTN": document.getElementById('btn_export_work'),
+              "EXPORT_BTN_DOWNLOAD": document.getElementById('a_export_work'),
+              "IMPORT_BTN": document.getElementById('btn_import_work'),
+              "IMPORT_BTN_FORM": document.getElementById('form_import_work'),
+              "IMPORT_BTN_INPUT": document.getElementById('input_work_to_load'),
+              //"SHUTDOWN_BTN": document.getElementById('shutdown_btn'),
               //timeline
               "TIMELINE_CONTAINER": document.getElementById('timeline_container'),
               "START_BLOCK": document.getElementById('start_block'),
@@ -116,11 +119,8 @@ class dipam_interface {
               console.log(data);
               if (!(data["is_ready"])) {
                 interface_instance.DOMS.WORKFLOW.NOTE_BADGE.style.display = "block";
-                //$(interface_instance.DOMS.WORKFLOW.UPDATE_TOOL_BTN).toggleClass("disable-elem");
-                $(interface_instance.DOMS.WORKFLOW.UPDATE_TOOL_BTN).addClass("to-do-style");
               }else {
                 interface_instance.DOMS.WORKFLOW.NOTE_BADGE.style.display = "none";
-                $(interface_instance.DOMS.WORKFLOW.UPDATE_TOOL_BTN).removeClass("to-do-style");
               }
           }
       });
@@ -595,63 +595,25 @@ class dipam_interface {
           }
        });
 
-      $(interface_instance.DOMS.WORKFLOW.UPDATE_TOOL_BTN).on( "click", function() {
-
-        function __update(tag = "write") {
-          $('.hover_bkgr_fricc').addClass("not-active");
-          $(interface_instance.DOMS.CONTROL.GUI).addClass("disable-elem");
-          $('.hover_bkgr_fricc .content').html(`
-            <img class="mitao-logo" src="getlogo" alt="mitao">
-            <p>Updating MITAO ... <br>(This process might take several minutes. Please don't close the application)</p>
-            `);
-          $.ajax({
-            url: "/update_tool/"+tag,
-            type: 'GET',
-            success: function(data) {
-                  data = JSON.parse(data);
-                  $(interface_instance.DOMS.CONTROL.GUI).removeClass("disable-elem");
-                  $('.popupCloseButton').click();
-                  console.log(data);
-                  interface_instance.DOMS.WORKFLOW.NOTE_BADGE.style.display = "none";
-                  $(interface_instance.DOMS.WORKFLOW.UPDATE_TOOL_BTN).removeClass("to-do-style");
-              }
-          });
-        }
-
-        if ($(this).hasClass("to-do-style")) {
-          $('.hover_bkgr_fricc').show();
-          __update();
-        }else {
-            $('.hover_bkgr_fricc .content').html(`
-              <img class="mitao-logo" src="getlogo" alt="mitao">
-              <p>MITAO is updated!<br>Do you want to proceed anyway?</p>
-              <button id="force_update_tool">Yes, force update anyway</button>
-            `);
-            $('.hover_bkgr_fricc').show();
-            $("#force_update_tool").on( "click", function(){
-              __update("overwrite");
-            });
-        }
-      });
-
-
 
       $(interface_instance.DOMS.WORKFLOW.HELP_TOOL_BTN).on( "click", function() {
-
-        $('.hover_bkgr_fricc .content').html(`
-          <img class="mitao-logo" src="getlogo" alt="mitao">
-          <p>This is MITAO, a Mashup Interface for Text Analysis Operations, is a new graphic-based, user friendly, open source software for performing topic modelling and other analysis on textual data.
-          It permits the definition and execution of a visual text analysis workflow. The source code and documentation is available on the MITAO Github repository. MITAO is currently licensed under the ISC License.</p>
-          <p>
-            <a href="https://doi.org/10.19245/25.05.pij.5.2.3">Check the paper on MITAO</a><br>
-            <a href="https://github.com/catarsi/mitao">Go to the git repository</a>
-          </p>
-          `);
-        $('.hover_bkgr_fricc').show();
+        fetch('/help/general')
+                .then(response => { return response.json(); })
+                .then(data => {
+                    $('.hover_bkgr_fricc .content').html(data["data"]);
+                    $('.hover_bkgr_fricc').show();
+                })
+                .catch(error => { console.error('There has been a problem with fetch operation:', error);});
       });
+
+
 
 
     }
+
+
+
+
     set_control_section_events(elem){
       if ('_private' in elem) {
         elem = elem._private;
@@ -1439,6 +1401,18 @@ class dipam_interface {
     //ADD Node and Tool Buttons
     $('#'+this.DOMS.DIAGRAM.ADD_DATA_BTN.getAttribute('id')).on({
       click: function(e) {
+
+        fetch('/runtime/add_unit?type=data') // Replace with your API endpoint
+                .then(response => {
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                });
+
         diagram_instance.add_node('data');
         _elem_onclick_handle();
         interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
@@ -1446,6 +1420,7 @@ class dipam_interface {
         document.getElementById('edit').click();
       }
     });
+
     $('#'+this.DOMS.DIAGRAM.ADD_TOOL_BTN.getAttribute('id')).on({
       click: function(e) {
         diagram_instance.add_node('tool');
@@ -1522,22 +1497,32 @@ class dipam_interface {
           });
     });
 
-    $( "#"+this.DOMS.WORKFLOW.SHUTDOWN_BTN.getAttribute('id')).on({
-        click: function(e) {
-          e.preventDefault();
-          $.get("/shutdown").always(function() {
-            window.close();
+    $(this.DOMS.WORKFLOW.EXPORT_BTN).on("click", function() {
+          console.log("Export all the work ... ");
+          //document.getElementById('list_options_trigger').click();
+          interface_instance.DOMS.WORKFLOW.EXPORT_BTN_DOWNLOAD.click();
+    });
+
+    $(this.DOMS.WORKFLOW.IMPORT_BTN).on("click", function() {
+          console.log("Import a new work ... ");
+          var form = interface_instance.DOMS.WORKFLOW.IMPORT_BTN_FORM;
+          var f_input = interface_instance.DOMS.WORKFLOW.IMPORT_BTN_INPUT;
+
+          f_input.click();
+          f_input.addEventListener('change', function() {
+              if (f_input.files.length > 0) {
+                  form.submit();
+              }
           });
-        }
     });
 
-
-    $( "#"+this.DOMS.WORKFLOW.LOAD_BTN.getAttribute('id')).on({
-        click: function(e) {
-          e.preventDefault();
-          $('#file_to_load').trigger('click');
-        }
-    });
+    // $( "#"+this.DOMS.WORKFLOW.SHUTDOWN_BTN.getAttribute('id')).on({
+    //     click: function(e) {
+    //       e.preventDefault();
+    //       fetch('/shutdown');
+    //       window.close();
+    //     }
+    // });
 
     $( "#"+this.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')+" button").on('click', function(e){
       if ((interface_instance.info_section_elem['elem_class'] == "nodes") || (interface_instance.info_section_elem['elem_class'] == "edges")) {
@@ -1546,29 +1531,6 @@ class dipam_interface {
           $( "#"+interface_instance.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')).css("display", "none");
         }
       }
-    });
-
-    $('#file_to_load').on({
-        change: function(e) {
-          var file = $('#file_to_load')[0].files[0];
-          if (file) {
-            var reader = new FileReader();
-            reader.readAsText(file, "UTF-8");
-            reader.onload = function(e) {
-                document.getElementById('list_options_trigger').click();
-                var result = e.target.result;
-                //console.log(result);
-                interface_instance.in_loading_status = true;
-                $.post( "/loadworkflow", {
-                  workflow_file: result
-                }).done(function() {
-                  window.removeEventListener("beforeunload", beforeunload_fun);
-                  location.reload();
-                  window.addEventListener('beforeunload',beforeunload_fun);
-                });
-            };
-          }
-        }
     });
 
     _elem_onclick_handle();

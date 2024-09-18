@@ -1,6 +1,6 @@
 
 # The base class to extend
-from app.data.base.d_dipam import D_DIPAM_UNIT
+from app.unit.data.base.d_dipam import D_DIPAM_UNIT
 
 import csv
 import os
@@ -11,12 +11,8 @@ D_TABLE extends D_DIPAM_UNIT
 
 class D_TABLE(D_DIPAM_UNIT):
 
-    def __init__(self,
-        num_id
-    ):
-
+    def __init__(self):
         super().__init__(
-            num_id = num_id,
             id = "d_table",
             label = "Dipam Table",
             description = "A dipam table type of data",

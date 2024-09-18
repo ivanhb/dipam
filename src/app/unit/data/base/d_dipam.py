@@ -2,7 +2,6 @@
 class D_DIPAM_UNIT:
     def __init__(
             self,
-            num_id = 1,
             id = "d_dipam",
             label = "Dipam data title",
             description = "A description of the Dipam data",
@@ -22,7 +21,7 @@ class D_DIPAM_UNIT:
         value: the corresponding value
         """
 
-        self.id = id + "_"+str(num_id)
+        self.id = id
         self.label = label
         self.description = description
         self.family = family
@@ -31,6 +30,10 @@ class D_DIPAM_UNIT:
         self.value_type = value_type
         self.value = value
         self.error = D_DIPAM_ERROR()
+
+    def set_id(self, idx):
+        self.id = self.id + "-"+ str(idx)
+        return self.id
 
     def backend2view(arg):
         data = {

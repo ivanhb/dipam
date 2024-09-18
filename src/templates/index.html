@@ -33,14 +33,11 @@
         });
       }
 
-      function beforeunload_fun(e) {
-        console.log("Closing!");
-        e.preventDefault();
-        $.get("/shutdown").always(function() {
-          window.close();
-        });
-      }
-      window.addEventListener('beforeunload', beforeunload_fun);
+      window.addEventListener('beforeunload', function(event) {
+          fetch('/shutdown');
+          // event.preventDefault();
+          // event.returnValue = ''; // Standard for most browsers
+      });
 
     </script>
 
@@ -124,14 +121,25 @@
                   </svg>
                   <span id="badge_notification" class="badge-notification"></span>
                 </button>
+
                 <div id="list_options">
-                        <button id="btn_update_tool" type="button" value="update" class="btn btn-default">Update MITAO</button>
+
                         <button id="btn_save_workflow" type="button" value="save" class="btn btn-default">Save</button>
-                        <a id="btn_save_workflow_a" href="/download/workflow" value="save" style="display:none;" target="_blank" download></a>
-                        <button id="btn_load_workflow" type="button" value="load" class="btn btn-default">Open</button>
-                        <input id="file_to_load" type="file" style="display: none;"/>
+                        <a id="btn_save_workflow_a" href="/download/runtime&id=workflow" value="save" target="_blank" download></a>
+
+                        <!-- To import/load a new workflow and corresponding data -->
+                        <button id="btn_import_work" type="button" value="load" class="btn btn-default">Load</button>
+                        <form id="form_import_work" action="/load/import" method="post" enctype="multipart/form-data">
+                            <input type="file" id="input_work_to_load" name="runtime" accept=".zip" style="display: none;">
+                        </form>
+
+                        <!-- To export the current workflow and corresponding data -->
+                        <button id="btn_export_work" type="button" class="btn btn-default">Export</button>
+                        <a id="a_export_work" href="/download/runtime" target="_blank" download></a>
+
                         <button id="btn_help_tool" type="button" value="help" class="btn btn-default">Help</button>
-                        <button id="shutdown_btn" type="button" value="shutdown" class="btn btn-default">Shutdown</button>
+
+                        <!-- <button id="shutdown_btn" type="button" value="shutdown" class="btn btn-default">Shutdown</button> -->
                 </div>
 
               </div>

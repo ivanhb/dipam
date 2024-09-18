@@ -1,5 +1,14 @@
 dirs:
-  - src_main: src/app
-  - dipam_runtime: dipam/runtime
-  - tmp_d_write: .tmp/runtime/tmp_d_write
-  - tmp_d_read: .tmp/runtime/tmp_d_read
+  - src_main: src
+  - src_app: src/app
+  - dipam_app: dipam
+
+description: |
+  <div>
+    <img src="https://raw.githubusercontent.com/ivanhb/dipam/master/doc/logov2.svg" alt="Logo">
+    <br>
+    <h1>DIPAM (v2.0)</h1>
+    <p>This is DIPAM, A Dashboard Interface for Python-based Applications Mashup</p>
+    <p>Created for mashing up and connecting tools to create a customizable visual workflow</p>
+    <p>For more information, visit the <a href="https://github.com/ivanhb/dipam">github repository</a>.</p>
+  </div>

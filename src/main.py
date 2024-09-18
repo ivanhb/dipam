@@ -26,6 +26,7 @@ import csv
 import os, signal, shutil
 import time
 import zipfile
+import io
 
 # FLASK Libraries
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file, after_this_request
@@ -40,12 +41,13 @@ import app.base.util as util
 # -----------
 # -----------
 
-DIPAM_APP_DIR = "./dipam"
-DIPAM_SRC_DIR = "./src"
+DIPAM_SRC_DIR = "src"
 
 
 # DIPAM config and global variables
-dipam_config = DIPAM_CONFIG(  DIPAM_SRC_DIR+"/app/base/config.yaml"  )
+dipam_config = DIPAM_CONFIG(  os.path.join( DIPAM_SRC_DIR, "app","base","config.yaml" )  )
+
+dipam_app_dir = None
 dipam_runtime = None
 dipam_units = {}
 
@@ -55,21 +57,137 @@ app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024    # 500 Mb limit
 app.config.update(
     SEND_FILE_MAX_AGE_DEFAULT=True
 )
+app_flask_main_path = None
 
 @app.route('/')
 def index():
-    workflow_path = DIPAM_APP_DIR+"/runtime/workflow.json"
+    workflow_path = os.path.join( dipam_app_dir, "runtime","workflow.json" )
     workflow_data = json.dumps(json.load(open(workflow_path)))
     return render_template('index.html', workflow=workflow_data, config={}, port=5000, type="browser")
 
-@app.route('/api/new_data_unit/<class_name>')
-def new_data_unit(class_name):
-    _d = dipam_runtime.create_new_data(class_name)
-    print(_d.id)
+
+@app.route('/shutdown', methods=['GET'])
+def shutdown():
+    ui.close()
+    return 'Server shutting down...'
+
+
+@app.route('/help/<type>',methods=['GET'])
+def help(type):
+    data = {}
+    if type == "general":
+        data["data"] = dipam_config.get_config_value("description")
+        return jsonify(data)
+
+@app.route("/save",methods=['GET'])
+def save():
+    return util.zipdir(
+        os.path.join( dipam_app_dir, "runtime" ), # source is all runtime directory
+        os.path.join( dipam_app_dir, "data", "checkpoint" ) # destination is dipam/data/checkpoint
+    )
+
+@app.route("/load/<type>",methods = ['POST'])
+def load(type):
+
+    if type == "checkpoint":
+        util.copy_dir_to(
+            os.path.join( dipam_app_dir,"data","checkpoint","runtime"),
+            dir_dipam_app
+        )
+
+    elif type == "import":
+        if 'runtime' not in request.files:
+            return '[ERROR]: No file to load!', 400
+
+        _file = request.files['runtime']
+        if _file and _file.filename.endswith('.zip'):
+
+            # check if the uploaded zip is a compatible runtime dipam data
+            zip_stream = io.BytesIO(_file.read())
+            is_runtime_data, error_msg = dipam_runtime.is_runtime_zip_data(zip_stream)
+            zip_stream.seek(0)
+
+            # if its valid runtime data
+            if is_runtime_data:
+                # delete the current runtime directory and update it with import
+                util.delete_path( os.path.join(dipam_app_dir, "runtime") )
+                with zipfile.ZipFile(zip_stream, 'r') as zip_ref:
+                    zip_ref.extractall( os.path.join(dipam_app_dir, "runtime") )
+                zip_stream.seek(0)
+            else:
+                return error_msg, 400
+
+
+@app.route("/download/<type>",methods=['GET'])
+def download(type):
+
+    unit_type = type.lower()
+    unit_id = False
+    if request.args:
+        unit_id = request.args.get('id').lower()
+
+    # The file to download is always 1 file (zip if multiple files)
+    # The destination is the father dir in case of zip
+    _f_to_send = None
+
+    if unit_type == "runtime":
+        source_dir = os.path.join( dipam_app_dir, "runtime" )
+
+        # > in this case all data in runtime are needed
+        if not unit_id:
+            dest_dir = os.path.join( dipam_app_dir, "tmp-write" )
+            util.clear_directory(dest_dir)
+            _f_to_send = util.zipdir(
+                source_dir,
+                dest_dir
+            )
+
+        # > in this case only the runtime workflow is needed
+        elif(unit_id == "workflow"):
+            _f_to_send = source_dir+"/workflow.json"
+
+        # > in this case only the data of a specific unit is needed
+        else:
+            source_dir = os.path.join(source_dir,"unit",unit_id)
+            dest_dir = os.path.join( dipam_app_dir, "tmp-write" )
+            util.clear_directory(dest_dir)
+            _f_to_send = util.zipdir(
+                source_dir,
+                dest_dir
+            )
+
+    # edit the path of the file to send considering the realtive path of the falsk app main.py
+    _f_to_send = os.path.join(app_flask_main_path , _f_to_send)
+
+    return send_file( _f_to_send, as_attachment=True )
+
+    # except Exception as e:
+        # return render_template('error.html', error_msg="[ERROR]: wrong download parameters! – "+str(e), port=5000, type="browser")
+
+
+@app.route('/runtime/add_unit',methods=['GET'])
+def new_dipam_unit():
+
+    unit_type = request.args.get('type').lower()
+    unit_id = None
+    if request.args.get('id'):
+        unit_id = request.args.get('id').upper()
+
+    _unit = dipam_runtime.create_new_unit(
+        unit_type,
+        unit_id
+    )
+
+    # return data to the web
+    return jsonify({
+        "id": _unit.id
+    })
+
+
 
 if __name__ == '__main__':
 
-
+    dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
     dipam_runtime = DIPAM_RUNTIME(
 
         # DIPAM CONFIG
@@ -77,14 +195,21 @@ if __name__ == '__main__':
 
         # DIPAM UNITS
         {
-            "data": dipam_config.get_enabled_data_units(),
+            "data": dipam_config.get_enabled_units("data"),
             #"tool": dipam_config.get_enabled_tool_units(),
             #"param": dipam_config.get_enabled_param_units()
         }
     )
 
+    dipam_runtime.init_runtime_defaults()
+
     # to create an instance
     #print( util.create_instance("src/app/data/enabled/d_table.py","D_CSV" ) )
+
+    # define flask main.py path
+    # this is important to ensure that relative paths of other modules start from the root
+    app_flask_main_path = os.path.dirname(os.path.abspath(sys.modules['__main__'].__file__))
+    app_flask_main_path = os.path.sep.join(app_flask_main_path.split(os.path.sep)[:-1])
 
     ui = FlaskUI(app, width=1200, height=800)
     ui.run()

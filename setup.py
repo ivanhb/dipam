@@ -13,12 +13,13 @@ app_dir = INSTALL_DIR + "/dipam"
 venv_dir = app_dir+"/pyvenv"
 libraries = [
     'requests',
-    'flask',
+    'Flask==3.0.3',
     'zipfile36',
     'PyYAML'
     #'numpy==1.24.2',
     #'pandas==2.0.3'
 ]
+
 
 def delete_directory_if_exists(directory):
     if os.path.exists(directory):
@@ -27,13 +28,13 @@ def delete_directory_if_exists(directory):
 """
 Create a venv
 """
-def create_venv(venv_dir):
+def create_venv():
     venv.create(venv_dir, with_pip=True)
 
 """
 Installing libraries
 """
-def install_libraries(venv_dir, libraries):
+def install_libraries():
     print(f"[INFO] Installing libraries in virtual environment...")
     # Construct the path to the Python executable in the venv
     python_executable = os.path.join(venv_dir, 'Scripts', 'python') if os.name == 'nt' else os.path.join(venv_dir, 'bin', 'python')
@@ -50,10 +51,10 @@ def deactivate_venv():
     subprocess.run(deactivate_command, shell=True)
 
 
-def create_app_script(install_dir):
+def create_app_script():
 
     # Define the path for the generated script
-    generated_script_path = install_dir+'/dipam.py'
+    generated_script_path = INSTALL_DIR+'/dipam.py'
 
     # Define the content of the generated script
     script_content = """
@@ -68,7 +69,7 @@ venv_dir = '"""+venv_dir+"""'
 python_executable = os.path.join(venv_dir, 'Scripts', 'python') if os.name == 'nt' else os.path.join(venv_dir, 'bin', 'python')
 
 # Define the path to the script to run
-script_to_run = '"""+install_dir+"""/src/main.py'
+script_to_run = '"""+INSTALL_DIR+"""/src/main.py'
 
 def run_script():
     # Run the script using the Python interpreter from the virtual environment
@@ -85,22 +86,12 @@ if __name__ == "__main__":
         file.write(script_content)
 
 
-def set_defaults(app_base, app_dir_runtime):
-    # Copy workflow file of DIPAM
-    source = os.path.join(app_base, "workflow.json")
-    dest = os.path.join(app_dir_runtime, "workflow.json")
-    shutil.copy(source,dest)
+def set_defaults():
 
-    # Create a runtime index
-    dest = os.path.join(app_dir_runtime, "index.json")
-    with open(dest, 'w') as file:
-        index = {
-            "data": 0,
-            "tool": 0,
-            "param": 0
-        }
-        json_data = json.dumps(index)
-        file.write(json_data)
+    # Copy the default runtime
+    shutil.copytree(
+        os.path.join(src_dir, "app", "base","default","runtime"),
+        os.path.join(app_dir, "data", "checkpoint", "runtime"))
 
 def main():
 
@@ -119,25 +110,20 @@ def main():
     if not os.path.exists(dipam_path):
         os.makedirs(os.path.join(app_dir, "log"))
         os.makedirs(os.path.join(app_dir, "data"))
-        os.makedirs(os.path.join(app_dir, "runtime", "process-tmp"))
-        os.makedirs(os.path.join(app_dir, "runtime", "tmp-d-write"))
+        os.makedirs(os.path.join(app_dir, "data", "checkpoint"))
+        os.makedirs(os.path.join(app_dir, "tmp-write"))
+        os.makedirs(os.path.join(app_dir, "runtime"))
 
-    create_venv(venv_dir)
+    create_venv()
     print(f"[INFO] Create the virtual environment: OK")
 
-    install_libraries(venv_dir, libraries)
+    install_libraries()
     print(f"[INFO] Install libraries in the virtual environment: OK")
 
-    deactivate_venv()
-    print(f"[INFO] Deactivate the virtual environment: OK")
-
-    create_app_script(INSTALL_DIR)
+    create_app_script()
     print(f"[INFO] DIPAM app generated: OK")
 
-    set_defaults(
-        os.path.join(src_dir, "app", "base"),
-        os.path.join(app_dir, "runtime")
-    )
+    set_defaults()
     print(f"[INFO] DIPAM defaults generated: OK")
 
 if __name__ == "__main__":
