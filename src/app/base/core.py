@@ -20,16 +20,13 @@ class DIPAM_RUNTIME:
             "runtime"
         )
 
-        self.units = dipam_units
-        self.data = []
-        self.tool = []
-        self.param = []
+        self.unit_index = dipam_units
+        self.runtime_units = dict()
+
 
     def init_runtime_defaults(self):
         """
         Builds/creates the DIPAM runtime defaults data
-        + Args: __
-        + Returns: __
         """
         # upload last runtime checkpoint
         dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
@@ -38,12 +35,11 @@ class DIPAM_RUNTIME:
             dir_dipam_app
         )
 
+
     def _build_index(self):
         """
         [LOCAL-METHOD]
         Builds the runtime index of DIPAM
-        + Args: __
-        + Returns: __
         """
 
         with open(os.path.join(self.runtime_dir, "workflow.json"), 'r') as file:
@@ -63,43 +59,200 @@ class DIPAM_RUNTIME:
                     elif _n_id.startswith("t-"):
                          index_data["tool"][_n_id] = {}
 
-        self.set_runtime_index( index_data  )
+        self.reset_runtime_index( index_data  )
 
 
-    def create_new_unit(self, unit_type, unit_class):
+    def add_unit(self, unit_type, unit_class = None, unit_id = None, unit_metadata = None):
+        """
+        """
         unit_type = unit_type.lower()
 
         # in case a unit class is not specified, get first one in the list
         if not unit_class:
-            unit_class = next(iter(self.units[unit_type]))
+            unit_class = next(iter(self.unit_index[unit_type]))
 
         unit_class = unit_class.upper()
         runtime_index_data = self.get_runtime_index()
         new_unit = util.create_instance(
-            self.units[unit_type][unit_class],
+            self.unit_index[unit_type][unit_class],
             unit_class
         )
-        unit_id = new_unit.set_id( len(runtime_index_data[unit_type].keys()) + 1 )
-        runtime_index_data[unit_type][unit_id] = {}
-        util.mkdir_at(
-            os.path.join(self.runtime_dir, "unit"),
-            unit_id)
-        self.set_runtime_index(runtime_index_data)
+
+        if not unit_id:
+            pref = "d-" if unit_type == "data" else "t-"
+            unit_id = new_unit.set_id( util.get_first_available_id(runtime_index_data[unit_type], pref) )
+        else:
+            # use the given one
+            new_unit.set_id(unit_id)
+
+        if unit_metadata:
+            new_unit.set_metadata(unit_metadata)
+
+        unit_index_data = new_unit.get_metadata()
+        if unit_type == "data":
+            # in case of "data" unit create a directory;
+            util.mkdir_at(
+                os.path.join(self.runtime_dir, "unit"),
+                unit_id)
+        # elif unit_type == "tool":
+            # in case of "tool" unit create a json to describe the tool;
+        #    util.mkjson_at(
+        #        os.path.join(self.runtime_dir, "unit"),
+        #        unit_id,
+        #        unit_index_data)
+
+        self.runtime_units[unit_id] = new_unit
+        self.set_runtime_index( unit_index_data )
+
         return new_unit
+
+    def delete_unit(self, unit_id):
+        """
+        Delete a Dipam unit from runtime;
+        @param:
+            <unit_id>: the id of the unit to delete
+        """
+        # remove it from the index.json;
+        unit_type = "data" if unit_id.startswith("d-") else "tool"
+        runtime_index_data = self.get_runtime_index()
+        runtime_index_data[unit_type].pop(unit_id, None)
+        self.reset_runtime_index(runtime_index_data)
+
+        # remove its corresponding data
+        if unit_id.startswith("d-"):
+            util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
+        return unit_id
+
+
+    def edit_unit(self, unit_id, metadata):
+        """
+        Edit a Dipam unit already created on runtime;
+        @param:
+            <unit_id>: the id of the unit to delete;
+            <data>: the new data of the unit
+        """
+        unit_type = "data" if unit_id.startswith("d-") else "tool"
+        runtime_index_data = self.get_runtime_index()
+
+        if unit_id in runtime_index_data[unit_type]:
+            _unit = self.runtime_units[unit_id]
+            # in case the unit class stays the same;
+            _unit.set_metadata(metadata)
+            self.set_runtime_index( _unit.get_metadata() )
+            # in case the unit class changes;
+            # then all corresponding data must be deleted as well
+            if not data["class"] == runtime_index_data[unit_type]["class"]:
+                if unit_id.startswith("d-"):
+                    util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
+                util.mkdir_at( os.path.join(self.runtime_dir, "unit"), unit_id)
+            return unit_id
+        return None
+
+
+
+    def add_link(self, source_id, target_id):
+        """
+        Adds a link between 2 Dipam units <source_id> and <target_id>;
+        Not compatible units are not linked;
+        @param:
+            <source_id>: the id of the source unit
+            <target_id>: the id of the target unit
+        @return:
+            True if the link is creted, False otherwise;
+        """
+        # check if both source and target are part of runtime units;
+        if source_id in self.runtime_units and target_id in self.runtime_units:
+            # check if source is compatible with target;
+            # i.e., source output might be connected to tool input
+            if self.check_unit_compatibility(source_id, target_id):
+
+                s_obj = self.runtime_units[source_id]
+                t_obj = self.runtime_units[target_id]
+
+                input_data = [s_obj]
+                if s_obj.type == "tool":
+                    input_data = s_obj.output
+
+                t_obj.set_input( input_data )
+                self.set_runtime_index( t_obj.get_metadata() )
+                return True
+
+        # for all other cases
+        return False
+
+
+    def check_unit_compatibility(self, unit_id, unit_b_id = None):
+        """
+        Check the compatible Dipam units of <unit_id>;
+        Compatible units are these that <unit_id> can link to;
+        if <unit_b_id> is specified thene the check is done only with that unit.
+        @param:
+            <unit_id>: the id of the unit to delete
+            [<unit_b_id>]: in case the check must be done only with a specific unit
+        @return:
+            a dict of all units (data and tool), with a corresponding True/False value;
+            if <unit_b_id> is specified only a True/False value is returned
+        """
+        res = {u_id: False for u_id in self.runtime_units}
+
+        # (1) Build the set of compatible data units
+        seed_unit = self.runtime_units[unit_id].get_metadata()
+        compatible_class = None
+        if unit_id.startswith("t-"):
+            compatible_class = set( seed_unit["output"] )
+        elif unit_id.startswith("d-"):
+            compatible_class = { seed_unit["class"] }
+
+        # (2) Check compatibility with all "tool" units in the system
+        # (whether i am checking a "tool" or "data" unti, none of them can be connected to a data)
+        # we need to check if the intersection with (1) gives more than 1 (so its compatible)
+        units_to_check = self.runtime_units
+        if unit_b_id:
+            units_to_check = [unit_b_id]
+
+        for k in units_to_check:
+            if k == unit_id:
+                res[k] = True
+            elif k.startswith("t-"):
+                _obj = self.runtime_units[k].get_metadata()
+                class_to_check = set(_obj["req_input"]).union(set(_obj["opt_input"]))
+                res[_obj["id"]] = len(compatible_class.intersection( class_to_check )) > 0
+
+        if unit_b_id:
+            return res[unit_b_id]
+
+        return res
+
 
     def get_runtime_index(self):
         with open(os.path.join(self.runtime_dir, "index.json"), 'r') as file:
             data = json.load(file)
         return data
 
+
     def set_runtime_index(self, data):
+        if not os.path.exists( os.path.join(self.runtime_dir, "index.json") ):
+            self.reset_runtime_index()
+
+        runtime_index_data = self.get_runtime_index()
+
+        type = None
+        if data["type"].startswith("t"):
+            type = "tool"
+        elif data["type"].startswith("d"):
+            type = "data"
+        runtime_index_data[type][data["id"]] = data
+
+        with open(os.path.join(self.runtime_dir, "index.json"), 'w') as json_file:
+            json.dump(runtime_index_data, json_file, indent=4)
+
+        return runtime_index_data
+
+    def reset_runtime_index(self, data = None):
+        if not data:
+            data = {"data":{},"tool":{}}
         with open(os.path.join(self.runtime_dir, "index.json"), 'w') as json_file:
             json.dump(data, json_file, indent=4)
-
-    def reset_runtime_index(self):
-        data = {"data":{},"tool":{}}
-        with open(os.path.join(self.runtime_dir, "index.json"), 'w') as json_file:
-            json.dump({}, json_file, indent=4)
 
     def is_runtime_zip_data(self, zip_stream):
         try:

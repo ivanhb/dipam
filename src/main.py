@@ -32,7 +32,7 @@ import io
 from flask import Flask, render_template, request, json, jsonify, redirect, url_for, send_file, after_this_request
 
 # DIPAM core modules
-from app.lib.flaskwebgui import FlaskUI
+from app.base.lib.flaskwebgui import FlaskUI
 from app.base.core import DIPAM_CONFIG
 from app.base.core import DIPAM_RUNTIME
 import app.base.util as util
@@ -60,34 +60,34 @@ app.config.update(
 app_flask_main_path = None
 
 @app.route('/')
-def index():
+def _index():
     workflow_path = os.path.join( dipam_app_dir, "runtime","workflow.json" )
     workflow_data = json.dumps(json.load(open(workflow_path)))
     return render_template('index.html', workflow=workflow_data, config={}, port=5000, type="browser")
 
 
 @app.route('/shutdown', methods=['GET'])
-def shutdown():
+def _shutdown():
     ui.close()
     return 'Server shutting down...'
 
 
 @app.route('/help/<type>',methods=['GET'])
-def help(type):
+def _help(type):
     data = {}
     if type == "general":
         data["data"] = dipam_config.get_config_value("description")
         return jsonify(data)
 
 @app.route("/save",methods=['GET'])
-def save():
+def _save():
     return util.zipdir(
         os.path.join( dipam_app_dir, "runtime" ), # source is all runtime directory
-        os.path.join( dipam_app_dir, "data", "checkpoint" ) # destination is dipam/data/checkpoint
+        os.path.join( dipam_app_dir, "data", "checkpoint" ) # target is dipam/data/checkpoint
     )
 
 @app.route("/load/<type>",methods = ['POST'])
-def load(type):
+def _load(type):
 
     if type == "checkpoint":
         util.copy_dir_to(
@@ -119,7 +119,7 @@ def load(type):
 
 
 @app.route("/download/<type>",methods=['GET'])
-def download(type):
+def _download(type):
 
     unit_type = type.lower()
     unit_id = False
@@ -127,7 +127,7 @@ def download(type):
         unit_id = request.args.get('id').lower()
 
     # The file to download is always 1 file (zip if multiple files)
-    # The destination is the father dir in case of zip
+    # The target is the father dir in case of zip
     _f_to_send = None
 
     if unit_type == "runtime":
@@ -166,48 +166,90 @@ def download(type):
 
 
 @app.route('/runtime/add_unit',methods=['GET'])
-def new_dipam_unit():
-
+def _add_unit():
+    """
+    [GET-METHOD]
+    This call is used to create a new dipam unit: data or tool.
+    @params:
+        + <type>: the unit type to add: data or tool
+        + [<value>]: the specific entity to add; if not specified the first is created.
+    """
     unit_type = request.args.get('type').lower()
     unit_id = None
-    if request.args.get('id'):
-        unit_id = request.args.get('id').upper()
+    if request.args.get('value'):
+        unit_id = request.args.get('value')
 
-    _unit = dipam_runtime.create_new_unit(
+    _unit = dipam_runtime.add_unit(
         unit_type,
         unit_id
     )
+    # print(  _unit.backend2view()    ) # PRINT TEST
+    return jsonify( _unit.backend2view() )
 
-    # return data to the web
-    return jsonify({
-        "id": _unit.id
-    })
+@app.route('/runtime/delete_unit',methods=['GET'])
+def _delete_unit():
+    """
+    [GET-METHOD]
+    This call is used to delete a dipam unit: data or tool.
+    @params:
+        + <value>: the unit id to delete
+    """
+    unit_id = None
+    if request.args.get('value'):
+        unit_id = request.args.get('value')
+    dipam_runtime.delete_unit(unit_id)
+    return "Unit deleted"
 
+
+@app.route('/runtime/link',methods=['POST'])
+def _add_link():
+    """
+    [POST-METHOD]
+    This call is used to create a link between two units in Dipam
+    @attributes:
+        + <source>: the unit id of the source
+        + <target>: the unit id of the target
+    """
+    dipam_runtime.add_link(
+        request.source,
+        request.target
+    )
+    return "Link done"
+
+
+@app.route('/runtime/check_compatibility',methods=['GET'])
+def _check_compatibility():
+    """
+    [GET-METHOD]
+    This call is used to return all the units that the given unit <value> can be linked to;
+    @params:
+        + <value>: the specific unit to check
+    """
+    unit_id = None
+    if request.args.get('value'):
+        unit_id = request.args.get('value')
+    units = dipam_runtime.check_unit_compatibility(unit_id)
+    return jsonify( units )
 
 
 if __name__ == '__main__':
 
     dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
     dipam_runtime = DIPAM_RUNTIME(
-
         # DIPAM CONFIG
         dipam_config,
-
         # DIPAM UNITS
         {
             "data": dipam_config.get_enabled_units("data"),
-            #"tool": dipam_config.get_enabled_tool_units(),
-            #"param": dipam_config.get_enabled_param_units()
+            "tool": dipam_config.get_enabled_units("tool")
         }
     )
 
     dipam_runtime.init_runtime_defaults()
 
-    # to create an instance
-    #print( util.create_instance("src/app/data/enabled/d_table.py","D_CSV" ) )
+    print(dipam_config.get_enabled_units("tool")) #TEST
 
-    # define flask main.py path
-    # this is important to ensure that relative paths of other modules start from the root
+    # Define flask main.py path: this is important to ensure that relative paths of other modules start from the root
     app_flask_main_path = os.path.dirname(os.path.abspath(sys.modules['__main__'].__file__))
     app_flask_main_path = os.path.sep.join(app_flask_main_path.split(os.path.sep)[:-1])
 

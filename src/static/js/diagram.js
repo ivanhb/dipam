@@ -358,20 +358,29 @@ class dipam_diagram {
     return -1;
   }
 
-  add_node(type) {
-    var node_n = this.gen_node_data(type);
+
+  /**
+  * Add a node (data or tool) to the diagram
+  * @param {string} type – the type of the node to be added, it's either "data" or "tool"
+  * @param {json} data – the data of the node to be added (retrieved from the backend)
+  */
+  add_node(n_type, n_data) {
+    // Integrate the backend data with the View data needed
+    var node_n = this.gen_node_data(n_type, n_data);
+
     node_n.group = 'nodes';
     this.cy.add(node_n);
     this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
-  }
-  gen_node_data(n_type, a_value = null) {
-    var a_node_data = null;
-    if (n_type in this.NODE_DATA) {
-      a_node_data = JSON.parse(JSON.stringify(this.NODE_DATA[n_type]));
-    }else {
-      a_node_data = JSON.parse(JSON.stringify(this.NODE_DATA));
-    }
 
+
+    //this.cy.nodes().forEach(function(node) {
+      //console.log(node.id());
+      //console.log(node.data());
+    //});
+  }
+
+
+  gen_node_data(n_type, a_node_data, a_value = null) {
 
     var node_obj = {
       style: this.STYLE.node[n_type],
@@ -379,17 +388,10 @@ class dipam_diagram {
       data: a_node_data
     };
 
-
-    //var info_box = this.DIAGRAM_CONTAINER.getBoundingClientRect();
-    //node_obj.position.x = info_box.x;
-    //node_obj.position.y = info_box.y + info_box.height/2;
-
-    //try with the pan value
-    //this.fit_diagram();
+    // update the position of the node in the digram view
     var info_box = this.cy.extent();
     node_obj.position.x = info_box.x1 + Math.abs(info_box.x1/3);
     node_obj.position.y = info_box.y1 + Math.abs(info_box.y1/2);
-
     for (var i = 0; i < this.cy.nodes().length; i++) {
       var a_node_added = this.cy.nodes()[i];
       if((a_node_added.position('x') == node_obj.position.x) && (a_node_added.position('y') == node_obj.position.y)){
@@ -397,6 +399,8 @@ class dipam_diagram {
         i = 0;
       }
     }
+
+    return node_obj;
 
     //Init the essential data: id, name, value
     if (n_type in this.CONFIG) {
@@ -571,18 +575,20 @@ class dipam_diagram {
     }
 
     // (2) Its style in the cy diagram
+    // In case is an Edge then STOP here!
     this.adapt_style(d_elem);
-
-    // (2.1) In case is an Edge then STOP HERE
     if(d_elem.isEdge()){
       return d_elem;
     }
 
     // (3) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
-    this.check_node_compatibility(d_elem, true);
+    // In v2.0:
+    this.apply_node_compatibility(id);
 
+    // In v1.0:
+    //this.check_node_compatibility(d_elem, true);
     // (4) The real time compatible elements of the cy diagram
-    this.check_node_compatibility(d_elem);
+    //this.check_node_compatibility(d_elem);
 
     //update diagram
     this.cy.style().update();
@@ -605,12 +611,27 @@ class dipam_diagram {
     return elem_style;
   }
 
-  //Remove an element by taking its id:<elem_id> from the diagram
-  //returns the removed element
+  /*
+  <DIPAMv2.0>
+  Remove an element using its id:<elem_id> from the diagram;
+  Removing elements such as: data("d-NN"), tool("t-NN"), or edges("e-NN");
+  Must be triggered always for removing
+  @returns: the removed element
+  */
   remove_elem(elem_id){
     this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
-    console.log(this.cy_undo_redo.getUndoStack());
-    return this.cy.remove("#"+elem_id);
+
+    // <---- DIPAMv2.0
+    if ((elem_id.startsWith("d-")) || (elem_id.startsWith("t-"))){
+            return fetch("/runtime/delete_unit?value="+elem_id)
+                    .then(response => {return this.cy.remove("#"+elem_id);});
+    }else {
+      if (elem_id.startsWith("e-")) {
+        return fetch("/runtime/delete_link?value="+elem_id)
+                .then(response => {return this.cy.remove("#"+elem_id);});
+      }
+    }
+    // DIPAMv2.0 ---->
   }
 
   highlight_diagram(){
@@ -654,58 +675,44 @@ class dipam_diagram {
     }
   }
 
-  //adapt the node compatibility status regarding it's neighborhood nodes
-  //returns the neighborhood nodes
-  check_node_compatibility(node, neighborhood = false){
 
-    var node_id = node._private.data.id;
+  // <---- DIPAM v2.0:
+  /**
+   * Takes a seed node and a json representing all the nodes of the diagram;
+   * each node is accomanied by a true/false value representing its compatibility with the root node.
+   *
+   * @param {node_seed} - id of the root node
+   * @param {nodes_compatibility} - a json with all compatible nodes
+   */
+  apply_node_compatibility(node){
+    var node_data = node._private.data;
+    var node_seed = node_data.id;
+    var node_type = node_data.type;
+    console.log(node_seed,node_type);
+    fetch("/runtime/check_compatibility?value="+node_seed)
+          .then(response => { return response.json(); })
+          .then(data => {
+            var nodes_compatibility = data;
 
-    //first make all transparent
-    this.activate_nodes(null,false, true);
-    //activate selected node
-    this.activate_nodes("node[id='"+node_id+"']", true, true);
-    //get the nodes i must check
-    var nodes_to_check = {
-      'all_nodes': this.cy.nodes('[type = "data"]').union(this.cy.nodes('[type = "tool"]')).difference(this.cy.nodes("node[id='"+node_id+"']")),
-      'target_nodes': this.cy.edges('[source = "'+node_id+'"]').target(),
-      'source_nodes': this.cy.edges('[target = "'+node_id+'"]').source()
-    };
-
-    //in case we want to check only the neighborhood nodes (the connected nodes)
-    if (neighborhood) {
-      nodes_to_check.all_nodes = [];
-    } else {
-      nodes_to_check.target_nodes = [];
-      nodes_to_check.source_nodes = [];
-    }
-
-    for (var k_nodes in nodes_to_check) {
-      if (nodes_to_check[k_nodes] != undefined) {
-        for (var i = 0; i < nodes_to_check[k_nodes].length; i++) {
-          var node_to_check_obj = nodes_to_check[k_nodes][i];
-          var node_to_check_obj_id = node_to_check_obj._private.data.id;
-          var flag_compatible = false;
-          if (k_nodes == 'target_nodes') {
-            flag_compatible = this.is_compatible(node, node_to_check_obj);
-            if (!(flag_compatible)){
-              this.cy.remove(this.cy.edges('edge[source="'+node_id+'"]').edges('edge[target="'+node_to_check_obj_id+'"]') );
+            // (1) deactivate all all nodes of the diagram
+            this.activate_nodes(null,false, true);
+            // (2) activate only the root node
+            this.activate_nodes("node[id='"+node_seed+"']", true, true);
+            // (3) activate compatible nodes
+            for (var _a_node in nodes_compatibility) {
+              if (nodes_compatibility[_a_node] == true) {
+                this.activate_nodes("node[id='"+_a_node+"']", true, true);
+              }else {
+                /* in case not compatible check if it is connected with {node_seed};
+                in this case its edges must be removed as well;
+                Check both directions (source or target with node_seed), and remove edges; */
+                var edges = this.cy.edges(`[source = "${node_seed}"][target = "${_a_node}"], [source = "${_a_node}"][target = "${node_seed}"]`);
+                if (edges.length > 0) {
+                    this.cy.remove(edges);
+                }
+              }
             }
-          }
-          else if (k_nodes == 'source_nodes') {
-            flag_compatible = this.is_compatible(node_to_check_obj, node);
-            if (!(flag_compatible)){
-              this.cy.remove(this.cy.edges('edge[source="'+node_to_check_obj_id+'"]').edges('edge[target="'+node_id+'"]') );
-            }
-          }
-          else if (k_nodes == 'all_nodes') {
-            flag_compatible = this.is_compatible(node, node_to_check_obj);
-          }
-          this.activate_nodes("node[id='"+node_to_check_obj_id+"']",flag_compatible, flag_compatible);
-        }
-      }
-    }
-
-    return nodes_to_check;
+          });
   }
 
   //activate/deactivate the diagram nodes. a subset could be defined through <selector>

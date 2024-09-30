@@ -2,12 +2,24 @@ import importlib.util
 import os
 import shutil
 import zipfile
+import json
 from pathlib import Path
 
 def mkdir_at(path, name):
     dir_path = Path( os.path.join(path,name) )
+    #remove it first, in case it already exists
+    clear_directory(dir_path)
     dir_path.mkdir(parents=True, exist_ok=True)
     return dir_path
+
+def mkjson_at(path, name, data):
+    file_path = Path( os.path.join(path,name+".json") )
+    #remove it first, in case it already exists
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    with open(file_path, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+    return file_path
 
 def copy_dir_to(dir, dest_dir):
     """
@@ -32,14 +44,15 @@ def clear_directory(directory_path):
     Remove all elements inside a given dirictory <directory_path>
     """
     # Iterate over all files and directories in the specified directory
-    for item in os.listdir(directory_path):
-        item_path = os.path.join(directory_path, item)
-        if os.path.isfile(item_path):
-            # Remove the file
-            os.remove(item_path)
-        elif os.path.isdir(item_path):
-            # Remove the directory and all its contents
-            shutil.rmtree(item_path)
+    if os.path.exists(directory_path):
+        for item in os.listdir(directory_path):
+            item_path = os.path.join(directory_path, item)
+            if os.path.isfile(item_path):
+                # Remove the file
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                # Remove the directory and all its contents
+                shutil.rmtree(item_path)
     return directory_path
 
 
@@ -128,3 +141,20 @@ def create_instance(file_path, class_name, *args):
     else:
         print(f"Class {class_name} not found in {file_path}.")
         return None
+
+
+def get_first_available_id(data, pref):
+    """
+    This methods returns the first available key to insert as new key in <data>;
+    such that all keys in <data>, start with <pref> and have a sequential number after.
+    @return:
+        the new possible key
+    E.G. <data> = {"d-1":1, "d-2":2, "d-4":4}, <pref> = "d-"; returns: "d-3"
+    """
+    _ids = set( [int(_k.replace(pref,"")) for _k in data] )
+    _new_id = 1
+    while True:
+        if _new_id not in _ids:
+            break
+        _new_id += 1
+    return pref+str(_new_id)

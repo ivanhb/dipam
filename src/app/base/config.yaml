@@ -12,3 +12,10 @@ description: |
     <p>Created for mashing up and connecting tools to create a customizable visual workflow</p>
     <p>For more information, visit the <a href="https://github.com/ivanhb/dipam">github repository</a>.</p>
   </div>
+
+view:
+  - component:
+    - select-value
+    - input-text
+    - select-file
+    - check-value

@@ -1398,37 +1398,40 @@ class dipam_interface {
       }
     });
 
-    //ADD Node and Tool Buttons
+
+    /**
+    * This function calls the "/runtime/add_unit" API to create a dipam unit of a specific <type>
+    * optionally the exact element to add could be specified (<id>)
+    * @param None
+    */
+    function __apicall_add_unit(type, id = null) {
+      var api_call = '/runtime/add_unit?type='+type
+      if (id != null) {
+        api_call = api_call+"&id="+id
+      }
+      fetch(api_call)
+              .then(response => {
+                  return response.json();
+              })
+              .then(data => {
+                  console.log("Add a new node of type=",type," ,with data=",data);
+                  //add a node to the diagram of a specific <type> with the corresponding <data>
+                  diagram_instance.add_node(type, data);
+
+                  _elem_onclick_handle();
+                  //interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+                  diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+                  //document.getElementById('edit').click();
+              })
+              .catch(error => {
+                  console.error('[ERROR] There has been a problem in the API to create a new data unit – ', error);
+              });
+    }
     $('#'+this.DOMS.DIAGRAM.ADD_DATA_BTN.getAttribute('id')).on({
-      click: function(e) {
-
-        fetch('/runtime/add_unit?type=data') // Replace with your API endpoint
-                .then(response => {
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(data);
-                })
-                .catch(error => {
-                    console.error('There has been a problem with your fetch operation:', error);
-                });
-
-        diagram_instance.add_node('data');
-        _elem_onclick_handle();
-        interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
-        diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
-        document.getElementById('edit').click();
-      }
+      click: function(e) { __apicall_add_unit("data")}
     });
-
     $('#'+this.DOMS.DIAGRAM.ADD_TOOL_BTN.getAttribute('id')).on({
-      click: function(e) {
-        diagram_instance.add_node('tool');
-        _elem_onclick_handle();
-        interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
-        diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
-        document.getElementById('edit').click();
-      }
+      click: function(e) { __apicall_add_unit("tool")}
     });
 
 
@@ -1550,7 +1553,12 @@ class dipam_interface {
         //nodes on click handler
         diagram_cy.nodes().on('click', function(e){
             diagram_instance.click_elem_style(this,'node');
-            diagram_instance.check_node_compatibility(this);
+            // In v2.0:
+            diagram_instance.apply_node_compatibility(this);
+            // In v1.0:
+            //diagram_instance.check_node_compatibility(this);
+            // ---
+
             interface_instance.click_on_node(this);
             elem_remove_handler(this);
         });

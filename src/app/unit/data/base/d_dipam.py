@@ -1,154 +1,140 @@
+from collections import defaultdict
 
 class D_DIPAM_UNIT:
+    """
+    Defines a DIPAM data unit;
+    New data units to integrate should extend this Class.
+
+    @param:
+        + <label>: name/title of the dipam data
+        + <description>: a description of the dipam data,
+        + <family>: the macro family of the data,
+        + <handler>: a list of entities representing the values to be stored in this data unit;
+            each entity is represented by: its io handler, value handler (if any), and file handler (if any)
+    """
     def __init__(
             self,
-            id = "d_dipam",
             label = "Dipam data title",
             description = "A description of the Dipam data",
             family = "The macro family of the Dipam data",
-            file = [],
-            file_extension = [],
-            value_type = None,
-            value = None
-        ):
-        """
-        label: name/title of the dipam data
-        description: a description of the dipam data,
-        family: the macro family of the data,
-        file: the path to the file(s) of this data type,
-        file_extension: the file_extension(s) handled for this data
-        value_type: the type of the value (e.g., int, list, <CLASS>)
-        value: the corresponding value
-        """
+            value_index = [
+                (
+                    None, # 0: IO_DIPAM_HANDLER
+                    None, # 1: VIEW_DIPAM_HANDLER (for VALUE)
+                    None # 2: VIEW_DIPAM_HANDLER (for FILE)
+                )
+            ]
 
-        self.id = id
+        ):
+        self.type = "data"
+        self.id = "d-NN"
         self.label = label
         self.description = description
         self.family = family
-        self.file = file
-        self.file_extension = file_extension
-        self.value_type = value_type
-        self.value = value
-        self.error = D_DIPAM_ERROR()
 
-    def set_id(self, idx):
-        self.id = self.id + "-"+ str(idx)
+        self.value_index = value_index
+        _index = defaultdict(int)
+        for _v in self.value_index:
+            c_name = _v[0].__class__.__name__
+            _index[c_name] += 1
+            _v[0].set_id( _index[c_name] )
+
+
+    def set_id(self, id):
+        """
+        [NOT-OVERWRITABLE]
+        Defines the id of the data unit.
+        @param:
+            + idx: a number to concat with the rest of the identifier
+        @return: the id of the data unit
+        """
+        self.id = str(id)
         return self.id
 
-    def backend2view(arg):
+    def get_metadata(self):
+        """
+        [NOT-OVERWRITABLE]
+        Returns the data to be used when storing the index data describing this unit
+        """
         data = {
+            "type": self.type,
+            "id": self.id,
+            "class": self.__class__.__name__,
+            "label": self.label,
+            "description": self.description,
+            "family": self.family
+        }
+        return data
+
+    def set_metadata(self,data):
+        """
+        [NOT-OVERWRITABLE]
+        Returns the data to be used when storing the index data describing this unit
+        """
+        updated_keys = set()
+        for k in data:
+            if hasattr(self, k):
+                setattr(self, k, data[k])
+                updated_keys.add(k)
+        return updated_keys
+
+    def backend2view(self):
+        """
+        [NOT-OVERWRITABLE]
+        Generates the data (as dict) to send to the view;
+        value are edited following "value_view" (DIPAM_VIEW), if defined.
+        @param:
+        @return: a directory representing the data to send to the view
+        """
+
+        data = {
+            "type": self.type,
             "id": self.id,
             "label": self.label,
             "description": self.description,
             "family": self.family,
-            "error": self.error,
-            "value": self.value
+            "value_index": dict()
         }
-        json_data = json.dumps(data)
-        return json_data
 
-    def view2backend(arg):
-        pass
+        for _v_part in self.value_index:
+            _v_part_io_handler = _v_part[0]
+            _v_part_value = _v_part_io_handler.read()
+            _v_part_id = _v_part_io_handler.id
 
-    def read(self):
+            data["value_index"][ _v_part_id ] = {
+                    "value": _v_part_value,
+                    "v-view": None,
+                    "f-view": None
+            }
+
+            # Build view if specified
+            _v_part_data = data["value_index"][ _v_part_id ]
+            if _v_part[1]:
+                _v_part_data["v-view"] = _v_part[1].gen_data(_v_part_value)
+            if _v_part[2]:
+                _v_part_data["f-view"] = _v_part[2].gen_data(_v_part_value)
+
+        return data
+
+
+    def view2backend(self, type, *args):
         """
-        Read the contents of Data and return the values
-        :return: contents of the data
-        """
-
-        if self.value:
-            self.value_check()
-            self.value_read()
-
-        elif file:
-            self.file_check()
-            self.file_read()
-
-        else:
-            self.error.set("No corresponding value!")
-
-        return self.value, self.error
-
-
-    def value_check(self):
-        """
-        This method updates self.error if a corresponding value self.value is not suitable for this data unit
-        In case of no errors then self.error is not updated
-        """
-        if not isinstance(self.value, eval(self.value_type)):
-            self.error.set("Value type not supported!")
-            return False
-        return True
-
-
-    def value_read(self):
-        """
-        This method must define a way to read self.value
-        [OPT] overwrite self.value if needed
-        [OPT] overwrite self.error in case of error
+        Defines the id of the data unit.
+        @param:
+            + <type>: is either "VALUE" or "FILE", to specify the corresponding view trigger
+        @return:
         """
 
-    def file_check(self):
-        """
-        This method updates self.error if a self.file is not suitable for this data unit
-        In case of no errors then self.error is not updated
-        """
-        if not self.file.endswith(self.file_extension):
-            self.error.set("File type not supported!")
+        if type == "VALUE":
+            self.value_view_handler(args)
+        elif type == "FILE":
+            self.file_view_handler(args)
 
-    def file_read(self):
-        """
-        >> [REQ] to be overwriten
-        ----------------------------------
-        This method must define a way to read self.file
-        [REQ] overwrite self.value
-        [OPT] overwrite self.error in case of error
-        """
+        if self.io_handler.check(type, args):
+            # read it and save it as the current value of this data unit
+            self.value = self.io_handler.read(type, args)
+            # store the new value on the target dir of this dipam data unit
+            self.io_handler.store(self.value)
+            return True
 
-    def write(self, s, store_type, dipam_io):
-        """
-        Write the contents of <s> into a file(s) or value
-        :params:
-            <s>: the content a list of values
-            <store_type>: "FILE" or "VALUE"
-        :return:
-            file(s) name or value
-        """
-        self.value_write(s)
-        if self.value_check():
-            if store_type.startswith("FILE"):
-                self.file_write(s)
-                f_storage = []
-                if store_type.endswith("MULTI"):
-                    for _v in self.value:
-                        f_storage.append( dipam_io.save_d_tmp(self.id, _v, self.file_extension) )
-                elif store_type.startswith("ONE"):
-                    f_storage.append( dipam_io.save_d_tmp(self.id, self.value, self.file_extension) )
-
-                return f_storage, self.error
-
-        return self.value, self.error
-
-    def value_write(self, s):
-        self.value = s
-
-    def file_write(self, s):
-        self.value = s
-
-
-
-class D_DIPAM_ERROR:
-    def __init__(
-            self,
-            value = None
-        ):
-        """
-        value: a string that describes the error in the dipam data
-        """
-        self.value = value
-
-    def set(self, s):
-        self.value = s
-
-    def get(self):
-        return self.value
+        return False
