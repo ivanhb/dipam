@@ -35,32 +35,8 @@ class DIPAM_RUNTIME:
             dir_dipam_app
         )
 
-
-    def _build_index(self):
-        """
-        [LOCAL-METHOD]
-        Builds the runtime index of DIPAM
-        """
-
-        with open(os.path.join(self.runtime_dir, "workflow.json"), 'r') as file:
-            workflow_data = json.load(file)
-
-        index_data = {
-            "data":{},
-            "tool":{}
-        }
-
-        if "nodes" in workflow_data:
-            for _n in workflow_data["nodes"]:
-                if "data" in _n:
-                    _n_id = _n["data"]["id"]
-                    if _n_id.startswith("d-"):
-                         index_data["data"][_n_id] = {}
-                    elif _n_id.startswith("t-"):
-                         index_data["tool"][_n_id] = {}
-
-        self.reset_runtime_index( index_data  )
-
+    # UNIT HANDLER METHODS
+    # ------
 
     def add_unit(self, unit_type, unit_class = None, unit_id = None, unit_metadata = None):
         """
@@ -88,7 +64,7 @@ class DIPAM_RUNTIME:
         if unit_metadata:
             new_unit.set_metadata(unit_metadata)
 
-        unit_index_data = new_unit.get_metadata()
+        unit_index_data = new_unit.dump_metadata()
         if unit_type == "data":
             # in case of "data" unit create a directory;
             util.mkdir_at(
@@ -123,7 +99,6 @@ class DIPAM_RUNTIME:
             util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
         return unit_id
 
-
     def edit_unit(self, unit_id, metadata):
         """
         Edit a Dipam unit already created on runtime;
@@ -138,7 +113,7 @@ class DIPAM_RUNTIME:
             _unit = self.runtime_units[unit_id]
             # in case the unit class stays the same;
             _unit.set_metadata(metadata)
-            self.set_runtime_index( _unit.get_metadata() )
+            self.set_runtime_index( _unit.dump_metadata() )
             # in case the unit class changes;
             # then all corresponding data must be deleted as well
             if not data["class"] == runtime_index_data[unit_type]["class"]:
@@ -149,6 +124,8 @@ class DIPAM_RUNTIME:
         return None
 
 
+    # LINK HANDLER METHODS
+    # ------
 
     def add_link(self, source_id, target_id):
         """
@@ -173,13 +150,30 @@ class DIPAM_RUNTIME:
                 if s_obj.type == "tool":
                     input_data = s_obj.output
 
-                t_obj.set_input( input_data )
-                self.set_runtime_index( t_obj.get_metadata() )
+                t_obj.set_data_input( input_data )
+                self.set_runtime_index( t_obj.dump_metadata() )
                 return True
 
         # for all other cases
         return False
 
+    def delete_link(self, source_id, target_id):
+        """
+        Delete a link between 2 Dipam units <source_id> and <target_id>;
+        @param:
+            <source_id>: the id of the source unit
+            <target_id>: the id of the target unit
+        @return:
+            True if the link was deleted
+        """
+        # check if both source and target are part of runtime units;
+        if source_id in self.runtime_units and target_id in self.runtime_units:
+            # delete it from the inputs of target
+            t_obj = self.runtime_units[target_id]
+            t_obj.delete_data_input(source_id)
+            self.set_runtime_index( t_obj.dump_metadata() )
+            return True
+        return False
 
     def check_unit_compatibility(self, unit_id, unit_b_id = None):
         """
@@ -196,7 +190,7 @@ class DIPAM_RUNTIME:
         res = {u_id: False for u_id in self.runtime_units}
 
         # (1) Build the set of compatible data units
-        seed_unit = self.runtime_units[unit_id].get_metadata()
+        seed_unit = self.runtime_units[unit_id].dump_metadata()
         compatible_class = None
         if unit_id.startswith("t-"):
             compatible_class = set( seed_unit["output"] )
@@ -206,29 +200,33 @@ class DIPAM_RUNTIME:
         # (2) Check compatibility with all "tool" units in the system
         # (whether i am checking a "tool" or "data" unti, none of them can be connected to a data)
         # we need to check if the intersection with (1) gives more than 1 (so its compatible)
-        units_to_check = self.runtime_units
+        units_to_check = None
         if unit_b_id:
             units_to_check = [unit_b_id]
+        else:
+            units_to_check = self.runtime_units.keys()
 
         for k in units_to_check:
             if k == unit_id:
                 res[k] = True
             elif k.startswith("t-"):
-                _obj = self.runtime_units[k].get_metadata()
+                _obj = self.runtime_units[k].dump_metadata()
                 class_to_check = set(_obj["req_input"]).union(set(_obj["opt_input"]))
                 res[_obj["id"]] = len(compatible_class.intersection( class_to_check )) > 0
 
-        if unit_b_id:
-            return res[unit_b_id]
+        if unit_b_id != None:
+            return {unit_b_id: res[unit_b_id]}
 
         return res
 
+
+    # RUNTIME INDEX METHODS
+    # ------
 
     def get_runtime_index(self):
         with open(os.path.join(self.runtime_dir, "index.json"), 'r') as file:
             data = json.load(file)
         return data
-
 
     def set_runtime_index(self, data):
         if not os.path.exists( os.path.join(self.runtime_dir, "index.json") ):

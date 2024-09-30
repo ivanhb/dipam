@@ -48,7 +48,7 @@ class T_DIPAM_UNIT:
         self.id = str(id)
         return self.id
 
-    def get_metadata(self):
+    def dump_metadata(self):
         """
         [NOT-OVERWRITABLE]
         Returns the data to be used when storing the index data describing this unit
@@ -112,7 +112,7 @@ class T_DIPAM_UNIT:
 
         return ( input_check and param_check , err_msg )
 
-    def set_input(self, l_data_unit = []):
+    def set_data_input(self, l_data_unit = []):
         """
         [NOT-OVERWRITABLE]
         Set a list of new DIPAM data unit as input to the tool
@@ -121,6 +121,18 @@ class T_DIPAM_UNIT:
             du_c_name = data_unit.__class__.__name__
             if du_c_name in self.req_input or du_c_name in self.opt_input:
                 self.data_input.append(data_unit)
+        return self.data_input
+
+    def delete_data_input(self, l_data_unit_ids = []):
+        """
+        [NOT-OVERWRITABLE]
+        Set a list of new DIPAM data unit as input to the tool
+        """
+        new_data_input = []
+        for unit_obj in self.data_input:
+            if not unit_obj.id in l_data_unit_ids:
+                new_data_input.append(unit_obj)
+        self.data_input = new_data_input
         return self.data_input
 
     def set_param(self, data_unit):

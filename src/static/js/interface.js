@@ -1417,10 +1417,11 @@ class dipam_interface {
                   console.log("Add a new node of type=",type," ,with data=",data);
                   //add a node to the diagram of a specific <type> with the corresponding <data>
                   diagram_instance.add_node(type, data);
-
                   _elem_onclick_handle();
+
+                  // TODO v1.0
                   //interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
-                  diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+                  //diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
                   //document.getElementById('edit').click();
               })
               .catch(error => {
@@ -1560,7 +1561,7 @@ class dipam_interface {
             // ---
 
             interface_instance.click_on_node(this);
-            elem_remove_handler(this);
+            elem_remove_handler();
         });
 
         //edges on click handler
@@ -1568,10 +1569,10 @@ class dipam_interface {
             //console.log("Edge clicked !", this._private.data.id,this);
             diagram_instance.click_elem_style(this,'edge');
             interface_instance.click_on_edge(this);
-            elem_remove_handler(this);
+            elem_remove_handler();
         });
 
-        function elem_remove_handler(elem) {
+        function elem_remove_handler() {
           $( "#"+interface_instance.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')).css("display", "block");
         }
     }

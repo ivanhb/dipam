@@ -51,7 +51,7 @@ class D_DIPAM_UNIT:
         self.id = str(id)
         return self.id
 
-    def get_metadata(self):
+    def dump_metadata(self):
         """
         [NOT-OVERWRITABLE]
         Returns the data to be used when storing the index data describing this unit

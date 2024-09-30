@@ -200,21 +200,44 @@ def _delete_unit():
     dipam_runtime.delete_unit(unit_id)
     return "Unit deleted"
 
-
-@app.route('/runtime/link',methods=['POST'])
-def _add_link():
+@app.route('/runtime/delete_link',methods=['GET'])
+def _delete_link():
     """
-    [POST-METHOD]
-    This call is used to create a link between two units in Dipam
-    @attributes:
+    [GET-METHOD]
+    This call is used to delete a link between two units
+    @params:
         + <source>: the unit id of the source
         + <target>: the unit id of the target
     """
-    dipam_runtime.add_link(
-        request.source,
-        request.target
-    )
-    return "Link done"
+    source_id = request.args.get('source')
+    target_id = request.args.get('target')
+    if source_id and target_id:
+        dipam_runtime.delete_link(
+            source_id,
+            target_id
+        )
+        return "Link deleted!", 200
+    return "[ERROR]: value(s) not specified", 400
+
+
+@app.route('/runtime/add_link',methods=['GET'])
+def _add_link():
+    """
+    [GET-METHOD]
+    This call is used to create a link between two units in Dipam
+    @params:
+        + <source>: the unit id of the source
+        + <target>: the unit id of the target
+    """
+    source_id = request.args.get('source')
+    target_id = request.args.get('target')
+    if source_id and target_id:
+        dipam_runtime.add_link(
+            source_id,
+            target_id
+        )
+        return "Link done"
+    return "[ERROR]: value not specified", 400
 
 
 @app.route('/runtime/check_compatibility',methods=['GET'])
@@ -225,11 +248,21 @@ def _check_compatibility():
     @params:
         + <value>: the specific unit to check
     """
-    unit_id = None
+    units = {}
+
     if request.args.get('value'):
         unit_id = request.args.get('value')
-    units = dipam_runtime.check_unit_compatibility(unit_id)
+
+        unit_b_id = None
+        if request.args.get('value_to_check'):
+            unit_b_id = request.args.get('value_to_check')
+
+        units = dipam_runtime.check_unit_compatibility( unit_id, unit_b_id )
+    else:
+        return "[ERROR]: value not specified", 400
+
     return jsonify( units )
+
 
 
 if __name__ == '__main__':

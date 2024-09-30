@@ -460,57 +460,69 @@ class dipam_diagram {
     return node_obj;
   }
 
+  // <---- DIPAM v2.0
+  /**
+  * Things to do after an edge is created;
+  * an API call is done to create the link between the two units;
+  * if the two units are compatible and the graph is not a cycle then the Edge persists
+  */
   after_add_edge(edge_data){
     var interface_instance = this;
     var cy_instance = this.cy;
     var source_node = cy_instance.nodes("node[id='"+edge_data.source+"']")[0];
     var target_node = cy_instance.nodes("node[id='"+edge_data.target+"']")[0];
-    var flag_compatible = this.is_compatible(source_node, target_node);
 
-    //check if the diagram is still a DAG
-    var flag_is_cycle = is_cycle(this.get_target_nodes(source_node), source_node);
+    // API call to check compatibility
+    fetch("/runtime/check_compatibility?value="+edge_data.source+"&value_to_check="+edge_data.target)
+          .then(response => { return response.json(); })
+          .then(data => {
+            var node_compatibility = data[edge_data.target];
+            if (node_compatibility) {
+              console.log("New edge is compatible!");
+              //check if the diagram is still a DAG
+              var is_cycle = _check_cycle(this.get_target_nodes(source_node), source_node);
+              if (is_cycle) {
+                cy_instance.remove('#'+edge_data.id);
+              }else {
+                // API to create the link between the two units
+                fetch("/runtime/add_link?source="+edge_data.source+"&target="+edge_data.target)
+                    .then(response => {
+                      this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
+                      console.log("The edge was created:",response);
+                    });
+              }
+            }
+          });
 
-    //check also if there is another same edge
-    if ((!flag_compatible) || flag_is_cycle)  {
-      console.log('Edge not compatible! ');
-      if (flag_is_cycle) {
-        console.log("It creates a loop !");
-      }
-      cy_instance.remove('#'+edge_data.id);
-    }else {
-      //if flag_compatible add it to log file
-      this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
-    }
+      //is cycle starting from node N
+      function _check_cycle(arr_nodes, origin){
 
-    return edge_data;
+        //check if one of the nodes is origin
+        for (var i = 0; i < arr_nodes.length; i++) {
+          var node = arr_nodes[i];
+          if (__is_same_node(node, origin)) {
+            return true;
+          }
+        }
 
-    //is cycle starting from node N
-    function is_cycle(arr_nodes, origin){
+        var res = false;
+        for (var i = 0; i < arr_nodes.length; i++) {
+          var node = arr_nodes[i];
+          var out_nodes = interface_instance.get_target_nodes(node);
+          if (out_nodes.length != 0) {
+              res = res || is_cycle(out_nodes , origin);
+          }
+        }
 
-      //check if one of the nodes is origin
-      for (var i = 0; i < arr_nodes.length; i++) {
-        var node = arr_nodes[i];
-        if (__is_same_node(node, origin)) {
-          return true;
+        return res;
+
+        function __is_same_node(n_a, n_b){
+          return (n_a._private.data.id == n_b._private.data.id);
         }
       }
-
-      var res = false;
-      for (var i = 0; i < arr_nodes.length; i++) {
-        var node = arr_nodes[i];
-        var out_nodes = interface_instance.get_target_nodes(node);
-        if (out_nodes.length != 0) {
-            res = res || is_cycle(out_nodes , origin);
-        }
-      }
-
-      return res;
-
-      function __is_same_node(n_a, n_b){
-        return (n_a._private.data.id == n_b._private.data.id);
-      }
-    }
   }
+
+
   gen_edge_data(source_id,target_id){
     var edge_obj = { data: JSON.parse(JSON.stringify(this.EDGE_DATA)) , group: 'edges'};
     edge_obj.data.id = this.gen_id('edge');
@@ -611,28 +623,31 @@ class dipam_diagram {
     return elem_style;
   }
 
-  /*
-  <DIPAMv2.0>
-  Remove an element using its id:<elem_id> from the diagram;
-  Removing elements such as: data("d-NN"), tool("t-NN"), or edges("e-NN");
-  Must be triggered always for removing
-  @returns: the removed element
+  // <---- DIPAM v2.0
+  /**
+  * Remove an element using its id:<elem_id> from the diagram;
+  * Removing elements such as: data("d-NN"), tool("t-NN"), or edges("e-NN");
+  * Note: must be triggered always for removing
+  * @param {elem_id} - id of the node to remove
+  * @returns: the removed element
   */
   remove_elem(elem_id){
-    this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
-
-    // <---- DIPAMv2.0
     if ((elem_id.startsWith("d-")) || (elem_id.startsWith("t-"))){
             return fetch("/runtime/delete_unit?value="+elem_id)
                     .then(response => {return this.cy.remove("#"+elem_id);});
     }else {
       if (elem_id.startsWith("e-")) {
-        return fetch("/runtime/delete_link?value="+elem_id)
+        var edge_obj = this.cy.$("#"+elem_id);
+        var source_id = edge_obj.data("source");
+        var target_id = edge_obj.data("target");
+        return fetch("/runtime/delete_link?source="+source_id+"&target="+target_id)
                 .then(response => {return this.cy.remove("#"+elem_id);});
       }
     }
-    // DIPAMv2.0 ---->
+    // TODO: check this from dipam v1.0
+    this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
   }
+  // DIPAM v2.0 ---->
 
   highlight_diagram(){
     //first color all nodes
@@ -688,7 +703,6 @@ class dipam_diagram {
     var node_data = node._private.data;
     var node_seed = node_data.id;
     var node_type = node_data.type;
-    console.log(node_seed,node_type);
     fetch("/runtime/check_compatibility?value="+node_seed)
           .then(response => { return response.json(); })
           .then(data => {
