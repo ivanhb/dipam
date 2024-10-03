@@ -4,7 +4,15 @@ class VIEWH_INPUT_BOX(VIEW_DIPAM_HANDLER):
     def __init__(self):
         super().__init__(
             id = "input-text",
-            type = "DYNAMIC"
+            type = "DYNAMIC",
+            html_content = """
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <label class="input-group-text">${title}</label>
+              </div>
+              <input ${text_palceholder} data-id="${id}" data-att-value="`+k_attribute+`" type="text" ></input>
+            </div>
+            """
         )
 
     def value2view(self, value):
@@ -12,6 +20,9 @@ class VIEWH_INPUT_BOX(VIEW_DIPAM_HANDLER):
 
     def value2backend(self, value):
         return value
+
+
+
 
 
 class VIEWH_INPUT_FILE(VIEW_DIPAM_HANDLER):

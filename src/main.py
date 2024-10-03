@@ -280,7 +280,6 @@ if __name__ == '__main__':
 
     dipam_runtime.init_runtime_defaults()
 
-    print(dipam_config.get_enabled_units("tool")) #TEST
 
     # Define flask main.py path: this is important to ensure that relative paths of other modules start from the root
     app_flask_main_path = os.path.dirname(os.path.abspath(sys.modules['__main__'].__file__))

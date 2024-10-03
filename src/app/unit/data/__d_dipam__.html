@@ -1,0 +1,97 @@
+
+
+<!-- (1) HTML TEMPLATE
+  * This part is the macro structure to be used when initializing a DIPAM data unit view;
+  *
+-->
+<div id="control" data-id="${base.id}" class="data">
+    <div id="control_body">
+
+      <div id="control_mid">
+          <!--
+            *
+            * THIS PART IS VARIABLE
+            * ALL THE CUSTOM HTML ELE GO HERE
+            *
+          -->
+      </div>
+
+      <!-- THIS PART IS FIXED -->
+      <div id="control_foot">
+        <!-- This button edits the element with the new values defined -->
+        <div class="foot-dom btn-edit">
+          <button id="edit" value="editoff" type="button" class="edit-trigger btn btn-light">Edit properties</button>
+        </div>
+        <!-- This button removes the element from the workflow -->
+        <div class="foot-dom btn-remove">
+          <button id="remove" type="button" class="remove-trigger btn btn-light">Remove element</button>
+        </div>
+        <!-- These buttons appear only when edit button is clicked -->
+        <div id="edit_buttons" class="foot-dom">
+            <span><button id="cancel" type="button" class="cancel-trigger btn btn-default edit-switch">Cancel</button></span>
+            <span><button id="save" type="button" class="save-trigger btn btn-default edit-switch">Save</button></span>
+        </div>
+      </div>
+
+    </div>
+</div>
+
+<!-- (2) DIPAM VIEW VALUE -->
+<script id="dipam_unit_view_value_base" type="text/javascript">
+class V_D_DIPAM_UNIT {
+
+  constructor(value) {
+    this.unit_id = $("#control").data('id');
+    this.value = value;
+  }
+
+  /**
+  * This method is IS OVERWRITABLE
+  * given a value generated from the HTML component(s) this should modify this.value
+  * *NOTE: a  new value must be assigned to this.value
+  */
+  set_value(value) {
+    this.value = value;
+  }
+
+  /**
+  * This method is NOT OVERWRITABLE
+  * used to retrieve the data of a corresponding this data unit from the backend.
+  get_value() {
+    // a fetch() using endpoint API – backend2view()
+  }
+  */
+
+  /**
+  * This method is NOT OVERWRITABLE
+  */
+  save_value() {
+    // a fetch() using endpoint API – view2backend()
+  }
+}
+//var dipam_unit_value = V_D_DIPAM_UNIT(null);
+</script>
+
+
+
+<!-- (3) EVENT TRIGGER -->
+<script id="dipam_unit_event_trigger_base" type="text/javascript">
+
+  $('#edit').on('click', function() {
+    $('#edit_buttons').display();
+  });
+
+  $('#remove').on('click', function() {
+    var node_id = dipam_unit_value.unit_id;
+    diagram_instance.remove_elem(node_id);
+  });
+
+  $('#cancel').on('click', function() {
+
+  });
+
+  $('#save').on('click', function() {
+
+  });
+
+</script>

@@ -1539,8 +1539,10 @@ class dipam_interface {
 
     _elem_onclick_handle();
 
+
     function _elem_onclick_handle(){
 
+        //diagram on click handler
         diagram_cy.on('tap', function(event){
           // target holds a reference to the originator
           // of the event (core or element)
@@ -1559,7 +1561,6 @@ class dipam_interface {
             // In v1.0:
             //diagram_instance.check_node_compatibility(this);
             // ---
-
             interface_instance.click_on_node(this);
             elem_remove_handler();
         });

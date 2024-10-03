@@ -43,14 +43,20 @@ class DIPAM_RUNTIME:
         """
         unit_type = unit_type.lower()
 
-        # in case a unit class is not specified, get first one in the list
+        # in case a unit class is not specified, get first one in the list with a view tempalte
+        unit_type_pool = self.unit_index[unit_type]
         if not unit_class:
-            unit_class = next(iter(self.unit_index[unit_type]))
+            for _unit in unit_type_pool:
+                # check if has a view template
+                if unit_type_pool[_unit][1]:
+                    unit_class = _unit
+                    break
 
-        unit_class = unit_class.upper()
+        # unit_class = unit_class.upper()
+        unit_class_file = unit_type_pool[unit_class][0]
         runtime_index_data = self.get_runtime_index()
         new_unit = util.create_instance(
-            self.unit_index[unit_type][unit_class],
+            unit_class_file,
             unit_class
         )
 
@@ -309,15 +315,21 @@ class DIPAM_CONFIG:
     def get_classes_in_dir(self, directory):
         all_classes = dict()
 
-        for filename in os.listdir(directory):
+        all_files = os.listdir(directory)
+        for filename in all_files:
             if filename.endswith(".py"):
+                # in case is dipam base file skip it
+                if filename.startswith("__dipam"):
+                    continue
                 file_path = os.path.join(directory, filename)
                 with open(file_path, 'r') as file:
                     file_content = file.read()
                 tree = ast.parse(file_content)
                 class_names = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+                has_view_template = filename.replace(".py",".html") in all_files
                 for _c in class_names:
-                    all_classes[_c] = directory + "/" +filename
+                    # for each class set its file path and whether it has/has not a template view
+                    all_classes[_c] = ( file_path, has_view_template )
         return all_classes
 
 
@@ -327,8 +339,8 @@ class DIPAM_CONFIG:
     def get_enabled_units(self, unit_type):
         unit_type = unit_type.lower()
         dir = self.get_config_value("dirs.src_app")
-        enabled_path = dir+"/unit/"+unit_type+"/enabled"
-        return self.get_classes_in_dir(enabled_path)
+        _path = os.path.join(dir,"unit",unit_type)
+        return self.get_classes_in_dir(_path)
 
 
 class DIPAM_IO:

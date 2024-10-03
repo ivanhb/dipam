@@ -10,10 +10,28 @@ class VIEW_DIPAM_HANDLER:
     def __init__(
         self,
         id,
-        type = "STATIC"
+        type = "STATIC",
+        html_content = None,
+        settings = None
     ):
         self.id = id
         self.type = type
+        self.html_content = html_content
+        self.settings = settings
+
+
+    def check_value_format(self, value):
+        """
+        [REQ] Must be overwriten if needed
+        ----------------------------------
+        This method defines how the value format accepted by the view;
+        @param:
+            <value>: the value to check
+        @return:
+            True/False if <value>, respectively, follows or does not follow the expected format.
+        """
+        return True
+
 
     def gen_data(self, value):
         """
@@ -22,7 +40,7 @@ class VIEW_DIPAM_HANDLER:
         data = {
             "id": self.id,
             "type": self.type,
-            "value": value
+            "html_dom": self.html_content
         }
         data["value"] = self.value2view(value)
         return data

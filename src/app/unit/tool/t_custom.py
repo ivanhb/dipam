@@ -1,7 +1,5 @@
 # Always import:
-from app.unit.tool.base.t_dipam import T_DIPAM_UNIT
-from app.enabled.io_handler_custom import *
-from app.enabled.view_handler_custom import *
+from app.unit.tool.__t_dipam__ import T_DIPAM_UNIT
 
 class T_TABLE_HALVE(T_DIPAM_UNIT):
 

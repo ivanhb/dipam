@@ -367,11 +367,9 @@ class dipam_diagram {
   add_node(n_type, n_data) {
     // Integrate the backend data with the View data needed
     var node_n = this.gen_node_data(n_type, n_data);
-
     node_n.group = 'nodes';
     this.cy.add(node_n);
     this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
-
 
     //this.cy.nodes().forEach(function(node) {
       //console.log(node.id());
@@ -400,63 +398,6 @@ class dipam_diagram {
       }
     }
 
-    return node_obj;
-
-    //Init the essential data: id, name, value
-    if (n_type in this.CONFIG) {
-      var type_value = null;
-      for (var k_node_key in this.CONFIG[n_type]) {
-        if (this.CONFIG[n_type][k_node_key]["input_ready"]) {
-          type_value = k_node_key
-          break;
-        }
-      }
-      if (a_value != null) {
-        type_value = a_value;
-      }
-      if (Object.keys(this.CONFIG[n_type]).length > 0){
-          var new_id = this.gen_id(n_type);
-          node_obj.data.id = new_id;
-          node_obj.data.name = new_id;
-          node_obj.data.type = n_type;
-          node_obj.data.value = type_value;
-      }
-
-      //check if I should add dynamic fields for the param associated
-      node_obj.data.param = {};
-      var my_conf = this.CONFIG[n_type][type_value];
-      if ('param' in this.CONFIG[n_type][type_value]) {
-        for (var i = 0; i < my_conf.param.length; i++) {
-          var p_key = my_conf.param[i];
-          if (p_key in this.CONFIG.param) {
-              var corresponding_param = this.CONFIG.param[p_key];
-              var corresponding_param_handler = corresponding_param.handler;
-              var corresponding_param_val = undefined;
-              switch (corresponding_param_handler) {
-                case "select-value":
-                  var init_val_index = corresponding_param.value.indexOf(corresponding_param.init_value);
-                  corresponding_param_val = corresponding_param.value[init_val_index];
-                  break;
-                case "input-text":
-                  if (corresponding_param.init_value != undefined){
-                    if (corresponding_param.init_value != false){
-                      corresponding_param_val = corresponding_param.init_value;
-                    }
-                  }
-                  break;
-                case "select-file":
-                  corresponding_param_val = JSON.parse(JSON.stringify(corresponding_param.init_value));
-                  break;
-                case "check-value":
-                  corresponding_param_val = corresponding_param.value;
-                  break;
-                default:
-              }
-              node_obj.data.param[p_key] = corresponding_param_val;
-            }
-          }
-        }
-      }
     return node_obj;
   }
 
@@ -522,16 +463,16 @@ class dipam_diagram {
       }
   }
 
-
   gen_edge_data(source_id,target_id){
     var edge_obj = { data: JSON.parse(JSON.stringify(this.EDGE_DATA)) , group: 'edges'};
-    edge_obj.data.id = this.gen_id('edge');
+    edge_obj.data.id = "e-"+source_id+"_"+target_id;
     edge_obj.data.type = 'edge';
-    edge_obj.data.name = this.gen_id('edge');
+    edge_obj.data.name = "e-"+source_id+"_"+target_id;
     edge_obj.data.source = source_id;
     edge_obj.data.target = target_id;
     return JSON.parse(JSON.stringify(edge_obj));
   }
+
 
   //Update an element
   // (1) Its data in the cy diagram
@@ -743,41 +684,6 @@ class dipam_diagram {
     return target_element;
   }
 
-  //Generate an ID for a giving type of element
-  //type: tool | data | edge
-  //returns an ID with t- | d- | e- followed by a 4-digit. e.g: t-0012
-  gen_id(type){
-
-      var str_prefix = "";
-      var num_id = null;
-      var arr_elems = null;
-      switch (type) {
-            case 'tool': str_prefix = "t-"; arr_elems= this.get_nodes('tool'); break;
-            case 'data': str_prefix = "d-"; arr_elems= this.get_nodes('data'); break;
-            case 'edge': str_prefix = "e-"; arr_elems= this.get_edges(); break;
-      }
-
-      var ids_taken = [];
-      for (var i = 0; i < arr_elems.length; i++) {
-          ids_taken.push(parseInt(arr_elems[i]._private.data.id.substring(2)));
-      }
-
-      var num_id = 1;
-      while (num_id <= arr_elems.length) {
-        if (ids_taken.indexOf(num_id) == -1) {
-          break;
-        }else {
-          num_id++;
-        }
-      }
-
-      var num_zeros = 3 - num_id/10;
-      var str_zeros = "";
-      for (var i = 0; i < num_zeros; i++) {
-            str_zeros= str_zeros + "0";
-      }
-      return str_prefix+str_zeros+num_id;
-  }
 
   //takes a class node
   //returns an array of all the output data IDs
