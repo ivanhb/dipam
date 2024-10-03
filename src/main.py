@@ -43,13 +43,10 @@ import app.base.util as util
 
 DIPAM_SRC_DIR = "src"
 
-
-# DIPAM config and global variables
+# DIPAM globs: config and runtime
 dipam_config = DIPAM_CONFIG(  os.path.join( DIPAM_SRC_DIR, "app","base","config.yaml" )  )
-
-dipam_app_dir = None
-dipam_runtime = None
-dipam_units = {}
+dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
+dipam_runtime = DIPAM_RUNTIME(dipam_config)
 
 
 app = Flask(__name__)
@@ -183,8 +180,12 @@ def _add_unit():
         unit_type,
         unit_id
     )
-    # print(  _unit.backend2view()    ) # PRINT TEST
-    return jsonify( _unit.backend2view() )
+
+    return jsonify( {
+        "id": _unit.id,
+        "type":_unit.type,
+        "class":_unit.unit_class
+    } )
 
 @app.route('/runtime/delete_unit',methods=['GET'])
 def _delete_unit():
@@ -264,21 +265,29 @@ def _check_compatibility():
     return jsonify( units )
 
 
+@app.route('/runtime/get_template',methods=['GET'])
+def _get_template():
+    """
+    [GET-METHOD]
+    This API call is used to return the path to the HTML file that defines the base and specific template of unit;
+    unit with type=<type> and class=<class>
+    @params:
+        + <type>: the unit type (tool or data)
+        + <class>: the unit class
+        + <id>: the unit id
+    """
+    res = {}
+    unit_id = request.args.get('id')
+    html_content, script_content = dipam_runtime.build_view_template(unit_id)
+    if unit_id:
+        res = {
+            "html_content": html_content,
+            "script_content": script_content
+        }
+    return jsonify( res )
+
 
 if __name__ == '__main__':
-
-    dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
-    dipam_runtime = DIPAM_RUNTIME(
-        # DIPAM CONFIG
-        dipam_config,
-        # DIPAM UNITS
-        {
-            "data": dipam_config.get_enabled_units("data"),
-            "tool": dipam_config.get_enabled_units("tool")
-        }
-    )
-
-    dipam_runtime.init_runtime_defaults()
 
 
     # Define flask main.py path: this is important to ensure that relative paths of other modules start from the root

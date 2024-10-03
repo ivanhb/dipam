@@ -71,8 +71,8 @@ class D_TEXT(D_DIPAM_UNIT):
         """
         """
         res = {
-            "value.title": self.label,
-            "value.description": self.description,
-            "value.text_palceholder": "placeholder='Give a new value ...'"
+            "value-title": self.label,
+            "value-description": self.description,
+            "value-text_palceholder": "Set a string value ..."
         }
         return res

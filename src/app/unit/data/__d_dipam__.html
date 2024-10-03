@@ -1,19 +1,19 @@
 
 
-<!-- (1) HTML TEMPLATE
+<!--START:HTML-TEMPLATE-BASE-->
+<!--
   * This part is the macro structure to be used when initializing a DIPAM data unit view;
   *
 -->
-<div id="control" data-id="${base.id}" class="data">
+<div id="control" data-id="{base-id}" class="data">
     <div id="control_body">
 
       <div id="control_mid">
           <!--
-            *
             * THIS PART IS VARIABLE
-            * ALL THE CUSTOM HTML ELE GO HERE
-            *
+            * FOR THE CUSTOM HTML UNIT VIEW
           -->
+          <!--HTML-TEMPLATE-UNIT-->
       </div>
 
       <!-- THIS PART IS FIXED -->
@@ -35,9 +35,11 @@
 
     </div>
 </div>
+<!--HTML-TEMPLATE-BASE:END-->
 
-<!-- (2) DIPAM VIEW VALUE -->
-<script id="dipam_unit_view_value_base" type="text/javascript">
+
+<!-- (2) VIEW VALUE -->
+<script type="text/javascript">
 class V_D_DIPAM_UNIT {
 
   constructor(value) {
@@ -74,8 +76,11 @@ class V_D_DIPAM_UNIT {
 
 
 
+<!--VIEW-VALUE-UNIT-->
+
+
 <!-- (3) EVENT TRIGGER -->
-<script id="dipam_unit_event_trigger_base" type="text/javascript">
+<script type="text/javascript">
 
   $('#edit').on('click', function() {
     $('#edit_buttons').display();
@@ -95,3 +100,6 @@ class V_D_DIPAM_UNIT {
   });
 
 </script>
+
+
+<!--EVENT-TRIGGER-UNIT-->

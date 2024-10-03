@@ -1,4 +1,6 @@
 from collections import defaultdict
+import re
+import os
 
 class D_DIPAM_UNIT:
     """
@@ -25,6 +27,7 @@ class D_DIPAM_UNIT:
         ):
         self.type = "data"
         self.id = "d-NN"
+        self.unit_class = self.__class__.__name__
         self.label = label
         self.description = description
         self.family = family
@@ -155,7 +158,7 @@ class D_DIPAM_UNIT:
         data = {
             "type": self.type,
             "id": self.id,
-            "class": self.__class__.__name__,
+            "unit_class": self.unit_class,
             "label": self.label,
             "description": self.description,
             "family": self.family
@@ -175,7 +178,7 @@ class D_DIPAM_UNIT:
         return updated_keys
 
 
-    def prepare_view_template(self):
+    def gen_view_template(self, base_view_fpath, unit_view_fpath):
         """
         [NOT-OVERWRITABLE]
         Generates the view template to send to the view
@@ -191,13 +194,34 @@ class D_DIPAM_UNIT:
 
         # load the html template of this data unit;
         # the html template file must be in same dir with same name of this class but lowercase
-        html_template_file = self.__class__.__name__.lower()+".html"
-        with open(html_template_file, 'r') as file:
-            html_template = file.read()
-
         # Use the format method to replace placeholders
-        filled_html_template = html_template.format(**template_args)
-        return html_output
+        with open(base_view_fpath, 'r') as file_base, open(unit_view_fpath, 'r') as file_unit:
+            template_base = file_base.read()
+            template_unit = file_unit.read()
+
+        # Extract divs from the <template_unit> and place them in <template_base>
+        for pattern, placeholder in [
+            (r"<!--START:HTML-TEMPLATE-->(.*?)<!--HTML-TEMPLATE:END-->", "<!--HTML-TEMPLATE-UNIT-->"),
+            (r"<!--START:VIEW-VALUE-->(.*?)<!--VIEW-VALUE:END-->", "<!--VIEW-VALUE-UNIT-->"),
+            (r"<!--START:EVENT-TRIGGER-->(.*?)<!--EVENT-TRIGGER:END-->", "<!--EVENT-TRIGGER-UNIT-->")
+        ]:
+            match = re.search(pattern, template_unit, re.DOTALL)
+            template_base = template_base.replace(placeholder, match.group(1) if match else "")
+
+        # put args in the HTML part
+        # Use regex to extract the desired parts
+        match = re.search(r"<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->(.*)", template_base, re.DOTALL)
+        if match:
+            html_template = match.group(1).format(**template_args)
+            script_template = match.group(2).strip()
+
+            # to make it just clean code
+            # remove the script tag from it
+            script_template = re.sub(r'<script type="text/javascript">(.*?)</script>', r'\1', script_template, flags=re.DOTALL)
+            # remove the html comments
+            script_template = re.sub(r'<!--.*?-->', '', script_template, flags=re.DOTALL)  # Remove comments
+            return html_template, script_template
+        return None, None
 
     def map_base_to_template_args(self):
         """
@@ -205,11 +229,11 @@ class D_DIPAM_UNIT:
         @return: a dict with all the base.{} arguments to subtitute in the HTML template of this data unit
         """
         res = {
-            "base.id": self.id,
-            "base.type": self.type,
-            "base.label": self.label,
-            "base.description": self.description,
-            "base.family": self.family
+            "base-id": self.id,
+            "base-type": self.type,
+            "base-label": self.label,
+            "base-description": self.description,
+            "base-family": self.family
         }
         return res
 
@@ -220,7 +244,7 @@ class D_DIPAM_UNIT:
         **NOTE: Subclasses must override this method without changing params
                 <value> is a value that respects this data unti value format (v_check() > True)
         """
-        res = {"value.content": value}
+        res = {"value-content": value}
         return res
 
     def backend2view(self):

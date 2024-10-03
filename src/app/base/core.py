@@ -11,25 +11,31 @@ class DIPAM_RUNTIME:
 
     def __init__(
         self,
-        dipam_config,
-        dipam_units
+        dipam_config
     ):
-        self.config = dipam_config
+
+        self.unit_base = {
+            "data": dipam_config.get_base_unit("data"),
+            "tool": dipam_config.get_base_unit("tool")
+        }
+        self.unit_index = {
+            "data": dipam_config.get_enabled_units("data"),
+            "tool": dipam_config.get_enabled_units("tool")
+        }
+        self.runtime_units = dict()
         self.runtime_dir = os.path.join(
-            self.config.get_config_value("dirs.dipam_app"),
+            dipam_config.get_config_value("dirs.dipam_app"),
             "runtime"
         )
-
-        self.unit_index = dipam_units
-        self.runtime_units = dict()
+        self.init_runtime_defaults(dipam_config)
 
 
-    def init_runtime_defaults(self):
+    def init_runtime_defaults(self, dipam_config):
         """
         Builds/creates the DIPAM runtime defaults data
         """
         # upload last runtime checkpoint
-        dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
+        dir_dipam_app = dipam_config.get_config_value("dirs.dipam_app")
         util.copy_dir_to(
             os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
             dir_dipam_app
@@ -48,12 +54,12 @@ class DIPAM_RUNTIME:
         if not unit_class:
             for _unit in unit_type_pool:
                 # check if has a view template
-                if unit_type_pool[_unit][1]:
+                if unit_type_pool[_unit]["view_fpath"]:
                     unit_class = _unit
                     break
 
         # unit_class = unit_class.upper()
-        unit_class_file = unit_type_pool[unit_class][0]
+        unit_class_file = unit_type_pool[unit_class]["model_fpath"]
         runtime_index_data = self.get_runtime_index()
         new_unit = util.create_instance(
             unit_class_file,
@@ -122,7 +128,7 @@ class DIPAM_RUNTIME:
             self.set_runtime_index( _unit.dump_metadata() )
             # in case the unit class changes;
             # then all corresponding data must be deleted as well
-            if not data["class"] == runtime_index_data[unit_type]["class"]:
+            if not data["unit_class"] == runtime_index_data[unit_type]["unit_class"]:
                 if unit_id.startswith("d-"):
                     util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
                 util.mkdir_at( os.path.join(self.runtime_dir, "unit"), unit_id)
@@ -201,7 +207,7 @@ class DIPAM_RUNTIME:
         if unit_id.startswith("t-"):
             compatible_class = set( seed_unit["output"] )
         elif unit_id.startswith("d-"):
-            compatible_class = { seed_unit["class"] }
+            compatible_class = { seed_unit["unit_class"] }
 
         # (2) Check compatibility with all "tool" units in the system
         # (whether i am checking a "tool" or "data" unti, none of them can be connected to a data)
@@ -224,6 +230,29 @@ class DIPAM_RUNTIME:
             return {unit_b_id: res[unit_b_id]}
 
         return res
+
+
+    def build_view_template(self, unit_id):
+        """
+        Build the base and specific unit template
+        @param:
+            <unit_id>: the unit id
+        @return:
+            HTML content ready to be inserted in the interface
+        """
+        base_view_fpath = None
+        if unit_id.startswith("d-"):
+            base_view_fpath = self.unit_base["data"]["view_fpath"]
+        elif unit_id.startswith("t-"):
+            base_view_fpath = self.unit_base["tool"]["view_fpath"]
+
+        class_name = self.runtime_units[unit_id].__class__.__name__
+        unit_view_fpath = self.unit_index["data"][class_name]["view_fpath"]
+
+        return self.runtime_units[unit_id].gen_view_template(
+            base_view_fpath,
+            unit_view_fpath
+        )
 
 
     # RUNTIME INDEX METHODS
@@ -265,6 +294,7 @@ class DIPAM_RUNTIME:
             return "workflow.json" in file_list and "index.json" in file_list, ""
         except Exception as e:
             return False, "[ERROR]: The file is not a valid runtime ZIP file! – "+str(e)
+
 
 
 class DIPAM_CONFIG:
@@ -319,17 +349,22 @@ class DIPAM_CONFIG:
         for filename in all_files:
             if filename.endswith(".py"):
                 # in case is dipam base file skip it
-                if filename.startswith("__dipam"):
+                if filename.startswith("__d_dipam__.py"):
                     continue
                 file_path = os.path.join(directory, filename)
                 with open(file_path, 'r') as file:
                     file_content = file.read()
                 tree = ast.parse(file_content)
                 class_names = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
-                has_view_template = filename.replace(".py",".html") in all_files
+                view_template = None
+                if filename.replace(".py",".html") in all_files:
+                    view_template = file_path.replace(".py",".html")
                 for _c in class_names:
                     # for each class set its file path and whether it has/has not a template view
-                    all_classes[_c] = ( file_path, has_view_template )
+                    all_classes[_c] = {
+                        "model_fpath": file_path,
+                        "view_fpath": view_template
+                    }
         return all_classes
 
 
@@ -341,6 +376,22 @@ class DIPAM_CONFIG:
         dir = self.get_config_value("dirs.src_app")
         _path = os.path.join(dir,"unit",unit_type)
         return self.get_classes_in_dir(_path)
+
+    """
+    Return the model and view file path of a specific unit type
+    """
+    def get_base_unit(self, unit_type):
+        unit_type = unit_type.lower()
+        dir = self.get_config_value("dirs.src_app")
+
+        fname = "d_dipam"
+        if unit_type == "tool":
+            fname = "t_dipam"
+
+        return {
+            "model_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.py"),
+            "view_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.html")
+        }
 
 
 class DIPAM_IO:

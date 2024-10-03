@@ -133,13 +133,34 @@ class dipam_interface {
         this.overview_section_elem['elem_class'] = elem_class;
     }
 
+    // build_info(elem, elem_class= 'nodes', update_control_params = false) {
+    //   if('_private' in elem)
+    //     elem = elem._private;
+    //   this.info_section_html = this.build_control_section(elem, update_control_params);
+    //   this.info_section_elem['elem'] = elem;
+    //   this.info_section_elem['elem_class'] = elem_class;
+    //   this.DOMS.CONTROL.BASE.className = elem.data.type;
+    // }
+
+    /** DIPAM v2.0
+    * Build info will call the back end to get the html to read for generating the section
+    */
     build_info(elem, elem_class= 'nodes', update_control_params = false) {
-      if('_private' in elem)
+      if('_private' in elem){
         elem = elem._private;
-      this.info_section_html = this.build_control_section(elem, update_control_params);
-      this.info_section_elem['elem'] = elem;
-      this.info_section_elem['elem_class'] = elem_class;
-      this.DOMS.CONTROL.BASE.className = elem.data.type;
+      }
+      var node_id = elem.data.id;
+
+      fetch("/runtime/get_template?id="+node_id)
+          .then(response => { return response.json(); })
+          .then(data => {
+              console.log("Template generated for the node=",node_id,data);
+              $('#left').html( data["html_content"] );
+
+              var script = document.createElement('script');
+              script.textContent = data["script_content"];
+              document.body.appendChild(script);
+          })
     }
 
     build_control_section(elem, update_control_params = false){
@@ -1414,7 +1435,7 @@ class dipam_interface {
                   return response.json();
               })
               .then(data => {
-                  console.log("Add a new node of type=",type," ,with data=",data);
+                  console.log("New node added: type=",data["type"],", id=",data["id"],", class=",data["class"] );
                   //add a node to the diagram of a specific <type> with the corresponding <data>
                   diagram_instance.add_node(type, data);
                   _elem_onclick_handle();
@@ -1556,12 +1577,10 @@ class dipam_interface {
         //nodes on click handler
         diagram_cy.nodes().on('click', function(e){
             diagram_instance.click_elem_style(this,'node');
-            // In v2.0:
+            // DIPAM v2.0
             diagram_instance.apply_node_compatibility(this);
-            // In v1.0:
-            //diagram_instance.check_node_compatibility(this);
-            // ---
             interface_instance.click_on_node(this);
+            // DIPAM v2.0
             elem_remove_handler();
         });
 

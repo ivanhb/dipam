@@ -158,3 +158,24 @@ def get_first_available_id(data, pref):
             break
         _new_id += 1
     return pref+str(_new_id)
+
+
+def replace_vars_in_file(self, unit_type, replacements):
+    # Get the file path
+    file_path = self.unit_base[unit_type]["view_fpath"]
+
+    # Read the file content
+    with open(file_path, 'r') as file:
+        content = file.read()
+
+    # Define a function to replace the variables
+    def replace_match(match):
+        # Extract the variable name without ${ and }
+        var_name = match.group(1)
+        # Return the corresponding value from the replacements dictionary, or keep it unchanged if not found
+        return replacements.get(var_name, match.group(0))
+
+    # Use a regular expression to find all ${<VAR>} patterns and replace them
+    updated_content = re.sub(r'\$\{(\w+)\}', replace_match, content)
+
+    return updated_content
