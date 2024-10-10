@@ -1,6 +1,7 @@
 # Always import:
 from app.unit.data.__d_dipam__ import D_DIPAM_UNIT
 
+import os
 
 class D_TEXT(D_DIPAM_UNIT):
     """
@@ -14,18 +15,41 @@ class D_TEXT(D_DIPAM_UNIT):
             family = "General",
             f_att = {
                 "extension": ["txt"],
-                "name": "text",
+                "name": "gtext",
                 # -- Added Attributes
                 "header": None,
                 "rows_limit": None
             }
         )
 
-    def v_check(self, a_val):
-        """
-        If the value is a string, the check is successful.
-        """
-        return isinstance(a_val, str)
+    #   -----
+    #   Methods to manage writing/updating self.value
+    #   -----
+
+    def store_value(self, unit_dir_path):
+        file_path = os.path.join(unit_dir_path, self.f_att["name"]+".txt")
+        with open(file_path, 'w') as file:
+            file.write(self.value)
+        return True
+
+    def is_value_match(self, a_value):
+        return a_value == self.value
+
+    def manage_view_file(self, l_files):
+        new_value = ""
+        for file in l_files:
+            pref = file.filename.split(".")[-1]
+            if not pref == 'txt':
+                return False, "[ERROR] Some files have a non-supported format for this type of data"
+            file_content = file.read()
+            new_value = new_value +"\n"+ file_content.decode('utf-8')
+        return new_value
+
+    def manage_view_direct_value(self, a_value):
+        if not isinstance(a_value,str):
+            return False, "[ERROR] Some files have a non-supported format for this type of data"
+        new_value = a_value
+        return new_value
 
 
     def f_read(self, file_path):
@@ -35,44 +59,3 @@ class D_TEXT(D_DIPAM_UNIT):
         with open(file_path, 'r') as file:
             value = file.read()
         return value
-
-    def f_write(self, dir_path):
-        """
-        """
-        value = self.value
-        dest_dir = dir_path
-
-        res_files = []
-        total_rows = len(value)
-
-        # Split data into chunks and write each chunk to a new CSV file
-        step = self.f_att.rows_limit
-        if step == None:
-            # in case no limit is given the for step is equal all rows (the iteration is done one time only)
-            step = total_rows + 1
-
-        file_count = 1
-        value = value.split("\n")
-        for start_idx in range(0, total_rows, step):
-            end_idx = min(start_idx + self.f_att.rows_limit, total_rows)
-            chunk = value[start_idx:end_idx]
-            chunk_concat = "\n".join(chunk)
-
-            # Write this chunk to a new file
-            dest_file = os.path.join(dest_dir,self.f_att.name,"-",str(file_count),".txt")
-            with open(_dest, 'w') as file:
-                file.write( chunk_concat )
-            file_count += 1
-            res_files.append(dest_file)
-
-        return res_files
-
-    def map_value_to_template_args(self, value):
-        """
-        """
-        res = {
-            "value-title": self.label,
-            "value-description": self.description,
-            "value-text_palceholder": "Set a string value ..."
-        }
-        return res

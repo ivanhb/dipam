@@ -43,10 +43,44 @@ import app.base.util as util
 
 DIPAM_SRC_DIR = "src"
 
+
+class DIPAM_MESSENGER:
+
+    def __init__(self):
+        self.type = {
+            200: "DIPAM operated correctly",
+            304: "No operation done by DIPAM",
+            400: "Bad Request",
+            401: "Not authorized operation",
+            404: "Resource not found"
+        }
+
+    def build_msg(self, data, code = None, integrate_data = False):
+        """
+        """
+        if code:
+            return self.type[code], code
+        elif isinstance(data,tuple):
+            if data[1].startswith("[ERROR]"):
+                return self.type[400] +" – "+ data[1], 400
+
+            elif data[1].startswith("[WARNING]"):
+                return self.type[304] +" – "+ data[1], 304
+        else:
+            if data == None:
+                return self.type[304], 304
+
+        if integrate_data:
+            return data, 200
+
+        return self.type[200], 200
+
+
 # DIPAM globs: config and runtime
 dipam_config = DIPAM_CONFIG(  os.path.join( DIPAM_SRC_DIR, "app","base","config.yaml" )  )
 dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
 dipam_runtime = DIPAM_RUNTIME(dipam_config)
+dipam_messenger = DIPAM_MESSENGER()
 
 
 app = Flask(__name__)
@@ -161,6 +195,26 @@ def _download(type):
     # except Exception as e:
         # return render_template('error.html', error_msg="[ERROR]: wrong download parameters! – "+str(e), port=5000, type="browser")
 
+@app.route('/runtime/all_unit',methods=['GET'])
+def _all_units():
+    """
+    [GET-METHOD]
+    This call is used to get the list of all available unit classes for a specific <type>
+    @params:
+        + <type>: the unit type
+    """
+    unit_type = request.args.get('type').lower()
+    unit_classes = dipam_config.get_enabled_units(unit_type)
+    res = []
+    for _c in unit_classes:
+        _unit = util.create_instance(
+            unit_classes[_c]["model_fpath"],
+            _c
+        )
+        res.append(_unit.dump_metadata())
+        del _unit
+    return jsonify( res )
+
 
 @app.route('/runtime/add_unit',methods=['GET'])
 def _add_unit():
@@ -172,13 +226,13 @@ def _add_unit():
         + [<value>]: the specific entity to add; if not specified the first is created.
     """
     unit_type = request.args.get('type').lower()
-    unit_id = None
-    if request.args.get('value'):
-        unit_id = request.args.get('value')
+    unit_class = None
+    if request.args.get('class'):
+        unit_class = request.args.get('class')
 
     _unit = dipam_runtime.add_unit(
         unit_type,
-        unit_id
+        unit_class = unit_class
     )
 
     return jsonify( {
@@ -239,6 +293,28 @@ def _add_link():
         )
         return "Link done"
     return "[ERROR]: value not specified", 400
+
+
+@app.route("/runtime/save_unit",methods = ['POST'])
+def _save_runtime_unit():
+    res = None
+    data = request.get_json()
+    if data:
+        unit_id = data.get('unit_id')
+        unit_type = data.get('unit_type')
+        unit_class = data.get('unit_class')
+        unit_data = data.get('data')
+        if unit_data:
+            print("Saving the data",unit_data," – of: ", unit_id)
+
+            # Save unit data, and specifiy source_is_view to True
+            # This also saves/updates the runtime index metadata
+            res, storage_dir  = dipam_runtime.save_unit_data(unit_data, unit_id, True)
+
+            # Save the status of the runtime
+            dipam_runtime.save_runtime_status(storage_dir)
+
+    return dipam_messenger.build_msg(res)
 
 
 @app.route('/runtime/check_compatibility',methods=['GET'])

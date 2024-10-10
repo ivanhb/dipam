@@ -15,6 +15,7 @@ class DIPAM_RUNTIME:
     ):
 
         self.unit_base = {
+            "diagram": dipam_config.get_base_unit("diagram"),
             "data": dipam_config.get_base_unit("data"),
             "tool": dipam_config.get_base_unit("tool")
         }
@@ -22,28 +23,54 @@ class DIPAM_RUNTIME:
             "data": dipam_config.get_enabled_units("data"),
             "tool": dipam_config.get_enabled_units("tool")
         }
+        self.diagram_unit = util.create_instance(
+            self.unit_base["diagram"]["model_fpath"],
+            "DIAGRAM_DIPAM_UNIT")
         self.runtime_units = dict()
         self.runtime_dir = os.path.join(
             dipam_config.get_config_value("dirs.dipam_app"),
             "runtime"
         )
-        self.init_runtime_defaults(dipam_config)
+        self.config = dipam_config
+        self.init_runtime_status()
 
 
-    def init_runtime_defaults(self, dipam_config):
+    def init_runtime_status(self):
         """
         Builds/creates the DIPAM runtime defaults data
         """
         # upload last runtime checkpoint
-        dir_dipam_app = dipam_config.get_config_value("dirs.dipam_app")
+        dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
+
+        if not os.path.exists( os.path.join(dir_dipam_app,"runtime") ):
+            util.copy_dir_to(
+                os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
+                dir_dipam_app
+            )
+        return True
+
+    def save_runtime_status(self, storage_dir = None ):
+        """
+        Builds/creates the DIPAM runtime defaults data
+        """
+        dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
+
+        dir_to_copy = storage_dir
+        dest_dir = os.path.join(dir_dipam_app, "data", "checkpoint","runtime","unit")
+        if not storage_dir:
+            # take entire runtime directory
+            dir_to_copy = os.path.join( dir_dipam_app,"runtime")
+            dest_dir = os.path.join(dir_dipam_app, "data", "checkpoint")
+
         util.copy_dir_to(
-            os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
-            dir_dipam_app
+            dir_to_copy,
+            dest_dir
         )
+        return True
+
 
     # UNIT HANDLER METHODS
     # ------
-
     def add_unit(self, unit_type, unit_class = None, unit_id = None, unit_metadata = None):
         """
         """
@@ -111,12 +138,31 @@ class DIPAM_RUNTIME:
             util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
         return unit_id
 
-    def edit_unit(self, unit_id, metadata):
+    def save_unit_data(self, data, unit_id, source_is_view = False):
+        """
+        Save the given <data> for a unit identified by <unit_id>
+        @param:
+            <unit_id>: the id of the unit to edit;
+            <data>: the data to save
+        """
+        unit_type = "data" if unit_id.startswith("d-") else "tool"
+        if unit_type == "data":
+            unit_runtime_dir = os.path.join(self.runtime_dir, "unit",unit_id)
+            new_value = self.runtime_units[unit_id].write(data, source_is_view, unit_runtime_dir)
+
+            # set and update the index metadata of <unit_id>
+            if not isinstance(new_value, tuple) and new_value:
+                self.runtime_units[unit_id].update_view_data(data)
+                self.set_runtime_index( self.runtime_units[unit_id].dump_metadata() )
+
+            return new_value, unit_runtime_dir
+
+    def edit_unit_metadata(self, unit_id, metadata):
         """
         Edit a Dipam unit already created on runtime;
         @param:
-            <unit_id>: the id of the unit to delete;
-            <data>: the new data of the unit
+            <unit_id>: the id of the unit to edit;
+            <metadata>: the new metadata of the unit
         """
         unit_type = "data" if unit_id.startswith("d-") else "tool"
         runtime_index_data = self.get_runtime_index()
@@ -231,7 +277,6 @@ class DIPAM_RUNTIME:
 
         return res
 
-
     def build_view_template(self, unit_id):
         """
         Build the base and specific unit template
@@ -241,7 +286,10 @@ class DIPAM_RUNTIME:
             HTML content ready to be inserted in the interface
         """
         base_view_fpath = None
-        if unit_id.startswith("d-"):
+        if unit_id.startswith("diagram"):
+            base_view_fpath = self.unit_base["diagram"]["view_fpath"]
+            return self.diagram_unit.gen_view_template(base_view_fpath)
+        elif unit_id.startswith("d-"):
             base_view_fpath = self.unit_base["data"]["view_fpath"]
         elif unit_id.startswith("t-"):
             base_view_fpath = self.unit_base["tool"]["view_fpath"]
@@ -313,13 +361,12 @@ class DIPAM_CONFIG:
         with open(self.yaml_config_file, 'r') as file:
             self.yaml_config_value = yaml.safe_load(file)
 
-
-    """
-    Given a key <s> the method returns the corresponding value in self.yaml_config_value
-    Inner keys are specified with a "."
-    :return: value of the key in the self.yaml_config_value
-    """
     def get_config_value(self, s):
+        """
+        Given a key <s> the method returns the corresponding value in self.yaml_config_value
+        Inner keys are specified with a "."
+        :return: value of the key in the self.yaml_config_value
+        """
         data = self.yaml_config_value
         keys = s.split('.')
 
@@ -338,11 +385,10 @@ class DIPAM_CONFIG:
 
         return data
 
-
-    """
-    Go through all .py files in <directory> and extract the names of all the defined classes
-    """
     def get_classes_in_dir(self, directory):
+        """
+        Go through all .py files in <directory> and extract the names of all the defined classes
+        """
         all_classes = dict()
 
         all_files = os.listdir(directory)
@@ -368,71 +414,34 @@ class DIPAM_CONFIG:
         return all_classes
 
 
-    """
-    Return a list of all the DIPAM data units classes enabled (ready to be used)
-    """
     def get_enabled_units(self, unit_type):
+        """
+        Return a list of all the DIPAM data units classes enabled (ready to be used)
+        """
         unit_type = unit_type.lower()
         dir = self.get_config_value("dirs.src_app")
         _path = os.path.join(dir,"unit",unit_type)
         return self.get_classes_in_dir(_path)
 
-    """
-    Return the model and view file path of a specific unit type
-    """
     def get_base_unit(self, unit_type):
+        """
+        Return the model and view file path of a specific unit type
+        """
         unit_type = unit_type.lower()
         dir = self.get_config_value("dirs.src_app")
 
-        fname = "d_dipam"
-        if unit_type == "tool":
-            fname = "t_dipam"
+        if unit_type == "tool" or unit_type == "data":
+            fname = "d_dipam"
+            if unit_type == "tool":
+                fname = "t_dipam"
 
-        return {
-            "model_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.py"),
-            "view_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.html")
-        }
-
-
-class DIPAM_IO:
-
-    def __init__(
-            self
-        ):
-        """
-        """
-        self.config = DIPAM_CONFIG()
-
-    def save_d_tmp(self, d_id, f_content, f_extension):
-
-        path_tmp_d_write = self.config.get_config_value("dirs.tmp_d_write")
-        last_f_num = __get_largest_numbered_file( path_tmp_d_write, d_id )
-
-        f_name = d_id+"_"+str(last_f_num+1)+"."+f_extension
-        f_path = self.config.get_config_value("dirs.tmp_d_write") + "/" + f_name
-
-        with open(f_path, 'w') as file:
-            file.write(f_content)
-
-        return f_path
-
-
-    def __get_largest_numbered_file(dir,f_name):
-        """
-        [LOCAL-METHOD] Gets the file that starts with <f_name> contained in <dir> with the bigger number
-        """
-
-        pattern = re.compile(r'^'+f_name+'_(\d+)$')
-        max_num = -1
-        largest_file = None
-
-        # Loop through all files in the directory
-        for filename in os.listdir(dir):
-            match = pattern.match(filename)
-            if match:
-                number = int(match.group(1))
-                if number > max_num:
-                    max_num = number
-                    largest_file = filename
-
-        return max_num
+            return {
+                "model_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.py"),
+                "view_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.html")
+            }
+        elif unit_type=="diagram":
+            fname = "diagram_dipam"
+            return {
+                "model_fpath": os.path.join(dir,"base","__"+fname+"__.py"),
+                "view_fpath": os.path.join(dir,"base","__"+fname+"__.html")
+            }

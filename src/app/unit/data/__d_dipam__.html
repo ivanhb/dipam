@@ -1,105 +1,51 @@
 
-
 <!--START:HTML-TEMPLATE-BASE-->
 <!--
   * This part is the macro structure to be used when initializing a DIPAM data unit view;
-  *
 -->
-<div id="control" data-id="{base-id}" class="data">
-    <div id="control_body">
+<div id="control_body" data-type="{base-type}" data-id="{base-id}" data-class="{base-unit_class}" class="data-unit">
 
-      <div id="control_mid">
-          <!--
-            * THIS PART IS VARIABLE
-            * FOR THE CUSTOM HTML UNIT VIEW
-          -->
-          <!--HTML-TEMPLATE-UNIT-->
+      <div id="control_mid row">
+
+          <div class="dipam-unit-template col">
+
+            <!-- To enable the edit of the element -->
+              <div class="row">
+                  <div class="btn-edit col">
+                    <span><button id="edit_btn" class="btn btn-primary">Edit</button></span>
+                    <span><button id="cancel_btn" class="btn btn-default">Cancel</button></span>
+                    <span><button id="remove_btn" class="btn btn-danger">Delete item</button></span>
+                    <!-- <div id="editable-content" class="mt-3"><p>This content is <span id="edit_btn_status">locked</span> for editing.</p></div> -->
+                  </div>
+              </div>
+
+              <h1>{base-label}</h1>
+              <p>{base-description}</p>
+              <br>
+
+              <!-- INPUTS are here -->
+              <div id="input_section">
+                <!-- Button to toggle input method -->
+                <button class="switch-input-btn" data-value="direct_input">Switch to File Input</button>
+
+                <!-- DIRECT INPUT: variable following the template of the data unit -->
+                <div id="input_group">
+                    <!--HTML-TEMPLATE-UNIT-->
+                </div>
+                <!-- FILE INPUT -->
+                <button class="file-upload-btn" onclick="document.getElementById('f_input').click();">Load File</button>
+                <input type="file" id="f_input" name="f_input" style="display:none" accept=".txt" />
+              </div>
+          </div>
+
       </div>
 
       <!-- THIS PART IS FIXED -->
-      <div id="control_foot">
-        <!-- This button edits the element with the new values defined -->
-        <div class="foot-dom btn-edit">
-          <button id="edit" value="editoff" type="button" class="edit-trigger btn btn-light">Edit properties</button>
-        </div>
-        <!-- This button removes the element from the workflow -->
-        <div class="foot-dom btn-remove">
-          <button id="remove" type="button" class="remove-trigger btn btn-light">Remove element</button>
-        </div>
-        <!-- These buttons appear only when edit button is clicked -->
-        <div id="edit_buttons" class="foot-dom">
-            <span><button id="cancel" type="button" class="cancel-trigger btn btn-default edit-switch">Cancel</button></span>
-            <span><button id="save" type="button" class="save-trigger btn btn-default edit-switch">Save</button></span>
-        </div>
-      </div>
+      <div id="control_foot"></div>
 
-    </div>
 </div>
 <!--HTML-TEMPLATE-BASE:END-->
 
-
-<!-- (2) VIEW VALUE -->
-<script type="text/javascript">
-class V_D_DIPAM_UNIT {
-
-  constructor(value) {
-    this.unit_id = $("#control").data('id');
-    this.value = value;
-  }
-
-  /**
-  * This method is IS OVERWRITABLE
-  * given a value generated from the HTML component(s) this should modify this.value
-  * *NOTE: a  new value must be assigned to this.value
-  */
-  set_value(value) {
-    this.value = value;
-  }
-
-  /**
-  * This method is NOT OVERWRITABLE
-  * used to retrieve the data of a corresponding this data unit from the backend.
-  get_value() {
-    // a fetch() using endpoint API – backend2view()
-  }
-  */
-
-  /**
-  * This method is NOT OVERWRITABLE
-  */
-  save_value() {
-    // a fetch() using endpoint API – view2backend()
-  }
-}
-//var dipam_unit_value = V_D_DIPAM_UNIT(null);
-</script>
-
-
-
 <!--VIEW-VALUE-UNIT-->
-
-
-<!-- (3) EVENT TRIGGER -->
-<script type="text/javascript">
-
-  $('#edit').on('click', function() {
-    $('#edit_buttons').display();
-  });
-
-  $('#remove').on('click', function() {
-    var node_id = dipam_unit_value.unit_id;
-    diagram_instance.remove_elem(node_id);
-  });
-
-  $('#cancel').on('click', function() {
-
-  });
-
-  $('#save').on('click', function() {
-
-  });
-
-</script>
-
 
 <!--EVENT-TRIGGER-UNIT-->

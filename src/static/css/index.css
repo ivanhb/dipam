@@ -129,37 +129,10 @@ body {
   border-radius: 10px 15px 15px 10px;
   background-color: var(--diagram-color);
 }
-#control.diagram{
-  background-color: var(--diagram-color);
-}
-#control.diagram input{
-  background-color: var(--diagram-color);
-}
-#control.diagram textarea{
-  background-color: var(--diagram-color);
-}
-#control.tool{
-  background-color: var(--tool-color-hover);
-}
-#control.tool input{
-  background-color: var(--tool-color-hover);
-}
-#control.tool select{
-  background-color: var(--tool-color-hover);
-}
-#control.data{
-  background-color: var(--data-color-hover);
-}
-#control.data input{
-  background-color: var(--data-color-hover);
-}
-#control.data select{
-  background-color: var(--data-color-hover);
-}
-#control label{
+#control_body label{
   color: white;
 }
-#control input{
+#control_body input{
   border-radius: px;
 }
 
@@ -337,7 +310,7 @@ DIAGRAM TOP
     height: 20px;
     display: none;
 }
-#list_options{
+.list-options{
   margin-top: 1px;
   position: absolute;
   display: none;
@@ -349,7 +322,7 @@ DIAGRAM TOP
   right: 3%;
   margin-top: 20px;
 }
-#list_options button{
+.list-options button{
   vertical-align: middle;
   font-size: 12pt;
   font-weight: 340;
@@ -363,11 +336,11 @@ DIAGRAM TOP
   border-bottom: dotted 1.5px white;
   color: black;
 }
-#list_options button:hover{
+.list-options button:hover{
   border-bottom: solid 1.5px gray;
   background-color: var(--bg-color-hover);
 }
-#list_options a{
+.list-options a{
   font-size: 14pt;
   display: block;
   width: 100%;
@@ -614,7 +587,7 @@ select, .dropdown-toggle{
 .timeline-block-inner.tool-block{
   background-color: var(--tool-color);
 }
-.timeline-block-inner.data-block{
+.timeline-block-inner.data-unit-block{
   background-color: var(--data-color);
 }
 .timeline-block-inner.text-block{
@@ -853,6 +826,42 @@ ul + label{
     top: 24px;
     height: 32px;
   }
+}
+
+
+
+.tool-unit{
+  background-color: var(--tool-color-hover);
+}
+.tool-unit input{
+  background-color: var(--tool-color-hover);
+}
+.tool-unit select{
+  background-color: var(--tool-color-hover);
+}
+.tool-unit a{
+  color: white;
+}
+.data-unit{
+  background-color: var(--data-color-hover);
+}
+.data-unit input{
+  background-color: var(--data-color-hover);
+}
+.data-unit select{
+  background-color: var(--data-color-hover);
+}
+.data-unit a{
+  color: white;
+}
+.diagram-unit{
+  background-color: var(--diagram-color);
+}
+.diagram-unit input{
+  background-color: var(--diagram-color);
+}
+.diagram-unit textarea{
+  background-color: var(--diagram-color);
 }
 
 
