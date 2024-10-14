@@ -3,19 +3,8 @@ class dipam_diagram {
 
 
   constructor(config_data, workflow={}) {
-    this.CONFIG = config;
-
-    this.DIAGRAM_DATA = {id: "", name: "", type: "", value:""};
-    this.NODE_DATA = {id: "", name: "", type: "", value:""};
-    this.EDGE_DATA = {id: "", name: "", type: "", value:"", source: "", target:""};
-    //add the additional ad-hoc attributes defined in config
-    //this._apply_diagram_config_definition();
-
-    this.DIAGRAM_CONTAINER = document.getElementById('cy');
 
     this.DIAGRAM_GENERAL = workflow.diagram;
-    this.INIT_NODES = workflow.nodes;
-    this.INIT_EDGES = workflow.edges;
 
     this.STYLE = {
       node: {
@@ -43,7 +32,7 @@ class dipam_diagram {
     };
 
     this.cy = cytoscape({
-              container: this.DIAGRAM_CONTAINER,
+              container: document.getElementById('cy'),
 
               layout: {
                 name: 'grid',
@@ -125,10 +114,11 @@ class dipam_diagram {
               ],
 
               elements: {
-                nodes: this.INIT_NODES,
-                edges: this.INIT_EDGES
+                nodes: workflow.nodes,
+                edges: workflow.edges
               }
     });
+
     this.set_diagram_layout(workflow);
     var cy_undo_redo = this.cy.undoRedo(
         {
@@ -208,6 +198,22 @@ class dipam_diagram {
     }
     return this.cy.nodes('node[type = "data"]').union(this.cy.nodes('node[type = "tool"]'));
   }
+  get_node_by_id(n_id){
+    var nodes = this.cy.nodes('node[id = "'+n_id+'"]');
+    if (nodes.length == 1) {
+      return nodes[0];
+    }
+    return null;
+  }
+  set_node_data(n_id, n_data){
+    var nodes = this.cy.nodes('node[id = "'+n_id+'"]');
+    if (nodes.length == 1) {
+      for (const _k in n_data) {
+        nodes[0]._private.data.value[_k] = n_data[_k];
+      }
+    }
+    return nodes[0]._private.data.value;
+  }
   get_target_nodes(node){
     var out_nodes = this.cy.edges('edge[source="'+node._private.data.id+'"]').targets();
     var out_nodes_normalized = out_nodes.nodes('node[type = "data"]').union(out_nodes.nodes('node[type = "tool"]'));
@@ -239,12 +245,12 @@ class dipam_diagram {
     // build the nodes
     var diagram_nodes = this.get_nodes();
     for (var i = 0; i < diagram_nodes.length; i++) {
-      workflow_to_save.nodes.push({"data": _normalize_data_to_save(diagram_nodes[i], true)});
+      workflow_to_save.nodes.push( _normalize_data_to_save(diagram_nodes[i], true) );
     }
     // build the edges
     var diagram_edges = this.get_edges();
     for (var i = 0; i < diagram_edges.length; i++) {
-      workflow_to_save.edges.push({"data": _normalize_data_to_save(diagram_edges[i])});
+      workflow_to_save.edges.push( _normalize_data_to_save(diagram_edges[i]) );
     }
 
     return workflow_to_save;
@@ -252,25 +258,6 @@ class dipam_diagram {
     function _normalize_data_to_save(an_elem, is_node = false) {
       var res_obj = an_elem._private.data;
 
-      /*adapt all parameters*/
-      if (is_node){
-        var l_of_params = Object.keys(res_obj.param);
-        console.log(res_obj.type,res_obj.value);
-        var all_params = diagram_instance.CONFIG[res_obj.type][res_obj.value];
-        if ("param" in all_params) {
-          all_params = all_params["param"];
-          for (var i_p = 0; i_p < all_params.length; i_p++) {
-            var a_param = all_params[i_p];
-            if (l_of_params.indexOf(a_param) == -1){
-              res_obj.param[a_param] = null;
-            }
-          }
-        }
-      }
-
-      if ("workflow" in res_obj){
-        delete res_obj["workflow"];
-      }
       //gen the graph data of elem
       if (is_node) {
         if (!('graph' in res_obj)) {
@@ -361,29 +348,28 @@ class dipam_diagram {
 
   /**
   * Add a node (data or tool) to the diagram
-  * @param {string} type – the type of the node to be added, it's either "data" or "tool"
-  * @param {json} data – the data of the node to be added (retrieved from the backend)
+  * @param {string} n_type – the type of the node to be added, it's either "data" or "tool"
+  * @param {json} n_data – the data of the node to be added (retrieved from the backend)
   */
   add_node(n_type, n_data) {
-    // Integrate the backend data with the View data needed
+    // (1) create the node data – style, position, and view data
     var node_n = this.gen_node_data(n_type, n_data);
-    node_n.group = 'nodes';
+    // (2) add node to cy diagram
     this.cy.add(node_n);
+    // (3) set undo/redo
     this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
-
-    //this.cy.nodes().forEach(function(node) {
-      //console.log(node.id());
-      //console.log(node.data());
-    //});
+    // Print test
+    console.log("The added node in cy = ",  this.cy.$("#"+node_n.data.id) );
   }
 
 
-  gen_node_data(n_type, a_node_data, a_value = null) {
+  gen_node_data(n_type, n_data, a_value = null) {
 
     var node_obj = {
+      group: "nodes",
       style: this.STYLE.node[n_type],
       position: { x: 0, y: 0},
-      data: a_node_data
+      data: n_data
     };
 
     // update the position of the node in the digram view
@@ -473,6 +459,15 @@ class dipam_diagram {
     return JSON.parse(JSON.stringify(edge_obj));
   }
 
+  //Update diagram data
+  update_diagram_data(data){
+    for (const _k in data) {
+      if (_k in this.DIAGRAM_GENERAL) {
+        this.DIAGRAM_GENERAL[_k] = data[_k];
+      }
+    }
+    return this.DIAGRAM_GENERAL;
+  }
 
   //Update an element
   // (1) Its data in the cy diagram

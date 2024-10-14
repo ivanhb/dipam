@@ -1,1 +1,13 @@
-{"diagram": {"data": {"id": "diagram-0", "name": "lda topic model", "param": {"p-gendescription": "This workflow builds an LDA topic model and generates its outputs: datasets and visualizations."}, "type": "diagram"}}, "edges": [{"data": {"id": "e-0001", "name": "e-0001", "source": "d-0001", "target": "t-0003", "type": "edge", "value": ""}}, {"data": {"id": "e-0002", "name": "e-0002", "source": "t-0003", "target": "t-0002", "type": "edge", "value": ""}}], "nodes": [{"data": {"graph": {"position": {"x": 150.66666666666666, "y": 286.73051843983853}}, "id": "d-0001", "name": "d-0001", "param": {"p-file": {"0": {}}}, "type": "data", "value": "d-gen-table"}}, {"data": {"graph": {"position": {"x": 218.15339221691016, "y": 240.64218395493128}}, "id": "t-0003", "name": "t-0003", "param": {"p-tab-att-id": "name", "p-tab-atts-content": "country"}, "type": "tool", "value": "t-meta-builder-from-tab"}}, {"data": {"graph": {"position": {"x": 299.02779865715, "y": 290.91724591425356}}, "id": "t-0002", "name": "t-0002", "param": {}, "type": "tool", "value": "t-save-files"}}]}
+{
+  "diagram": {
+      "id": "diagram",
+      "class": "DIAGRAM_DIPAM_UNIT",
+      "type": "diagram",
+      "value":{
+        "label": "DIPAM v2.0",
+        "description": "This is my first diagram"
+      }
+  },
+  "edges": [],
+  "nodes": []
+}

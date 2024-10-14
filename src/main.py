@@ -55,7 +55,7 @@ class DIPAM_MESSENGER:
             404: "Resource not found"
         }
 
-    def build_msg(self, data, code = None, integrate_data = False):
+    def build_msg(self, data= None, code = None, integrate_data = False):
         """
         """
         if code:
@@ -110,12 +110,20 @@ def _help(type):
         data["data"] = dipam_config.get_config_value("description")
         return jsonify(data)
 
-@app.route("/save",methods=['GET'])
-def _save():
-    return util.zipdir(
-        os.path.join( dipam_app_dir, "runtime" ), # source is all runtime directory
-        os.path.join( dipam_app_dir, "data", "checkpoint" ) # target is dipam/data/checkpoint
-    )
+@app.route("/save/<type>",methods=['POST'])
+def _save(type):
+    if type == "workflow":
+        util.mkjson_at(
+            os.path.join( dipam_app_dir, "runtime" ),
+            "workflow.json",
+            request.get_json()["workflow_data"]
+        )
+        util.zipdir(
+            os.path.join( dipam_app_dir, "runtime" ), # source is all runtime directory
+            os.path.join( dipam_app_dir, "data", "checkpoint" ) # target is dipam/data/checkpoint
+        )
+        return dipam_messenger.build_msg(code=200)
+    return dipam_messenger.build_msg(code=304)
 
 @app.route("/load/<type>",methods = ['POST'])
 def _load(type):

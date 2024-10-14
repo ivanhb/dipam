@@ -19,22 +19,25 @@
                   </div>
               </div>
 
-              <h1>{base-label}</h1>
-              <p>{base-description}</p>
-              <br>
-
               <!-- INPUTS are here -->
-              <div id="input_section">
-                <!-- Button to toggle input method -->
-                <button class="switch-input-btn" data-value="direct_input">Switch to File Input</button>
+              <div id="node_data">
+                  <h1><input id="node_title_input" class="input-metadata" type="text" id="base-label" value="{base-label}" data-dipam-metavalue="label"></h1>
+                  <p><input id="node_description_input" class="input-metadata" type="text" id="base-label" value="{base-description}" data-dipam-metavalue="description"></p>
+                  <br>
 
-                <!-- DIRECT INPUT: variable following the template of the data unit -->
-                <div id="input_group">
-                    <!--HTML-TEMPLATE-UNIT-->
-                </div>
-                <!-- FILE INPUT -->
-                <button class="file-upload-btn" onclick="document.getElementById('f_input').click();">Load File</button>
-                <input type="file" id="f_input" name="f_input" style="display:none" accept=".txt" />
+                  <!-- INPUTS are here -->
+                  <div id="input_section">
+                    <!-- Button to toggle input method -->
+                    <button class="switch-input-btn" data-value="direct_input">Switch to File Input</button>
+
+                    <!-- DIRECT INPUT: variable following the template of the data unit -->
+                    <div id="input_group">
+                        <!--HTML-TEMPLATE-UNIT-->
+                    </div>
+                    <!-- FILE INPUT -->
+                    <button id="f_input_btn" class="file-upload-btn" onclick="document.getElementById('f_input').click();">Load File</button>
+                    <input type="file" id="f_input" name="f_input" style="display:none" accept=".txt" />
+                  </div>
               </div>
           </div>
 

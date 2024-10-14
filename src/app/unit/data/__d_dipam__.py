@@ -89,8 +89,6 @@ class D_DIPAM_UNIT:
         This method writes a given value into a "FILE" or "VALUE" (<type>);
         <args> are different depending on the <type> value
         @param:
-            + <type>: "FILE" or "VALUE"
-            + <args>: additional arguments
         @returns:
             self.value
         """
@@ -100,15 +98,15 @@ class D_DIPAM_UNIT:
         # if source_is_view, then a convertion of the data into self.value is needed first;
         if source_is_view:
 
-            if "file" in data:
-                l_files = [ data["file"] ]
-                if isinstance(data["file"], list):
-                    l_files = data["file"]
+            if "file_input" in data:
+                l_files = [ data["file_input"] ]
+                if isinstance(data["file_input"], list):
+                    l_files = data["file_input"]
                 # Manage view file(s) and convert it into self.value format
                 new_value = self.manage_view_file(data_to_convert)
 
-            elif "value" in data:
-                direct_value = data["value"]
+            elif "direct_input" in data:
+                direct_value = data["direct_input"]
                 # Manage view direct value and convert it into self.value format
                 new_value = self.manage_view_direct_value(direct_value)
 
@@ -190,8 +188,7 @@ class D_DIPAM_UNIT:
         @return:
             a new value that follow the format of <self.value>
         """
-        new_value = a_value
-        return new_value
+        return a_value
 
 
     #   -----
@@ -304,13 +301,13 @@ class D_DIPAM_UNIT:
         return res
 
     def update_view_data(self, data):
-        if "file" in data:
-            l_files = [ data["file"] ]
-            if isinstance(data["file"], list):
-                l_files = data["file"]
-            self.view["file"] = str(len(l_files))+ " files uploaded"
-        elif "value" in data:
-            self.view["value"] = data["value"]
+        if "file_input" in data:
+            l_files = [ data["file_input"] ]
+            if isinstance(data["file_input"], list):
+                l_files = data["file_input"]
+            self.view["file_input"] = str(len(l_files))+ " files uploaded"
+        elif "direct_input" in data:
+            self.view["direct_input"] = data["direct_input"]
         return True
 
     def backend2view(self):

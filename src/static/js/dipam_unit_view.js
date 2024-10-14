@@ -2,25 +2,11 @@ class DIPAM_UNIT_VIEW {
 
   constructor() {
     this.unit_id = $("#control_body").data('id');
-    this.value = null;
     this.settings = {
       "file_input": true,
       "multi_files": true,
       "direct_input": true,
     };
-  }
-
-  /**
-  * This method is IS OVERWRITABLE
-  * given a value generated from the HTML component(s) this should modify this.value
-  * *NOTE: a  new value must be assigned to this.value
-  */
-  def_value(value) {
-    this.value = value;
-  }
-
-  set_value(value) {
-    this.value = value;
   }
 
   set_settings(obj_setup) {
@@ -33,38 +19,61 @@ class DIPAM_UNIT_VIEW {
   }
 
   /**
-  * This method is NOT OVERWRITABLE
-  * used to retrieve the data of a corresponding this data unit from the backend.
-  get_value() {
-    // a fetch() using endpoint API – backend2view()
-  }
+  * NOT OVERWRITABLE
+  * This methods goes throught the interface of the visulized node and reads all the input(s)
+  * inputs are converted into: "direct-input", "file-input", and all the metadata (e.g., label, description)
   */
+  get_node_data_from_interface() {
 
-  /**
-  * This method is NOT OVERWRITABLE
-  */
-  save_value() {
-    // a fetch() using endpoint API – view2backend()
+    var res = {};
 
-    var input_value = null;
-    // if both inputs are handled: check the active one currently
-    if ((this.settings.file_input) && (this.settings.direct_input)) {
-      input_value = $('.switch-input-btn').data('value');
-    }else if (this.settings.file_input) {
-      input_value = "file_input";
-    }else if (this.settings.direct_input) {
-      input_value = "direct_input";
+    // (1) get metadata
+    $('[data-dipam-metavalue]').each(function() {
+        var _id = $(this).attr('data-dipam-metavalue');
+        res[_id] = $(this).val();
+    });
+
+    // (2) check for direct values
+    var direct_values = {};
+    $('#input_group').find('[data-dipam-value]').each(function() {
+        direct_values[  $(this).attr('id')  ] = $(this).val();
+    });
+    if (Object.keys(direct_values).length > 0) {
+      res["direct_input"] = direct_values;
     }
 
-    if (input_value == "direct_input") {
-      return {"value": this.value};
-    }else if (input_value == "file_input") {
-      const fileInput = document.getElementById('f_input');
+    // (3) check if a file input is given instead
+    const fileInput = document.getElementById('f_input');
+    if (fileInput != undefined) {
       if (fileInput.files.length > 0) {
-        return {"file":fileInput.files};
+        res["file_input"] = fileInput.files;
       }
     }
-    return null;
+
+    return res;
+  }
+
+  /**
+  * [NOT-OVERWRITABLE]
+  * Set the values of the DOMs in the template part of the input-group container
+  */
+  set_node_interface_from_data(unit_id) {
+    // take the view value from the diagram nodes
+    let node = diagram_instance.get_node_by_id(unit_id);
+    var current_value = node._private.data.value;
+
+    $('[data-dipam-metavalue]').each(function() {
+        var _id = $(this).attr('data-dipam-metavalue');
+        $(this).val( current_value[_id] );
+    });
+    if ("direct_input" in current_value) {
+      $('#input_group').find('[data-dipam-value]').each(function() {
+          $(this).val(  current_value["direct_input"][$(this).attr('id')]  );
+      });
+    }else if ("file_input" in current_value) {
+      $('#f_input_btn').val( current_value["file_input"]["file"].length.toString() +" files uploaded"  );
+    }
+    return true;
   }
 
 
@@ -83,7 +92,7 @@ class DIPAM_UNIT_VIEW {
       // The base body
       "CONTROL_BODY": $("#control_body"),
       // INPUT part
-      "INPUT_SECTION": $('#input_section'),
+      "NODE_DATA": $('#node_data'),
       "BTN_INPUT_SWITCH": $('.switch-input-btn'),
       "INPUT_GROUP": $('#input_group'),
       "INPUT_FILE":$('.file-upload-btn'),
@@ -102,7 +111,7 @@ class DIPAM_UNIT_VIEW {
     var node_type = DOMS.CONTROL_BODY.data('type');
 
     // Disable and don't display edit triggers in the control info panel
-    DOMS.INPUT_SECTION.find('input, button').prop('disabled', true);
+    DOMS.NODE_DATA.find('input, button').prop('disabled', true);
     DOMS.BTN_INPUT_SWITCH.css('display','none');
     DOMS.INPUT_FILE.css('display','none');
     DOMS.CONTROL_FOOT.css('display','none');
@@ -120,6 +129,9 @@ class DIPAM_UNIT_VIEW {
       }
       if (dipam_unit_value.settings.file_input) {
         DOMS.INPUT_FILE.css('display','inline');
+      }
+      if (node_type != "diagram") {
+        dipam_unit_value.set_node_interface_from_data(node_id);
       }
     }else {
       DOMS.BTN_INPUT_SWITCH.css('display','inline');
@@ -148,35 +160,46 @@ class DIPAM_UNIT_VIEW {
         DOMS.CANCEL_BUTTON.show();
         DOMS.REMOVE_BUTTON.show();
         // enable inputs and buttons
-        DOMS.INPUT_SECTION.find('input, button').prop('disabled', false);
+        DOMS.NODE_DATA.find('input, button').prop('disabled', false);
       } else {
         // in this case save values
-        fetch('/runtime/save_unit', {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({
-                  unit_id: node_id,
-                  unit_type: node_type,
-                  unit_class: node_class,
-                  data: unit_view_instance.save_value()
-              })
-          })
-          .then(response => response.text()) // Parse the response as JSON
-          .then(data => {
-              console.log('Success:', data);
-              $(this).text('Edit').removeClass('btn-success').addClass('btn-primary');
-              DOMS.CANCEL_BUTTON.hide();
-              DOMS.REMOVE_BUTTON.hide();
-              DOMS.INPUT_SECTION.find('input, button').prop('disabled', true);
-          })
-          .catch((error) => {
-              console.error('Error:', error);
-          });
+        var node_data = unit_view_instance.get_node_data_from_interface();
+        if (node_type == "diagram") {
+          diagram_instance.update_diagram_data(node_data);
+        }else{
+          fetch('/runtime/save_unit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    unit_id: node_id,
+                    unit_type: node_type,
+                    unit_class: node_class,
+                    data: node_data
+                })
+            })
+            .then(response => response.text()) // Parse the response as JSON
+            .then(data => {
+                //console.log('Success:', data);
+                $(this).text('Edit').removeClass('btn-success').addClass('btn-primary');
+                DOMS.CANCEL_BUTTON.hide();
+                DOMS.REMOVE_BUTTON.hide();
+                DOMS.NODE_DATA.find('input, button').prop('disabled', true);
+                // in case of success:
+                // (1) update the node diagram value
+                // (2) generate the template interface
+                diagram_instance.set_node_data(node_id, node_data);
+                unit_view_instance.set_node_interface_from_data(node_id);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
       }
     });
 
     DOMS.CANCEL_BUTTON.on('click', function() {
       DOMS.EDIT_BUTTON.text('Edit').removeClass('btn-success').addClass('btn-primary');
+      DOMS.NODE_DATA.find('input, button').prop('disabled', true);
       DOMS.CANCEL_BUTTON.hide();
       DOMS.REMOVE_BUTTON.hide();
     });

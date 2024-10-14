@@ -137,20 +137,19 @@ class dipam_interface {
     build_info(elem, elem_class= 'node') {
 
       var elem_id = null;
-      if (elem_class == "node") {
-        elem_id = elem.data.id;
-        if('_private' in elem){
-          elem = elem._private;
-        }
-        elem_id = elem.data.id;
+      var elem_data = null;
+      if ((elem_class == "node") || (elem_class == "edge")){
+        elem_data = elem.data;
+        elem_id = elem_data.id;
       }else if (elem_class == "diagram") {
+        elem_data = diagram_instance.get_diagram();
         elem_id = "diagram";
       }
-
       /*build info only if the */
       fetch("/runtime/get_template?id="+elem_id)
           .then(response => { return response.json(); })
           .then(data => {
+              // (1) Set HTML and Script contents
               this.DOMS.CONTROL.BASE.innerHTML = data["html_content"];
               const unit_template_script = document.getElementById("unit_template_js");
               if (unit_template_script) {
@@ -159,8 +158,16 @@ class dipam_interface {
               var script = document.createElement('script');
               script.id = "unit_template_js";
               script.textContent = data["script_content"];
-              script.textContent += "dipam_unit_value.run_defaults();";
               document.body.appendChild(script);
+
+              // (2) if this is the first time this element is visulized;
+              //    then: its corresponding view value must be initialized
+              if (!(elem_data.hasOwnProperty('value'))) {
+                elem_data["value"] = dipam_unit_value.get_node_data_from_interface();
+              }
+
+              // (3) Run the default template operations
+              dipam_unit_value.run_defaults();
           });
     }
 
@@ -169,6 +176,7 @@ class dipam_interface {
       if ('_private' in node) {
         node = node._private;
       }
+      console.log("Node clicked:",node);
 
       // Rebuild info only if its a new node
       if (this.DOMS.CONTROL.BASE.children.length === 0) {
@@ -180,10 +188,6 @@ class dipam_interface {
           this.build_info(node, 'node');
         }
       }
-
-
-
-
     }
     click_on_edge(edge){
       if ('_private' in edge) {
@@ -227,8 +231,6 @@ class dipam_interface {
       }
       return str;
     }
-
-
 
 
     get_active_nav(){
@@ -712,11 +714,9 @@ class dipam_interface {
         api_call = api_call+"&class="+unit_class
       }
       fetch(api_call)
-              .then(response => {
-                  return response.json();
-              })
+              .then(response => {return response.json();})
               .then(data => {
-                  console.log("New node added: type=",data["type"],", id=",data["id"],", class=",data["class"] );
+                  console.log("New node added (id = "+data["id"]+") Data = ", data);
                   //add a node to the diagram of a specific <type> with the corresponding <data>
                   diagram_instance.add_node(type, data);
                   _elem_onclick_handle();
@@ -812,19 +812,23 @@ class dipam_interface {
 
     $(this.DOMS.WORKFLOW.SAVE_BTN).on("click", function() {
           //e.preventDefault();
-          console.log("Saving ... ");
           document.getElementById('list_options_trigger').click();
           //interface_instance.click_save_workflow();
           var workflow_data = diagram_instance.get_workflow_data();
-          $.post( "/saveworkflow"+"?time="+(new Date().getTime()).toString(), {
-            //workflow_data: JSON.stringify(workflow_data).replace(/\\/g, "\\\\"),
-            workflow_data: JSON.stringify(workflow_data),
-            path: "",
-            name: "",
-            load: "off"
-          }).done(function() {
+          console.log("Saving ... ",workflow_data);
+
+          // Use the fetch API to send a POST request
+          fetch("/save/workflow?time="+(new Date().getTime()).toString(), {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({workflow_data: workflow_data})
+          })
+          .then(response => {return response;})
+          .then(data => {
+            console.log('Success:', data);
             interface_instance.DOMS.WORKFLOW.SAVE_BTN_DOWNLOAD.click();
-          });
+          })
+          .catch(error => {console.error('Error:', error);});
     });
 
     $(this.DOMS.WORKFLOW.EXPORT_BTN).on("click", function() {
@@ -872,7 +876,10 @@ class dipam_interface {
           if (Object.keys(evtTarget).length == 1) {
             $( "#"+interface_instance.DOMS.CONTROL.OVERVIEW_BTN.getAttribute('id')).click();
             diagram_instance.highlight_diagram();
-            interface_instance.build_info(null,'diagram');
+            interface_instance.build_info(
+              diagram_instance.get_diagram(),
+              'diagram'
+            );
           }
         });
 

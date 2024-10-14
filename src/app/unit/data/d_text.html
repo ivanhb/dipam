@@ -17,26 +17,28 @@ To init a DIPAM data unit template you need to define 3 components:
 
 
 <!--START:HTML-TEMPLATE-->
-<input placeholder="Set a string value ..." id="input_1" type="text" />
+<input placeholder="Set a string value ..." id="input_freetxt" type="text" data-dipam-value />
 <!--HTML-TEMPLATE:END-->
 
 
 <!--START:VIEW-VALUE-->
 <script type="text/javascript">
-  dipam_unit_value.def_value("");
-  dipam_unit_value.set_settings({
-    "file_input": false,
-    "direct_input": true,
-  });
+
+  dipam_unit_value.set_settings(
+    {
+      "file_input": false,
+      "direct_input": true,
+    }
+  );
 
 </script>
 <!--VIEW-VALUE:END-->
 
 
 <!--START:EVENT-TRIGGER-->
-<script type="text/javascript">
+<!--<script type="text/javascript">
   $("#input_1").on('input', function(){
     dipam_unit_value.set_value( $(this).val() );
   });
-</script>
+</script>-->
 <!--EVENT-TRIGGER:END-->

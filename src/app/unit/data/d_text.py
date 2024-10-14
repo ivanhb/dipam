@@ -46,11 +46,12 @@ class D_TEXT(D_DIPAM_UNIT):
         return new_value
 
     def manage_view_direct_value(self, a_value):
-        if not isinstance(a_value,str):
-            return False, "[ERROR] Some files have a non-supported format for this type of data"
-        new_value = a_value
-        return new_value
 
+        if "input_freetxt" in a_value:
+            part_value = a_value["input_freetxt"]
+            if isinstance(part_value, str):
+                return part_value
+        return False, "[ERROR] Some files have a non-supported format for this type of data"
 
     def f_read(self, file_path):
         """

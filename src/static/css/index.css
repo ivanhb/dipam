@@ -127,14 +127,19 @@ body {
   position: relative;
   z-index: 1000;
   border-radius: 10px 15px 15px 10px;
-  background-color: var(--diagram-color);
+  /*background-color: var(--diagram-color);*/
 }
 #control_body label{
   color: white;
 }
 #control_body input{
-  border-radius: px;
+  width: 100%;
 }
+#control_body input.input-metadata{
+  border-bottom: none;
+  color: black;
+}
+
 
 /*
 DIAGRAM TOP
