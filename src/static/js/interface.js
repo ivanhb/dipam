@@ -702,35 +702,6 @@ class dipam_interface {
       }
     });
 
-
-    /**
-    * This function calls the "/runtime/add_unit" API to create a dipam unit of a specific <type>
-    * optionally the exact element to add could be specified (<id>)
-    * @param None
-    */
-    function __apicall_add_unit(type, unit_class = null) {
-      var api_call = '/runtime/add_unit?type='+type
-      if (unit_class != null) {
-        api_call = api_call+"&class="+unit_class
-      }
-      fetch(api_call)
-              .then(response => {return response.json();})
-              .then(data => {
-                  console.log("New node added (id = "+data["id"]+") Data = ", data);
-                  //add a node to the diagram of a specific <type> with the corresponding <data>
-                  diagram_instance.add_node(type, data);
-                  _elem_onclick_handle();
-                  diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click',[]);
-
-                  // TODO v1.0
-                  //interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
-                  //diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
-                  //document.getElementById('edit').click();
-              })
-              .catch(error => {
-                  console.error('[ERROR] There has been a problem in the API to create a new data unit – ', error);
-              });
-    }
     $('#'+this.DOMS.DIAGRAM.ADD_DATA_BTN.getAttribute('id')).on({
       click: function(e) {__build_dropdown_opts("data");}
     });
@@ -738,7 +709,7 @@ class dipam_interface {
       click: function(e) {__build_dropdown_opts("tool");}
     });
     function __build_dropdown_opts(unit_type) {
-      const ADD_UNIT_LIST = interface_instance.DOMS.DIAGRAM.ADD_UNIT_LIST;
+      var ADD_UNIT_LIST = document.getElementById('list_options_unit_add');
       if (ADD_UNIT_LIST.style.display != "block") {
         fetch("/runtime/all_unit?type="+unit_type)
             .then(response => { return response.json(); })
@@ -746,14 +717,32 @@ class dipam_interface {
                 var html_content = "";
                 for (let i = 0; i < data.length; i++) {
                   var elem = data[i];
-                  html_content += '<a class="dropdown-item" data-type="'+elem.type+'" data-value="'+elem.unit_class+'">'+elem.label+'</a>';
+                  html_content += '<a class="dropdown-additem" data-type="'+elem.type+'" data-value="'+elem.unit_class+'">'+elem.label+'</a>';
                 }
                 ADD_UNIT_LIST.innerHTML = html_content;
                 ADD_UNIT_LIST.style.display = "block";
                 ADD_UNIT_LIST.classList.add(unit_type+"-unit");
-                $("#"+ADD_UNIT_LIST.getAttribute('id')+" .dropdown-item").click(function(){
-                    __apicall_add_unit(unit_type, this.getAttribute("data-value"));
-                    ADD_UNIT_LIST.style.display = "none";
+
+                $(".dropdown-additem").on("click", function() {
+
+                    fetch('/runtime/add_unit?type='+this.getAttribute("data-type")+"&class="+this.getAttribute("data-value"))
+                            .then(response => {return response.json();})
+                            .then(data => {
+                                console.log("New node added (id = "+data["id"]+") Data = ", data);
+                                //add a node to the diagram of a specific <type> with the corresponding <data>
+                                diagram_instance.add_node(type, data);
+                                _elem_onclick_handle();
+                                diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click',[]);
+                                diagram_instance.fit_diagram();
+                                // TODO v1.0
+                                //interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
+                                //diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+                                //document.getElementById('edit').click();
+                                ADD_UNIT_LIST.style.display = "none";
+                            })
+                            .catch(error => {
+                                console.error('[ERROR] There has been a problem in the API to create a new data unit – ', error);
+                            });
                 });
             })
       }else {

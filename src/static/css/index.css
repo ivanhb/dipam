@@ -61,12 +61,6 @@ select {
   border: none;
   border-bottom: dotted 2px;
 }
-input{
-  background-color: var(--diagram-color);
-  border: none;
-  border-bottom: dotted 2px white;
-  color: white;
-}
 ::placeholder {
   color: white;
   opacity: 0.7;
@@ -76,16 +70,6 @@ textarea{
   color: white;
   min-height:10px;
   border: none;
-}
-
-input:focus{
-  outline:0!important;
-}
-textarea:focus{
-  outline:0!important;
-}
-select:focus{
-  outline:0!important;
 }
 
 body {
@@ -128,16 +112,6 @@ body {
   z-index: 1000;
   border-radius: 10px 15px 15px 10px;
   /*background-color: var(--diagram-color);*/
-}
-#control_body label{
-  color: white;
-}
-#control_body input{
-  width: 100%;
-}
-#control_body input.input-metadata{
-  border-bottom: none;
-  color: black;
 }
 
 
@@ -492,13 +466,6 @@ select, .dropdown-toggle{
 .param-att.custom-select{
   width: calc(100% - 50%);
 }
-.input-group input {
-  width: calc(100%);
-}
-.input-group input[type="checkbox"]{
-  width: auto;
-  margin-left: 0px;
-}
 
 .input-group + .input-group{
   padding-top: 10px;
@@ -507,53 +474,6 @@ select, .dropdown-toggle{
   padding-top: 5px;
   padding-bottom: 8px;
 }
-
-.input-text-large textarea{
-  min-height: 100px;
-  resize: none;
-  width: 100%;
-}
-.input-text-group{
-  padding-top: 0px!important;
-  padding-bottom: 0px!important;
-}
-.input-text-group .input-group-prepend{
-  display: none;
-}
-.input-text-group table {
-  color: white;
-  border-collapse: separate;
-  border-spacing: 0 10px;
-  table-layout: auto;
-}
-.input-text-group table td{
-  padding-bottom: 25px;
-  border-left: solid 2px white;
-  padding-left: 5px;
-}
-.input-text-group table tr{
-}
-.input-text-group table td:last-child {
- display: table-cell;
- border-bottom: none;
- border-left: none!important;
-}
-.input-text-group table td:last-child button{
-  font-size: 16pt;
-  width: 35px;
-  height: 35px;
-  border: none;
-  border-radius: 7px;
-  opacity: 0.85;
-  color: black;
-  font-weight: 500;
-  margin-top: 50%;
-  margin-left: 50%;
-}
-.input-text-group table td:last-child button.del_att_regex{
-}
-
-
 
 #edit_buttons{
   padding-left: 10%;

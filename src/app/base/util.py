@@ -87,6 +87,8 @@ zip a directory <dir_to_zip> and save it in <dest>
 """
 def zipdir(dir_to_zip, dest_dir):
 
+    TO_EXCLUDE = [".DS_Store"]
+
     # create zip handler
     zip_name = dir_to_zip.split(os.path.sep)[-1]
     zip_fullpath = os.path.join(dest_dir, zip_name+".zip")
@@ -99,9 +101,10 @@ def zipdir(dir_to_zip, dest_dir):
     # create and produce zip file to be saved in dest_dir
     for root, dirs, files in os.walk(dir_to_zip):
         for file in files:
-            abs_path = os.path.join(root, file)
-            arcname = os.path.relpath(abs_path, start=dir_to_zip)
-            ziph.write(abs_path,arcname)
+            if file not in TO_EXCLUDE:
+                abs_path = os.path.join(root, file)
+                arcname = os.path.relpath(abs_path, start=dir_to_zip)
+                ziph.write(abs_path,arcname)
 
         for dir in dirs:
             dir_path = os.path.join(root, dir)
@@ -143,7 +146,7 @@ def create_instance(file_path, class_name, *args):
         return None
 
 
-def get_first_available_id(data, pref):
+def get_first_available_id(runtime_path, pref):
     """
     This methods returns the first available key to insert as new key in <data>;
     such that all keys in <data>, start with <pref> and have a sequential number after.
@@ -151,13 +154,26 @@ def get_first_available_id(data, pref):
         the new possible key
     E.G. <data> = {"d-1":1, "d-2":2, "d-4":4}, <pref> = "d-"; returns: "d-3"
     """
-    _ids = set( [int(_k.replace(pref,"")) for _k in data] )
-    _new_id = 1
+    _new_id = None
+
+    if pref == "d-":
+        data_path = os.path.join(runtime_path, "unit")
+        current_ids = [name for name in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, name))]
+
+    elif pref == "t-":
+        view_file = os.path.join(runtime_path, "workflow.json")
+        with open(view_file, 'r') as j_file:
+            workflow = json.load(j_file)
+            current_ids = [_n["id"] for _n in workflow["nodes"]]
+
+    _idx = 1
     while True:
-        if _new_id not in _ids:
+        _new_id = pref+str(_idx)
+        if _new_id not in current_ids:
             break
-        _new_id += 1
-    return pref+str(_new_id)
+        _idx += 1
+
+    return _new_id
 
 
 def replace_vars_in_file(self, unit_type, replacements):

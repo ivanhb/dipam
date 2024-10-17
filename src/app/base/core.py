@@ -26,12 +26,16 @@ class DIPAM_RUNTIME:
         self.diagram_unit = util.create_instance(
             self.unit_base["diagram"]["model_fpath"],
             "DIAGRAM_DIPAM_UNIT")
-        self.runtime_units = dict()
+
+
         self.runtime_dir = os.path.join(
             dipam_config.get_config_value("dirs.dipam_app"),
             "runtime"
         )
+        self.runtime_units = dict()
+
         self.config = dipam_config
+
         self.init_runtime_status()
 
 
@@ -41,12 +45,23 @@ class DIPAM_RUNTIME:
         """
         # upload last runtime checkpoint
         dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
-
         if not os.path.exists( os.path.join(dir_dipam_app,"runtime") ):
             util.copy_dir_to(
                 os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
                 dir_dipam_app
             )
+
+        # reload all units
+        workflow = json.load(open( os.path.join(dir_dipam_app,"runtime","workflow.json") ))
+        for _node in workflow["nodes"]:
+            _node_data = _node["data"]
+            self.add_unit(
+                _node_data["type"],
+                _node_data["class"],
+                _node_data["id"],
+                _node_data["value"]
+            )
+
         return True
 
     def save_runtime_status(self, storage_dir = None ):
@@ -87,7 +102,6 @@ class DIPAM_RUNTIME:
 
         # unit_class = unit_class.upper()
         unit_class_file = unit_type_pool[unit_class]["model_fpath"]
-        runtime_index_data = self.get_runtime_index()
         new_unit = util.create_instance(
             unit_class_file,
             unit_class
@@ -95,20 +109,21 @@ class DIPAM_RUNTIME:
 
         if not unit_id:
             pref = "d-" if unit_type == "data" else "t-"
-            unit_id = new_unit.set_id( util.get_first_available_id(runtime_index_data[unit_type], pref) )
+            unit_id = new_unit.set_id( util.get_first_available_id(self.runtime_dir, pref) )
         else:
             # use the given one
             new_unit.set_id(unit_id)
 
         if unit_metadata:
-            new_unit.set_metadata(unit_metadata)
+            new_unit.set_meta_attributes(unit_metadata)
 
-        unit_index_data = new_unit.dump_metadata()
         if unit_type == "data":
             # in case of "data" unit create a directory;
-            util.mkdir_at(
-                os.path.join(self.runtime_dir, "unit"),
-                unit_id)
+            unit_dir = os.path.join(self.runtime_dir, "unit", unit_id)
+            if not os.path.exists( unit_dir ):
+                util.mkdir_at(
+                    os.path.join(self.runtime_dir, "unit"),
+                    unit_id)
         # elif unit_type == "tool":
             # in case of "tool" unit create a json to describe the tool;
         #    util.mkjson_at(
@@ -117,7 +132,6 @@ class DIPAM_RUNTIME:
         #        unit_index_data)
 
         self.runtime_units[unit_id] = new_unit
-        self.set_runtime_index( unit_index_data )
 
         return new_unit
 
@@ -129,9 +143,6 @@ class DIPAM_RUNTIME:
         """
         # remove it from the index.json;
         unit_type = "data" if unit_id.startswith("d-") else "tool"
-        runtime_index_data = self.get_runtime_index()
-        runtime_index_data[unit_type].pop(unit_id, None)
-        self.reset_runtime_index(runtime_index_data)
 
         # remove its corresponding data
         if unit_id.startswith("d-"):
@@ -153,33 +164,8 @@ class DIPAM_RUNTIME:
             # set and update the index metadata of <unit_id>
             if not isinstance(new_value, tuple) and new_value:
                 self.runtime_units[unit_id].update_view_data(data)
-                self.set_runtime_index( self.runtime_units[unit_id].dump_metadata() )
 
             return new_value, unit_runtime_dir
-
-    def edit_unit_metadata(self, unit_id, metadata):
-        """
-        Edit a Dipam unit already created on runtime;
-        @param:
-            <unit_id>: the id of the unit to edit;
-            <metadata>: the new metadata of the unit
-        """
-        unit_type = "data" if unit_id.startswith("d-") else "tool"
-        runtime_index_data = self.get_runtime_index()
-
-        if unit_id in runtime_index_data[unit_type]:
-            _unit = self.runtime_units[unit_id]
-            # in case the unit class stays the same;
-            _unit.set_metadata(metadata)
-            self.set_runtime_index( _unit.dump_metadata() )
-            # in case the unit class changes;
-            # then all corresponding data must be deleted as well
-            if not data["unit_class"] == runtime_index_data[unit_type]["unit_class"]:
-                if unit_id.startswith("d-"):
-                    util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
-                util.mkdir_at( os.path.join(self.runtime_dir, "unit"), unit_id)
-            return unit_id
-        return None
 
 
     # LINK HANDLER METHODS
@@ -209,7 +195,6 @@ class DIPAM_RUNTIME:
                     input_data = s_obj.output
 
                 t_obj.set_data_input( input_data )
-                self.set_runtime_index( t_obj.dump_metadata() )
                 return True
 
         # for all other cases
@@ -229,7 +214,6 @@ class DIPAM_RUNTIME:
             # delete it from the inputs of target
             t_obj = self.runtime_units[target_id]
             t_obj.delete_data_input(source_id)
-            self.set_runtime_index( t_obj.dump_metadata() )
             return True
         return False
 
@@ -305,35 +289,6 @@ class DIPAM_RUNTIME:
 
     # RUNTIME INDEX METHODS
     # ------
-
-    def get_runtime_index(self):
-        with open(os.path.join(self.runtime_dir, "index.json"), 'r') as file:
-            data = json.load(file)
-        return data
-
-    def set_runtime_index(self, data):
-        if not os.path.exists( os.path.join(self.runtime_dir, "index.json") ):
-            self.reset_runtime_index()
-
-        runtime_index_data = self.get_runtime_index()
-
-        type = None
-        if data["type"].startswith("t"):
-            type = "tool"
-        elif data["type"].startswith("d"):
-            type = "data"
-        runtime_index_data[type][data["id"]] = data
-
-        with open(os.path.join(self.runtime_dir, "index.json"), 'w') as json_file:
-            json.dump(runtime_index_data, json_file, indent=4)
-
-        return runtime_index_data
-
-    def reset_runtime_index(self, data = None):
-        if not data:
-            data = {"data":{},"tool":{}}
-        with open(os.path.join(self.runtime_dir, "index.json"), 'w') as json_file:
-            json.dump(data, json_file, indent=4)
 
     def is_runtime_zip_data(self, zip_stream):
         try:

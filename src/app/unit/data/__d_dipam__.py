@@ -18,12 +18,7 @@ class D_DIPAM_UNIT:
             self,
             label = "Dipam data title",
             description = "A description of the Dipam data",
-            family = "The macro family of the Dipam data",
-            f_att = {
-                "name": None,
-                "extension": []
-                # ... To be extended by the sub class
-            }
+            family = "The macro family of the Dipam data"
         ):
         self.type = "data"
         self.id = "d-NN"
@@ -31,7 +26,6 @@ class D_DIPAM_UNIT:
         self.label = label
         self.description = description
         self.family = family
-        self.f_att = f_att
         self.value = None
         self.view = dict()
 
@@ -66,7 +60,7 @@ class D_DIPAM_UNIT:
         }
         return data
 
-    def set_metadata(self,data):
+    def set_meta_attributes(self,data):
         """
         [NOT-OVERWRITABLE]
         Returns the data to be used when storing the index data describing this unit

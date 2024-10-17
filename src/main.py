@@ -115,13 +115,17 @@ def _save(type):
     if type == "workflow":
         util.mkjson_at(
             os.path.join( dipam_app_dir, "runtime" ),
-            "workflow.json",
+            "workflow",
             request.get_json()["workflow_data"]
         )
-        util.zipdir(
-            os.path.join( dipam_app_dir, "runtime" ), # source is all runtime directory
-            os.path.join( dipam_app_dir, "data", "checkpoint" ) # target is dipam/data/checkpoint
+        util.copy_dir_to(
+            os.path.join( dipam_app_dir, "runtime" ),
+            os.path.join( dipam_app_dir, "data", "checkpoint" )
         )
+        # util.zipdir(
+        #     os.path.join( dipam_app_dir, "runtime" ),
+        #     os.path.join( dipam_app_dir, "data", "checkpoint" )
+        # )
         return dipam_messenger.build_msg(code=200)
     return dipam_messenger.build_msg(code=304)
 
@@ -131,7 +135,7 @@ def _load(type):
     if type == "checkpoint":
         util.copy_dir_to(
             os.path.join( dipam_app_dir,"data","checkpoint","runtime"),
-            dir_dipam_app
+            dipam_app_dir
         )
 
     elif type == "import":
@@ -183,7 +187,7 @@ def _download(type):
 
         # > in this case only the runtime workflow is needed
         elif(unit_id == "workflow"):
-            _f_to_send = source_dir+"/workflow.json"
+            _f_to_send = os.path.join( source_dir, "workflow.json")
 
         # > in this case only the data of a specific unit is needed
         else:
@@ -378,5 +382,8 @@ if __name__ == '__main__':
     app_flask_main_path = os.path.dirname(os.path.abspath(sys.modules['__main__'].__file__))
     app_flask_main_path = os.path.sep.join(app_flask_main_path.split(os.path.sep)[:-1])
 
-    ui = FlaskUI(app, width=1200, height=800)
+    # Load last workflow saved in checkpoint
+    _load("checkpoint")
+
+    ui = FlaskUI(app, width=1400, height=800)
     ui.run()

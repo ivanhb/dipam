@@ -1,0 +1,44 @@
+
+<!--START:HTML-TEMPLATE-BASE-->
+<!--
+  * This part is the macro structure to be used when initializing a DIPAM data unit view;
+-->
+<div id="control_body" data-type="tool" data-id="{base-id}" data-class="{base-unit_class}" class="tool-unit">
+
+      <div id="control_mid row">
+
+          <div class="dipam-unit-template col">
+
+            <!-- To enable the edit of the element -->
+              <div class="row">
+                  <div class="btn-edit col">
+                    <span><button id="edit_btn" class="btn btn-primary">Edit</button></span>
+                    <span><button id="cancel_btn" class="btn btn-default">Cancel</button></span>
+                    <span><button id="remove_btn" class="btn btn-danger">Delete item</button></span>
+                  </div>
+              </div>
+
+              <div id="node_data">
+                  <h1><input class="input-metadata" type="text" tool-dipam-metavalue="label"></h1>
+                  <p><input class="input-metadata" type="text" tool-dipam-metavalue="description"></p>
+                  <br>
+
+                  <div id="input_section">
+                      <!--HTML-TEMPLATE-UNIT-->
+                  </div>
+              </div>
+
+
+          </div>
+
+      </div>
+
+      <!-- THIS PART IS FIXED -->
+      <div id="control_foot"></div>
+
+</div>
+<!--HTML-TEMPLATE-BASE:END-->
+
+<!--VIEW-VALUE-UNIT-->
+
+<!--EVENT-TRIGGER-UNIT-->

@@ -138,10 +138,11 @@ class dipam_diagram {
     this.get_edges().style(this.STYLE.edge.edge);
   }
 
+
   set_diagram_layout(workflow) {
     var list_nodes = workflow.nodes;
-    for (var i = 0; i < list_nodes.length; i++) {
 
+    for (var i = 0; i < list_nodes.length; i++) {
       if ("graph" in list_nodes[i].data) {
         if ("position" in list_nodes[i].data.graph) {
           var a_node = this.cy.nodes('node[id = "'+list_nodes[i].data.id+'"]');
@@ -265,7 +266,7 @@ class dipam_diagram {
         }
         res_obj.graph["position"] = an_elem._private.position;
       }
-      return res_obj;
+      return {"data":res_obj};
     }
 
   }

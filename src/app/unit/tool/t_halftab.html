@@ -1,0 +1,29 @@
+<!--
+
+To init a DIPAM tool unit template you need to define 3 components:
+
+(1) HTML-TEMPLATE - the actual HTML template of the unit
+(2) VIEW-VALUE – define the view settings;
+(3) EVENT-TRIGGER - define events
+-->
+
+
+<!--START:HTML-TEMPLATE-->
+<input placeholder="Set a string value ..." type="text" tool-dipam-value="input_splitnumber" />
+<div tool-dipam-value="[d_table]"></div>
+<!--HTML-TEMPLATE:END-->
+
+
+<!--START:VIEW-VALUE-->
+<script type="text/javascript">
+</script>
+<!--VIEW-VALUE:END-->
+
+
+<!--START:EVENT-TRIGGER-->
+<!--<script type="text/javascript">
+  $("#input_1").on('input', function(){
+    dipam_unit_value.set_value( $(this).val() );
+  });
+</script>-->
+<!--EVENT-TRIGGER:END-->

@@ -1,0 +1,16 @@
+.input-metadata{
+  width: 100%;
+  border: none;
+}
+
+input[data-dipam-value]{
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+textarea[data-dipam-value]{
+  background-color: rgba(0, 0, 0, 0.3);
+  width: 100%;
+  font-size: 12pt;
+  border-radius: 5px;
+}
