@@ -21,6 +21,7 @@ class D_TABLE(D_DIPAM_UNIT):
         # custom attributes
         self.header = None
         self.rows_limit = None
+        self.tab_direct_raw = None
 
     def store_value(self, unit_dir_path):
 

@@ -35,6 +35,7 @@ from flask import Flask, render_template, request, json, jsonify, redirect, url_
 from app.base.lib.flaskwebgui import FlaskUI
 from app.base.core import DIPAM_CONFIG
 from app.base.core import DIPAM_RUNTIME
+from app.base.messenger import DIPAM_MESSENGER
 import app.base.util as util
 
 # -----------
@@ -44,43 +45,14 @@ import app.base.util as util
 DIPAM_SRC_DIR = "src"
 
 
-class DIPAM_MESSENGER:
-
-    def __init__(self):
-        self.type = {
-            200: "DIPAM operated correctly",
-            304: "No operation done by DIPAM",
-            400: "Bad Request",
-            401: "Not authorized operation",
-            404: "Resource not found"
-        }
-
-    def build_msg(self, data= None, code = None, integrate_data = False):
-        """
-        """
-        if code:
-            return self.type[code], code
-        elif isinstance(data,tuple):
-            if data[1].startswith("[ERROR]"):
-                return self.type[400] +" – "+ data[1], 400
-
-            elif data[1].startswith("[WARNING]"):
-                return self.type[304] +" – "+ data[1], 304
-        else:
-            if data == None:
-                return self.type[304], 304
-
-        if integrate_data:
-            return data, 200
-
-        return self.type[200], 200
-
 
 # DIPAM globs: config and runtime
+dipam_messenger = DIPAM_MESSENGER()
 dipam_config = DIPAM_CONFIG(  os.path.join( DIPAM_SRC_DIR, "app","base","config.yaml" )  )
 dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
+
 dipam_runtime = DIPAM_RUNTIME(dipam_config)
-dipam_messenger = DIPAM_MESSENGER()
+
 
 
 app = Flask(__name__)
@@ -118,16 +90,16 @@ def _save(type):
             "workflow",
             request.get_json()["workflow_data"]
         )
-        util.copy_dir_to(
-            os.path.join( dipam_app_dir, "runtime" ),
-            os.path.join( dipam_app_dir, "data", "checkpoint" )
-        )
-        # util.zipdir(
-        #     os.path.join( dipam_app_dir, "runtime" ),
-        #     os.path.join( dipam_app_dir, "data", "checkpoint" )
-        # )
-        return dipam_messenger.build_msg(code=200)
-    return dipam_messenger.build_msg(code=304)
+
+        if "store_checkpoint" in request.get_json():
+            if request.get_json()["store_checkpoint"]:
+                util.copy_dir_to(
+                    os.path.join( dipam_app_dir, "runtime" ),
+                    os.path.join( dipam_app_dir, "data", "checkpoint" )
+                )
+                
+        return dipam_messenger.build_view_msg(code=200)
+    return dipam_messenger.build_view_msg(code=304)
 
 @app.route("/load/<type>",methods = ['POST'])
 def _load(type):
@@ -223,7 +195,7 @@ def _all_units():
             unit_classes[_c]["model_fpath"],
             _c
         )
-        res.append(_unit.dump_metadata())
+        res.append(_unit.dump_attributes())
         del _unit
     return jsonify( res )
 
@@ -321,12 +293,17 @@ def _save_runtime_unit():
 
             # Save unit data, and specifiy source_is_view to True
             # This also saves/updates the runtime index metadata
-            res, storage_dir  = dipam_runtime.save_unit_data(unit_data, unit_id, True)
+            res_save  = dipam_runtime.save_unit_data(unit_data, unit_id, True)
+            if isinstance(res_save, tuple):
+                return dipam_messenger.build_view_msg(res_save)
+
+            new_value = res_save[0]
+            storage_dir = res_save[1]
 
             # Save the status of the runtime
             dipam_runtime.save_runtime_status(storage_dir)
 
-    return dipam_messenger.build_msg(res)
+    return dipam_messenger.build_view_msg(new_value)
 
 
 @app.route('/runtime/check_compatibility',methods=['GET'])

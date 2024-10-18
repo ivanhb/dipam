@@ -3,7 +3,7 @@
 <!--
   * This part is the macro structure to be used when initializing a DIPAM data unit view;
 -->
-<div id="control_body" data-type="tool" data-id="{base-id}" data-class="{base-unit_class}" class="tool-unit">
+<div id="control_body" data-type="tool" data-id="{id}" data-class="{unit_class}" class="tool-unit">
 
       <div id="control_mid row">
 
@@ -19,8 +19,8 @@
               </div>
 
               <div id="node_data">
-                  <h1><input class="input-metadata" type="text" tool-dipam-metavalue="label"></h1>
-                  <p><input class="input-metadata" type="text" tool-dipam-metavalue="description"></p>
+                  <h1><input class="input-metadata" type="text" value="{label}" data-dipam-metavalue="label"></h1>
+                  <p><input class="input-metadata" type="text" value="{description}" data-dipam-metavalue="description"></p>
                   <br>
 
                   <div id="input_section">

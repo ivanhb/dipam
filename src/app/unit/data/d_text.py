@@ -14,6 +14,8 @@ class D_TEXT(D_DIPAM_UNIT):
             description = "A general textual content. If specified by file any open format textual file is supported (e.g. txt, md, yaml, xml, html, etc)",
             family = "General"
         )
+        self.input_freetxt = None
+        self.value = "..."
 
     def store_value(self, unit_dir_path):
         file_path = os.path.join(unit_dir_path, "gtext.txt")

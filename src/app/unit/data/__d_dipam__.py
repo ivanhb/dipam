@@ -1,3 +1,5 @@
+from app.base.messenger import DIPAM_MESSENGER
+import app.base.util as util
 from collections import defaultdict
 import re
 import os
@@ -22,12 +24,12 @@ class D_DIPAM_UNIT:
         ):
         self.type = "data"
         self.id = "d-NN"
-        self.unit_class = self.__class__.__name__
         self.label = label
         self.description = description
         self.family = family
+        self.unit_class = self.__class__.__name__
+
         self.value = None
-        self.view = dict()
 
     #   -----
     #   Methods to manage base and indexing operations
@@ -44,21 +46,12 @@ class D_DIPAM_UNIT:
         self.id = str(id)
         return self.id
 
-    def dump_metadata(self):
+    def dump_attributes(self):
         """
         [NOT-OVERWRITABLE]
-        Returns the data to be used when storing the index data describing this unit
+        @return: a dict with all the attributes of this class
         """
-        data = {
-            "type": self.type,
-            "id": self.id,
-            "unit_class": self.unit_class,
-            "label": self.label,
-            "description": self.description,
-            "family": self.family,
-            "view": self.view
-        }
-        return data
+        return self.__dict__
 
     def set_meta_attributes(self,data):
         """
@@ -77,7 +70,7 @@ class D_DIPAM_UNIT:
     #   Methods to manage writing/updating self.value
     #   -----
 
-    def write(self, data, source_is_view = False, unit_dir_path = None):
+    def write(self, data = None, source_is_view = False, unit_base_dir = None):
         """
         [NOT-OVERWRITABLE]
         This method writes a given value into a "FILE" or "VALUE" (<type>);
@@ -87,7 +80,10 @@ class D_DIPAM_UNIT:
             self.value
         """
 
-        new_value = data
+        # in case <data> is not provided then take the current self.value
+        new_value = self.value
+        if data:
+            new_value = data
 
         # if source_is_view, then a convertion of the data into self.value is needed first;
         if source_is_view:
@@ -112,13 +108,19 @@ class D_DIPAM_UNIT:
         # control if the new value is different from the current one
         _check = self.is_value_match(new_value)
         if _check:
-            return None,"[INFO] nothing to write value is the same"
+            # stop here in case this was not the init of the unit
+            if data:
+                return None,"[INFO] nothing to write value is the same"
 
         # Assign the new value
         self.value = new_value
+
         # Dump it in case <unit_dir_path> is given
-        if unit_dir_path:
-            self.store_value(unit_dir_path)
+        if unit_base_dir:
+            unit_dir = os.path.join(unit_base_dir, self.id)
+            if not os.path.exists( unit_dir ):
+                util.mkdir_at(unit_base_dir,self.id)
+            self.store_value(unit_dir)
 
         return self.value
 
@@ -230,13 +232,7 @@ class D_DIPAM_UNIT:
         @return: a HTML template of this data unit
         """
         # get a dictionary for all the sub-args of "value"
-        #_value = self.read()
-        #template_args_value = self.map_value_to_template_args(_value)
-        template_args_value = {}
-        # add base attributes to <template_args>
-        template_args_base = self.map_base_to_template_args()
-        # concat both
-        template_args = template_args_value | template_args_base
+        template_args = self.dump_attributes()
 
         # load the html template of this data unit;
         # the html template file must be in same dir with same name of this class but lowercase
@@ -268,47 +264,3 @@ class D_DIPAM_UNIT:
             script_template = re.sub(r'<!--.*?-->', '', script_template, flags=re.DOTALL)  # Remove comments
             return html_template, script_template
         return None, None
-
-    def map_base_to_template_args(self):
-        """
-        [NOT-OVERWRITABLE]
-        @return: a dict with all the base.{} arguments to subtitute in the HTML template of this data unit
-        """
-        res = {
-            "base-id": self.id,
-            "base-type": self.type,
-            "base-unit_class": self.unit_class,
-            "base-label": self.label,
-            "base-description": self.description,
-            "base-family": self.family
-        }
-        return res
-
-    def map_value_to_template_args(self, value):
-        """
-        [OVERWRITABLE]
-        @return: a dict with all the value.{} arguments to subtitute in the HTML template of this data unit
-        **NOTE: Subclasses must override this method without changing params
-                <value> is a value that respects this data unti value format
-        """
-        res = {"value-content": value}
-        return res
-
-    def update_view_data(self, data):
-        if "file_input" in data:
-            l_files = [ data["file_input"] ]
-            if isinstance(data["file_input"], list):
-                l_files = data["file_input"]
-            self.view["file_input"] = str(len(l_files))+ " files uploaded"
-        elif "direct_input" in data:
-            self.view["direct_input"] = data["direct_input"]
-        return True
-
-    def backend2view(self):
-        """
-        [NOT-OVERWRITABLE]
-        This method must build the entire HTML view of this data unit;
-        Using "d_dipam.html" template and the corresponding template of this data unit,
-        """
-        html_content = ""
-        return html_content

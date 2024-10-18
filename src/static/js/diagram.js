@@ -400,24 +400,30 @@ class dipam_diagram {
     var source_node = cy_instance.nodes("node[id='"+edge_data.source+"']")[0];
     var target_node = cy_instance.nodes("node[id='"+edge_data.target+"']")[0];
 
+    if (!(target_node._private.active)) {
+      console.log("Can't connect to non-active nodes");
+      cy_instance.remove('#'+edge_data.id);
+    }
+
     // API call to check compatibility
     fetch("/runtime/check_compatibility?value="+edge_data.source+"&value_to_check="+edge_data.target)
           .then(response => { return response.json(); })
           .then(data => {
             var node_compatibility = data[edge_data.target];
             if (node_compatibility) {
-              console.log("New edge is compatible!");
               //check if the diagram is still a DAG
               var is_cycle = _check_cycle(this.get_target_nodes(source_node), source_node);
               if (is_cycle) {
                 cy_instance.remove('#'+edge_data.id);
+                console.log("New edge creates a cycle!");
               }else {
                 // API to create the link between the two units
-                fetch("/runtime/add_link?source="+edge_data.source+"&target="+edge_data.target)
-                    .then(response => {
-                      this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
-                      console.log("The edge was created:",response);
-                    });
+                // fetch("/runtime/add_link?source="+edge_data.source+"&target="+edge_data.target)
+                //     .then(response => {
+                //       this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
+                //       console.log("The edge was created:",response);
+                //     });
+                ; //pass
               }
             }
           });
@@ -450,8 +456,25 @@ class dipam_diagram {
       }
   }
 
+  get_connected_nodes(_id, direction){
+    let node = this.cy.getElementById(_id);
+
+    let connectedNodes = node.connectedEdges().connectedNodes();
+    if (direction === 'incoming') {
+        connectedNodes = node.incomers('node');
+    } else if (direction === 'outgoing') {
+        connectedNodes = node.outgoers('node');
+    }
+
+    // Extract the IDs of the connected nodes
+    let connectedNodeIds = connectedNodes.map(function(n) {
+        return n.id();
+    });
+    return connectedNodeIds;
+  }
+
   gen_edge_data(source_id,target_id){
-    var edge_obj = { data: JSON.parse(JSON.stringify(this.EDGE_DATA)) , group: 'edges'};
+    var edge_obj = { data: {} , group: 'edges'};
     edge_obj.data.id = "e-"+source_id+"_"+target_id;
     edge_obj.data.type = 'edge';
     edge_obj.data.name = "e-"+source_id+"_"+target_id;
@@ -657,10 +680,12 @@ class dipam_diagram {
                 /* in case not compatible check if it is connected with {node_seed};
                 in this case its edges must be removed as well;
                 Check both directions (source or target with node_seed), and remove edges; */
-                var edges = this.cy.edges(`[source = "${node_seed}"][target = "${_a_node}"], [source = "${_a_node}"][target = "${node_seed}"]`);
-                if (edges.length > 0) {
-                    this.cy.remove(edges);
-                }
+
+                //var edges = this.cy.edges(`[source = "${node_seed}"][target = "${_a_node}"], [source = "${_a_node}"][target = "${node_seed}"]`);
+                //if (edges.length > 0) {
+                //    this.cy.remove(edges);
+                //}
+                ; //pass
               }
             }
           });

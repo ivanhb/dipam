@@ -6,6 +6,7 @@ import json
 import app.base.util as util
 import zipfile
 import io
+from concurrent.futures import ThreadPoolExecutor
 
 class DIPAM_RUNTIME:
 
@@ -45,11 +46,11 @@ class DIPAM_RUNTIME:
         """
         # upload last runtime checkpoint
         dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
-        if not os.path.exists( os.path.join(dir_dipam_app,"runtime") ):
-            util.copy_dir_to(
-                os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
-                dir_dipam_app
-            )
+        #if not os.path.exists( os.path.join(dir_dipam_app,"runtime") ):
+        util.copy_dir_to(
+            os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
+            dir_dipam_app
+        )
 
         # reload all units
         workflow = json.load(open( os.path.join(dir_dipam_app,"runtime","workflow.json") ))
@@ -59,7 +60,8 @@ class DIPAM_RUNTIME:
                 _node_data["type"],
                 _node_data["class"],
                 _node_data["id"],
-                _node_data["value"]
+                _node_data["value"],
+                False
             )
 
         return True
@@ -86,7 +88,7 @@ class DIPAM_RUNTIME:
 
     # UNIT HANDLER METHODS
     # ------
-    def add_unit(self, unit_type, unit_class = None, unit_id = None, unit_metadata = None):
+    def add_unit(self, unit_type, unit_class = None, unit_id = None, unit_metadata = None, dump_values = True):
         """
         """
         unit_type = unit_type.lower()
@@ -109,7 +111,7 @@ class DIPAM_RUNTIME:
 
         if not unit_id:
             pref = "d-" if unit_type == "data" else "t-"
-            unit_id = new_unit.set_id( util.get_first_available_id(self.runtime_dir, pref) )
+            unit_id = new_unit.set_id( util.get_first_available_id(self.runtime_units, pref) )
         else:
             # use the given one
             new_unit.set_id(unit_id)
@@ -117,21 +119,15 @@ class DIPAM_RUNTIME:
         if unit_metadata:
             new_unit.set_meta_attributes(unit_metadata)
 
-        if unit_type == "data":
-            # in case of "data" unit create a directory;
-            unit_dir = os.path.join(self.runtime_dir, "unit", unit_id)
-            if not os.path.exists( unit_dir ):
-                util.mkdir_at(
-                    os.path.join(self.runtime_dir, "unit"),
-                    unit_id)
-        # elif unit_type == "tool":
-            # in case of "tool" unit create a json to describe the tool;
-        #    util.mkjson_at(
-        #        os.path.join(self.runtime_dir, "unit"),
-        #        unit_id,
-        #        unit_index_data)
-
         self.runtime_units[unit_id] = new_unit
+
+        # dump values on filesystem
+        if dump_values:
+            self.runtime_units[unit_id].write(
+                data = None,
+                source_is_view = False,
+                unit_base_dir = os.path.join(self.runtime_dir, "unit")
+            );
 
         return new_unit
 
@@ -145,8 +141,10 @@ class DIPAM_RUNTIME:
         unit_type = "data" if unit_id.startswith("d-") else "tool"
 
         # remove its corresponding data
-        if unit_id.startswith("d-"):
+        if unit_type == "data":
             util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
+        elif unit_type == "tool":
+            util.delete_file( os.path.join(self.runtime_dir, "unit",unit_id+".json") )
         return unit_id
 
     def save_unit_data(self, data, unit_id, source_is_view = False):
@@ -157,15 +155,17 @@ class DIPAM_RUNTIME:
             <data>: the data to save
         """
         unit_type = "data" if unit_id.startswith("d-") else "tool"
-        if unit_type == "data":
-            unit_runtime_dir = os.path.join(self.runtime_dir, "unit",unit_id)
-            new_value = self.runtime_units[unit_id].write(data, source_is_view, unit_runtime_dir)
 
-            # set and update the index metadata of <unit_id>
-            if not isinstance(new_value, tuple) and new_value:
-                self.runtime_units[unit_id].update_view_data(data)
+        unit_runtime_dir = os.path.join(self.runtime_dir, "unit",unit_id)
+        if unit_type == "tool":
+            unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
 
-            return new_value, unit_runtime_dir
+        res_write = self.runtime_units[unit_id].write(data, source_is_view, unit_runtime_dir)
+        if isinstance(res_write, tuple):
+            return res_write
+
+        new_value = self.runtime_units[unit_id].value
+        return [new_value, unit_runtime_dir]
 
 
     # LINK HANDLER METHODS
@@ -232,29 +232,25 @@ class DIPAM_RUNTIME:
         res = {u_id: False for u_id in self.runtime_units}
 
         # (1) Build the set of compatible data units
-        seed_unit = self.runtime_units[unit_id].dump_metadata()
+        seed_unit = self.runtime_units[unit_id]
         compatible_class = None
         if unit_id.startswith("t-"):
-            compatible_class = set( seed_unit["output"] )
+            compatible_class = set( seed_unit.output )
         elif unit_id.startswith("d-"):
-            compatible_class = { seed_unit["unit_class"] }
+            compatible_class = { seed_unit.unit_class }
 
         # (2) Check compatibility with all "tool" units in the system
         # (whether i am checking a "tool" or "data" unti, none of them can be connected to a data)
         # we need to check if the intersection with (1) gives more than 1 (so its compatible)
-        units_to_check = None
-        if unit_b_id:
-            units_to_check = [unit_b_id]
-        else:
-            units_to_check = self.runtime_units.keys()
+        units_to_check = self.runtime_units.keys()
 
         for k in units_to_check:
             if k == unit_id:
                 res[k] = True
             elif k.startswith("t-"):
-                _obj = self.runtime_units[k].dump_metadata()
-                class_to_check = set(_obj["req_input"]).union(set(_obj["opt_input"]))
-                res[_obj["id"]] = len(compatible_class.intersection( class_to_check )) > 0
+                _obj = self.runtime_units[k]
+                class_to_check = set( [_in[0] for _in in _obj.input] )
+                res[_obj.id] = len(compatible_class.intersection( class_to_check )) > 0
 
         if unit_b_id != None:
             return {unit_b_id: res[unit_b_id]}
@@ -270,16 +266,19 @@ class DIPAM_RUNTIME:
             HTML content ready to be inserted in the interface
         """
         base_view_fpath = None
+        unit_type = None
         if unit_id.startswith("diagram"):
             base_view_fpath = self.unit_base["diagram"]["view_fpath"]
             return self.diagram_unit.gen_view_template(base_view_fpath)
         elif unit_id.startswith("d-"):
+            unit_type = "data"
             base_view_fpath = self.unit_base["data"]["view_fpath"]
         elif unit_id.startswith("t-"):
+            unit_type = "tool"
             base_view_fpath = self.unit_base["tool"]["view_fpath"]
 
         class_name = self.runtime_units[unit_id].__class__.__name__
-        unit_view_fpath = self.unit_index["data"][class_name]["view_fpath"]
+        unit_view_fpath = self.unit_index[unit_type][class_name]["view_fpath"]
 
         return self.runtime_units[unit_id].gen_view_template(
             base_view_fpath,
@@ -350,7 +349,7 @@ class DIPAM_CONFIG:
         for filename in all_files:
             if filename.endswith(".py"):
                 # in case is dipam base file skip it
-                if filename.startswith("__d_dipam__.py"):
+                if filename.startswith("__d_dipam__") or filename.startswith("__t_dipam__"):
                     continue
                 file_path = os.path.join(directory, filename)
                 with open(file_path, 'r') as file:

@@ -38,7 +38,7 @@ class DIPAM_UNIT_VIEW {
   * This methods goes throught the interface of the visulized node and reads all the input(s)
   * inputs are converted into: "direct-input", "file-input", and all the metadata (e.g., label, description)
   */
-  get_node_data_from_interface( node_type ) {
+  get_node_data_from_interface( node_id, node_type ) {
 
     var res = {};
 
@@ -50,7 +50,7 @@ class DIPAM_UNIT_VIEW {
 
     // (2) check for direct values
     var direct_values = {};
-    $('#input_group').find('[data-dipam-value]').each(function() {
+    $('#input_section').find('[data-dipam-value]').each(function() {
         var _id = $(this).attr('data-dipam-value');
         direct_values[  _id  ] = $(this).val();
     });
@@ -66,6 +66,15 @@ class DIPAM_UNIT_VIEW {
       }
     }
 
+    // check if its a tool
+    if (node_type == "tool") {
+      if ("direct_input" in res) {
+        res["param"] = res["direct_input"];
+        delete res["direct_input"];
+      }
+      res["input"] = diagram_instance.get_connected_nodes(node_id, "incoming");
+    }
+
     return res;
   }
 
@@ -73,7 +82,7 @@ class DIPAM_UNIT_VIEW {
   * [NOT-OVERWRITABLE]
   * Set the values of the DOMs in the template part of the input-group container
   */
-  set_node_interface_from_data( node_type, unit_id) {
+  set_node_interface_from_data( unit_id, unit_type) {
     // take the view value from the diagram nodes
     let node = diagram_instance.get_node_by_id(unit_id);
     var current_value = node._private.data.value;
@@ -82,14 +91,18 @@ class DIPAM_UNIT_VIEW {
         var _id = $(this).attr('data-dipam-metavalue');
         $(this).val( current_value[_id] );
     });
+    console.log(current_value);
     if ("direct_input" in current_value) {
-      $('#input_group').find('[data-dipam-value]').each(function() {
+      $('#input_section').find('[data-dipam-value]').each(function() {
           var _id = $(this).attr('data-dipam-value');
-          $(this).val(  __normal_value(current_value["direct_input"][_id])  );
+          if (_id in current_value["direct_input"]) {
+              $(this).val(  __normal_value(current_value["direct_input"][_id])  );
+          }
       });
     }else if ("file_input" in current_value) {
       $('#f_input_btn').val( current_value["file_input"]["file"].length.toString() +" files uploaded"  );
     }
+
     return true;
 
     function __normal_value(_val) {
@@ -113,7 +126,7 @@ class DIPAM_UNIT_VIEW {
       // INPUT part
       "NODE_DATA": $('#node_data'),
       "BTN_INPUT_SWITCH": $('.switch-input-btn'),
-      "INPUT_GROUP": $('#input_group'),
+      "INPUT_SECTION": $('#input_section'),
       "INPUT_FILE":$('.file-upload-btn'),
       "INPUT_FILE_TRIGGER":$('#f_input'),
       // Edit part
@@ -151,7 +164,7 @@ class DIPAM_UNIT_VIEW {
 
 
     if ((node_type == "tool") || (node_type == "data")) {
-      dipam_unit_value.set_node_interface_from_data(node_type, node_id);
+      dipam_unit_value.set_node_interface_from_data(  node_id,node_type );
 
       DOMS.EDIT_BUTTON.on('click', function() {
         if ($(this).text() === 'Edit') {
@@ -162,7 +175,7 @@ class DIPAM_UNIT_VIEW {
           DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', false);
         } else {
           // in this case save values
-          var node_data = unit_view_instance.get_node_data_from_interface( node_type );
+          var node_data = unit_view_instance.get_node_data_from_interface( node_id, node_type );
           if (node_type == "diagram") {
             diagram_instance.update_diagram_data(node_data);
           }else{
@@ -187,7 +200,7 @@ class DIPAM_UNIT_VIEW {
                   // (1) update the node diagram value
                   // (2) generate the template interface
                   diagram_instance.set_node_data(node_id, node_data);
-                  unit_view_instance.set_node_interface_from_data(node_type, node_id);
+                  unit_view_instance.set_node_interface_from_data(  node_id,node_type );
               })
               .catch((error) => {
                   console.error('Error:', error);
@@ -213,7 +226,7 @@ class DIPAM_UNIT_VIEW {
 
       if (!((node_settings.file_input) && (node_settings.direct_input))) {
         if (node_settings.direct_input) {
-          DOMS.INPUT_GROUP.css('display','inline');
+          DOMS.INPUT_SECTION.css('display','inline');
         }
         if (node_settings.file_input) {
           DOMS.INPUT_FILE.css('display','inline');
@@ -224,15 +237,15 @@ class DIPAM_UNIT_VIEW {
       }else {
         // both input types must be handled
         DOMS.BTN_INPUT_SWITCH.css('display','inline');
-        DOMS.INPUT_GROUP.css('display','inline');
+        DOMS.INPUT_SECTION.css('display','inline');
         DOMS.BTN_INPUT_SWITCH.on('click', function(){
-          if (DOMS.INPUT_GROUP.css('display') === 'none' || DOMS.INPUT_GROUP.css('display') === '') {
-              DOMS.INPUT_GROUP.css('display','inline');
+          if (DOMS.INPUT_SECTION.css('display') === 'none' || DOMS.INPUT_SECTION.css('display') === '') {
+              DOMS.INPUT_SECTION.css('display','inline');
               DOMS.INPUT_FILE.css('display','none');
               this.text('Switch to File Input');
               this.attr('data-value','direct_input');
           } else {
-              DOMS.INPUT_GROUP.css('display','none');
+              DOMS.INPUT_SECTION.css('display','none');
               DOMS.INPUT_FILE.css('display','inline');
               this.text('Switch to Text Input');
               this.attr('data-value','direct_input');

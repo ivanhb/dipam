@@ -721,7 +721,7 @@ class dipam_interface {
                 }
                 ADD_UNIT_LIST.innerHTML = html_content;
                 ADD_UNIT_LIST.style.display = "block";
-                ADD_UNIT_LIST.classList.add(unit_type+"-unit");
+                ADD_UNIT_LIST.className = "list-options "+unit_type+"-unit";
 
                 $(".dropdown-additem").on("click", function() {
 
@@ -731,6 +731,14 @@ class dipam_interface {
                                 console.log("New node added (id = "+data["id"]+") Data = ", data);
                                 //add a node to the diagram of a specific <type> with the corresponding <data>
                                 diagram_instance.add_node(type, data);
+
+                                //save also the new diagram workflow
+                                fetch("/save/workflow?time="+(new Date().getTime()).toString(), {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({workflow_data: diagram_instance.get_workflow_data()})
+                                });
+
                                 _elem_onclick_handle();
                                 diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click',[]);
                                 diagram_instance.fit_diagram();
@@ -810,7 +818,7 @@ class dipam_interface {
           fetch("/save/workflow?time="+(new Date().getTime()).toString(), {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({workflow_data: workflow_data})
+              body: JSON.stringify({workflow_data: workflow_data, store_checkpoint: true})
           })
           .then(response => {return response;})
           .then(data => {
@@ -885,9 +893,9 @@ class dipam_interface {
         //edges on click handler
         diagram_cy.edges().on('click', function(e){
             //console.log("Edge clicked !", this._private.data.id,this);
-            diagram_instance.click_elem_style(this,'edge');
-            interface_instance.click_on_edge(this);
-            elem_remove_handler();
+            //diagram_instance.click_elem_style(this,'edge');
+            //interface_instance.click_on_edge(this);
+            //elem_remove_handler();
         });
 
         function elem_remove_handler() {

@@ -73,6 +73,18 @@ def delete_path(path):
     return False
 
 
+def delete_file(f_path):
+    """
+    delete a file <f_path>
+    """
+    try:
+        if os.path.isfile(f_path):
+            os.remove(f_path)
+            return True
+    except:
+        return False, "error", "The file <"+f_path+"> couldn't be removed"
+
+
 """
 copy <source_f> to a directory <dest_dir>
 """
@@ -146,7 +158,7 @@ def create_instance(file_path, class_name, *args):
         return None
 
 
-def get_first_available_id(runtime_path, pref):
+def get_first_available_id(runtime_units, pref):
     """
     This methods returns the first available key to insert as new key in <data>;
     such that all keys in <data>, start with <pref> and have a sequential number after.
@@ -155,24 +167,12 @@ def get_first_available_id(runtime_path, pref):
     E.G. <data> = {"d-1":1, "d-2":2, "d-4":4}, <pref> = "d-"; returns: "d-3"
     """
     _new_id = None
-
-    if pref == "d-":
-        data_path = os.path.join(runtime_path, "unit")
-        current_ids = [name for name in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, name))]
-
-    elif pref == "t-":
-        view_file = os.path.join(runtime_path, "workflow.json")
-        with open(view_file, 'r') as j_file:
-            workflow = json.load(j_file)
-            current_ids = [_n["id"] for _n in workflow["nodes"]]
-
     _idx = 1
     while True:
         _new_id = pref+str(_idx)
-        if _new_id not in current_ids:
+        if _new_id not in runtime_units:
             break
         _idx += 1
-
     return _new_id
 
 
