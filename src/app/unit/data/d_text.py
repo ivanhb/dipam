@@ -36,14 +36,6 @@ class D_TEXT(D_DIPAM_UNIT):
             new_value = new_value +"\n"+ file_content.decode('utf-8')
         return new_value
 
-    def manage_view_direct_value(self, a_value):
-
-        if "input_freetxt" in a_value:
-            part_value = a_value["input_freetxt"]
-            if isinstance(part_value, str):
-                return part_value
-        return False, "[ERROR] Some files have a non-supported format for this type of data"
-
     def f_read(self, file_path):
         """
         """
@@ -51,3 +43,15 @@ class D_TEXT(D_DIPAM_UNIT):
         with open(file_path, 'r') as file:
             value = file.read()
         return value
+
+    def direct_input_manager(self, a_value):
+        """
+        """
+        if "input_freetxt" in a_value:
+            try:
+                data = a_value["input_freetxt"]
+                if isinstance(data, str):
+                    return data
+            except:
+                return None, "error", "The provided value is not a string value"
+        return None, "error", "No values have been provided"

@@ -68,10 +68,6 @@ class DIPAM_UNIT_VIEW {
 
     // check if its a tool
     if (node_type == "tool") {
-      if ("direct_input" in res) {
-        res["param"] = res["direct_input"];
-        delete res["direct_input"];
-      }
       res["input"] = diagram_instance.get_connected_nodes(node_id, "incoming");
     }
 
@@ -127,8 +123,6 @@ class DIPAM_UNIT_VIEW {
       "NODE_DATA": $('#node_data'),
       "BTN_INPUT_SWITCH": $('.switch-input-btn'),
       "INPUT_SECTION": $('#input_section'),
-      "INPUT_FILE":$('.file-upload-btn'),
-      "INPUT_FILE_TRIGGER":$('#f_input'),
       // Edit part
       "EDIT_BUTTON":$('#edit_btn'),
       "CANCEL_BUTTON":$('#cancel_btn'),
@@ -144,19 +138,11 @@ class DIPAM_UNIT_VIEW {
 
     var node_settings = dipam_unit_value.settings[node_type];
 
-    //console.log(node_id, node_class, node_type, node_settings);
-
-    /*
-    Set the input section according to the values in node_settings
-    */
-
-
 
     if ((node_type == "tool") || (node_type == "data") || (node_type == "diagram")) {
       // Disable and don't display edit triggers in the control info panel
       DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
       DOMS.BTN_INPUT_SWITCH.css('display','none');
-      DOMS.INPUT_FILE.css('display','none');
       DOMS.CONTROL_FOOT.css('display','none');
       DOMS.CANCEL_BUTTON.css('display','none');
       DOMS.REMOVE_BUTTON.css('display','none');
@@ -189,21 +175,36 @@ class DIPAM_UNIT_VIEW {
                       data: node_data
                   })
               })
-              .then(response => response.text()) // Parse the response as JSON
+              .then(response => {return response.json();})
               .then(data => {
-                  //console.log('Success:', data);
+
                   $(this).text('Edit').removeClass('btn-success').addClass('btn-primary');
                   DOMS.CANCEL_BUTTON.hide();
                   DOMS.REMOVE_BUTTON.hide();
                   DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
+
                   // in case of success:
                   // (1) update the node diagram value
                   // (2) generate the template interface
                   diagram_instance.set_node_data(node_id, node_data);
                   unit_view_instance.set_node_interface_from_data(  node_id,node_type );
+
+                  // show all returned messages;
+                  // in case of error
+                  // Note: previous code updating the interface is done anyway
+                  if (! (vw_interface.show_popupmsg_all(data)) ) {
+                      return false;
+                  }
+
+                  // save also the new diagram workflow
+                  diagram_instance.save_workflow( false, vw_interface.show_popupmsg_warning);
               })
               .catch((error) => {
-                  console.error('Error:', error);
+                  vw_interface.show_popupmsg({
+                      "data": null,
+                      "log_type": "error",
+                      "log_msg": "Error in the DIPAM API while saving the data of a unit – "+error
+                  });
               });
           }
         }
@@ -222,41 +223,56 @@ class DIPAM_UNIT_VIEW {
       });
     }
 
+
+
     if (node_type == "data") {
 
-      if (!((node_settings.file_input) && (node_settings.direct_input))) {
-        if (node_settings.direct_input) {
-          DOMS.INPUT_SECTION.css('display','inline');
-        }
-        if (node_settings.file_input) {
-          DOMS.INPUT_FILE.css('display','inline');
-          if (node_settings.file_input.multi_files) {
-            DOMS.INPUT_FILE_TRIGGER.prop('multiple', true);
+      // a particular element for file
+
+      var direct_input = false;
+      direct_input = DOMS.INPUT_SECTION.find('[data-dipam-value]').each(function() {
+        DOMS.INPUT_SECTION.css('display','inline');
+        return true;
+      });
+
+      var file_input = false;
+      DOMS.INPUT_SECTION.find('[data-dipam-filevalue]').each(function() {
+          const html_content_file =`<button id="f_input_btn" class="file-upload-btn" onclick="document.getElementById('f_input').click();">Load File</button><input type="file" id="f_input" name="f_input" style="display:none" accept=".txt" />`;
+          this.replaceWith(html_content_file);
+          // to stop at first replace
+          $('.file-upload-btn').css('display','inline');
+
+          if (this.attr('data-multiple') !== undefined) {
+              $('#f_input').prop('multiple', true);
           }
-        }
-      }else {
+          return true;
+      });
+
+      if ((direct_input) && (file_input)){
         // both input types must be handled
         DOMS.BTN_INPUT_SWITCH.css('display','inline');
         DOMS.INPUT_SECTION.css('display','inline');
+
         DOMS.BTN_INPUT_SWITCH.on('click', function(){
-          if (DOMS.INPUT_SECTION.css('display') === 'none' || DOMS.INPUT_SECTION.css('display') === '') {
-              DOMS.INPUT_SECTION.css('display','inline');
-              DOMS.INPUT_FILE.css('display','none');
-              this.text('Switch to File Input');
-              this.attr('data-value','direct_input');
-          } else {
-              DOMS.INPUT_SECTION.css('display','none');
-              DOMS.INPUT_FILE.css('display','inline');
-              this.text('Switch to Text Input');
-              this.attr('data-value','direct_input');
+          if (this.text() == 'Switch to Direct Input Interface') {
+            DOMS.INPUT_SECTION.find('[data-dipam-value]').each(function() {
+              this.css('display','inline');
+            });
+            $('.file-upload-btn').css('display','none');
+            this.text('Switch to File(s) Input Interface');
+          }
+          else if (this.text() == 'Switch to File(s) Input Interface') {
+            DOMS.INPUT_SECTION.find('[data-dipam-value]').each(function() {
+              this.css('display','none');
+            });
+            $('.file-upload-btn').css('display','inline');
+            this.text('Switch to Direct Input Interface');
           }
         });
       }
-
     }
-
-
   }
+
 }
 
 var dipam_unit_value = new DIPAM_UNIT_VIEW();

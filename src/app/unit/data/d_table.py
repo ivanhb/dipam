@@ -22,6 +22,7 @@ class D_TABLE(D_DIPAM_UNIT):
         self.header = None
         self.rows_limit = None
         self.tab_direct_raw = None
+        self.value = []
 
     def store_value(self, unit_dir_path):
 
@@ -88,15 +89,21 @@ class D_TABLE(D_DIPAM_UNIT):
         return new_value
 
 
-    def manage_view_direct_value(self, a_value):
-
-        if "input_textarea" in a_value:
-            part_value = a_value["input_textarea"]
-            if isinstance(part_value, str):
-                # Split the string into rows using "\n"
-                rows = part_value.strip().split("\n")
-                # Split each row into cells using ","
-                list_of_lists = [row.split(",") for row in rows]
-                return list_of_lists
-
-        return False, "[ERROR] Some files have a non-supported format for this type of data"
+    def direct_input_manager(self, a_value):
+        """
+        """
+        if "tab_direct_raw" in a_value:
+            try:
+                res = []
+                rows = a_value["tab_direct_raw"].strip().split("\n")
+                if len(rows) > 0:
+                    rows = [row.split(",") for row in rows]
+                    header = rows[0]
+                    for r_cells in rows:
+                        if len(r_cells) != len(header):
+                            return None, "error", "The provided value is not convertable into table format – rows have different number of cells"
+                        res.append(r_cells)
+                return res
+            except:
+                return None, "error", "The provided value is not convertable into table format"
+        return None, "error", "No values have been provided"

@@ -394,15 +394,32 @@ class dipam_diagram {
   * an API call is done to create the link between the two units;
   * if the two units are compatible and the graph is not a cycle then the Edge persists
   */
+  remove_edge(id){
+    this.cy.remove('#'+id);
+    var edge = this.get_gen_elem_by_id(id);
+    var source_node = edge._private.data.source;
+    var target_node = edge._private.data.target;
+    var target_node_input = target_node._private.data.value.input;
+    target_node_input = target_node_input.filter(item => item !== source_node);
+    return true;
+  }
+
+
   after_add_edge(edge_data){
-    var interface_instance = this;
-    var cy_instance = this.cy;
-    var source_node = cy_instance.nodes("node[id='"+edge_data.source+"']")[0];
-    var target_node = cy_instance.nodes("node[id='"+edge_data.target+"']")[0];
+    var diagram_instance = this;
+    var source_node = diagram_instance.cy.nodes("node[id='"+edge_data.source+"']")[0];
+    var target_node = diagram_instance.cy.nodes("node[id='"+edge_data.target+"']")[0];
+
+    // add it as input to the target node
+    if (!("input" in target_node._private.data.value)) {
+      target_node._private.data.value["input"] = [];
+    }
+    target_node._private.data.value.input.push(edge_data.source);
+
 
     if (!(target_node._private.active)) {
       console.log("Can't connect to non-active nodes");
-      cy_instance.remove('#'+edge_data.id);
+      diagram_instance.remove_edge(edge_data.id);
     }
 
     // API call to check compatibility
@@ -414,7 +431,7 @@ class dipam_diagram {
               //check if the diagram is still a DAG
               var is_cycle = _check_cycle(this.get_target_nodes(source_node), source_node);
               if (is_cycle) {
-                cy_instance.remove('#'+edge_data.id);
+                diagram_instance.remove_edge(edge_data.id);
                 console.log("New edge creates a cycle!");
               }else {
                 // API to create the link between the two units
@@ -423,7 +440,7 @@ class dipam_diagram {
                 //       this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
                 //       console.log("The edge was created:",response);
                 //     });
-                ; //pass
+                return diagram_instance.save_workflow();
               }
             }
           });
@@ -442,7 +459,7 @@ class dipam_diagram {
         var res = false;
         for (var i = 0; i < arr_nodes.length; i++) {
           var node = arr_nodes[i];
-          var out_nodes = interface_instance.get_target_nodes(node);
+          var out_nodes = diagram_instance.get_target_nodes(node);
           if (out_nodes.length != 0) {
               res = res || is_cycle(out_nodes , origin);
           }
@@ -606,8 +623,29 @@ class dipam_diagram {
     }
     // TODO: check this from dipam v1.0
     this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
+    this.save_workflow();
+
   }
   // DIPAM v2.0 ---->
+
+  save_workflow( store_checkpoint = false, f_callback = null ){
+    fetch("/save/workflow?time="+(new Date().getTime()).toString(), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          workflow_data: this.get_workflow_data(),
+          store_checkpoint: store_checkpoint
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (f_callback != null) {
+        f_callback(data);
+      }
+      return data;
+    })
+    .catch(error => { return {"data":null, "log_type":"error", "log_msg":""} });
+  }
 
   highlight_diagram(){
     //first color all nodes

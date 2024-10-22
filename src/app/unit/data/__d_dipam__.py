@@ -1,6 +1,7 @@
 from app.base.messenger import DIPAM_MESSENGER
 import app.base.util as util
 from collections import defaultdict
+from pathlib import Path
 import re
 import os
 
@@ -24,10 +25,12 @@ class D_DIPAM_UNIT:
         ):
         self.type = "data"
         self.id = "d-NN"
+        self.unit_class = self.__class__.__name__
+
+        # These are metadata values
         self.label = label
         self.description = description
         self.family = family
-        self.unit_class = self.__class__.__name__
 
         self.value = None
 
@@ -76,7 +79,7 @@ class D_DIPAM_UNIT:
         This method writes a given value into a "FILE" or "VALUE" (<type>);
         <args> are different depending on the <type> value
         @param:
-        @returns:
+        @return:
             self.value
         """
 
@@ -96,31 +99,35 @@ class D_DIPAM_UNIT:
                 new_value = self.manage_view_file(data_to_convert)
 
             elif "direct_input" in data:
-                direct_value = data["direct_input"]
-                # Manage view direct value and convert it into self.value format
-                new_value = self.manage_view_direct_value(direct_value)
+                try:
+                    new_value = self.direct_input_manager(data["direct_input"])
+                    msg = DIPAM_MESSENGER.build_app_msg(new_value)
+                    if msg[1] == "error":
+                        return msg
+                except:
+                    return None,"error","Something wrong in the direct input(s) assignment"
 
         # control if the new value passes the check
         _check = self.check_value(new_value)
-        if isinstance(_check, tuple):
-            return _check
+        msg = DIPAM_MESSENGER.build_app_msg(_check)
+        if msg[1] == "error":
+            return msg
 
         # control if the new value is different from the current one
+        # stop here in case this was not the init of the unit
         _check = self.is_value_match(new_value)
         if _check:
-            # stop here in case this was not the init of the unit
             if data:
-                return None,"[INFO] nothing to write value is the same"
+                return None,"warning","Nothing to write: value is the same"
 
         # Assign the new value
         self.value = new_value
 
         # Dump it in case <unit_dir_path> is given
         if unit_base_dir:
-            unit_dir = os.path.join(unit_base_dir, self.id)
-            if not os.path.exists( unit_dir ):
-                util.mkdir_at(unit_base_dir,self.id)
-            self.store_value(unit_dir)
+            if not os.path.exists(unit_base_dir):
+                Path(unit_base_dir).mkdir(parents=True, exist_ok=True)
+            self.store_value(unit_base_dir)
 
         return self.value
 
@@ -139,9 +146,6 @@ class D_DIPAM_UNIT:
         @NOTE: Subclasses must override this method and use <self.value>;
             also it must always contain <unit_dir_path> as param
         """
-        file_path = os.path.join(unit_dir_path, "__d_dipam__.txt")
-        with open(file_path, 'w') as file:
-            file.write(self.value)
         return True
 
     def is_value_match(self, a_value):
@@ -173,16 +177,16 @@ class D_DIPAM_UNIT:
             new_value = new_value +"\n"+ file_content.decode('utf-8')
         return new_value
 
-    def manage_view_direct_value(self, a_value):
+    def direct_input_manager(self, a_value):
         """
         [OVERWRITABLE]
-        This method is responsible for processing uploaded direct unit view values;
-        It reads data, applies relevant transformations, and returns a new value (with the format of <self.value>) as a result;
+        This method is responsible for processing/normalizing an uploaded direct input from the view;
         The content validation of the new value produced is out of scope for this method.
+        DIRECT_INPUT_NAME must be set as the name of the direct input that this method manages
         @param:
-            <a_value> a view value in the dipam_unit_value format.
+            <a_value> the direct_input value given by the view
         @return:
-            a new value that follow the format of <self.value>
+            a new normalized value to assign to the direct_input of the tool
         """
         return a_value
 

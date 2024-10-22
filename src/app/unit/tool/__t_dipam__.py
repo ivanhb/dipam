@@ -20,8 +20,8 @@ class T_DIPAM_UNIT:
             description = "A description of the Dipam tool",
             family = "The macro family of the Dipam tool",
 
-            param = [
-                # ( PARAM-NAME, True/False if mandatory)
+            direct_input = [
+                # ( DIRECT-INPUT-NAME, True/False if mandatory)
             ],
 
             input = [
@@ -34,17 +34,20 @@ class T_DIPAM_UNIT:
         ):
         self.type = "tool"
         self.id = "t-NN"
+        self.unit_class = self.__class__.__name__
+
+        # These are metadata values
         self.label = label
         self.description = description
         self.family = family
-        self.unit_class = self.__class__.__name__
 
-        self.param = param
+
+        self.direct_input = direct_input
         self.input = input
         self.output = output
 
         self.value = {
-            "param": {},
+            "direct_input": {},
             "input": [],
             "output": []
         }
@@ -89,41 +92,45 @@ class T_DIPAM_UNIT:
         @param:
         @returns:
             self.value
+        @Note: to return an log msg the data to return must be followed by a log-type, and log-msg;
+            e.g. "Hi my name is ivan", "info", "this is a general info"
         """
         new_value = self.value
         if data:
             new_value = data
 
-        # if source_is_view, then a convertion of the data into self.value is needed first;
+        # if source_is_view, then a convertion of the data coming from the view is needed
         if source_is_view:
 
-            # manage the given params: call the manager of each param
-            if "param" in data:
-                for p_key, p_val in data["param"].items():
+            # manage the given direct_input(s): call the manager of each direct_input
+            if "direct_input" in data:
+                for p_key, p_val in data["direct_input"].items():
                     try:
-                        _param_manager = getattr(self, "param_manager__"+p_key+"__", None)
-                        _new_val = _param_manager(p_val)
-                        if isinstance(_new_val, tuple):
-                            return _new_val
-                        else:
-                            new_value["param"][p_key] = _new_val
+                        _direct_input_manager = getattr(self, "direct_input_manager__"+p_key+"__", None)
+                        _new_val = _direct_input_manager(p_val)
+                        msg = DIPAM_MESSENGER.build_app_msg(_new_val)
+                        if not msg[1] == None:
+                            return msg
+
+                        new_value["direct_input"][p_key] = _new_val
                     except:
-                        return None,"error","Something wrong in the parameters assignment"
-
-            # check if all mandatory params have been set
-            check_mandatory = all(_k in self.value["param"] and self.value["param"][_k] != None for _k in [_p[0] for _p in self.param if _p[1] ])
-            if not check_mandatory:
-                return None,"error","Some mandatory parameters are not set"
-
+                        return None,"error","Something wrong in the direct input(s) assignment"
 
             # Manage dipam data units given as input and insert them into self.input format
             if "input" in data:
                 new_value["input"] = self.inputs_manage(  data["input"]  )
 
-            # check if all mandatory inputs have been set
-            check_mandatory = all(_k in self.value["input"] for _k in [_in[0] for _in in self.input if _in[1] ])
-            if not _check_mandatory:
-                return None,"error","Some mandatory inputs are not set"
+
+            # # check if all mandatory params have been set
+            # check_mandatory = all(_k in new_value["direct_input"] and new_value["direct_input"][_k] != None for _k in [_p[0] for _p in self.direct_input if _p[1] ])
+            # if not check_mandatory:
+            #     return None,"error","Some mandatory direct inputs are not set"
+            #
+            # # check if all mandatory inputs have been set
+            # check_mandatory = all(_k in new_value["input"] for _k in [_in[0] for _in in self.input if _in[1] ])
+            # if not check_mandatory:
+            #     return None,"error","Some mandatory inputs are not set"
+
 
         self.value = new_value
         if unit_base_dir:
@@ -213,16 +220,16 @@ class T_DIPAM_UNIT:
         return None, None
 
 
-    def param_manager__PARAM_NAME__(self, a_value):
+    def direct_input_manager__DIRECT_INPUT_NAME__(self, a_value):
         """
         [OVERWRITABLE]
-        This method is responsible for processing/normalizing an uploaded param from the view;
+        This method is responsible for processing/normalizing an uploaded direct input from the view;
         The content validation of the new value produced is out of scope for this method.
-        PARAM_NAME must be set as the name of the parameter that this method manages
+        DIRECT_INPUT_NAME must be set as the name of the direct input that this method manages
         @param:
-            <a_value> the param value given by the view
+            <a_value> the direct_input value given by the view
         @return:
-            a new normalized value to assign to the param of the tool
+            a new normalized value to assign to the direct_input of the tool
         """
         return a_value
 
@@ -236,7 +243,6 @@ class T_DIPAM_UNIT:
         @return:
             a list of dipam data unit id(s)
         """
-        new_val = {}
-        for k_in in a_inputs:
-            new_val[k_in] = None
-        return new_val
+        if a_inputs:
+            return [k_in for k_in in a_inputs]
+        return []

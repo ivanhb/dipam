@@ -49,6 +49,7 @@ class dipam_interface {
               "IMPORT_BTN_INPUT": document.getElementById('input_work_to_load'),
               //"SHUTDOWN_BTN": document.getElementById('shutdown_btn'),
               //timeline
+              "POPUP_CONTAINER": document.getElementById('popup_container'),
               "TIMELINE_CONTAINER": document.getElementById('timeline_container'),
               "START_BLOCK": document.getElementById('start_block'),
               "END_BLOCK": document.getElementById('end_block'),
@@ -324,9 +325,7 @@ class dipam_interface {
       return res_value;
     }
 
-  click_load_workflow(){
 
-  }
 
 
   click_run_workflow(){
@@ -674,6 +673,50 @@ class dipam_interface {
     }
   }
 
+  show_popupmsg(data, show_warning = false, show_info = false){
+    var keep_process_alive = true;
+    var msg_to_show = null;
+    if (data != undefined) {
+        if ("log_type" in data) {
+          if ((data["log_type"] != undefined) && (data["log_type"] != null)) {
+              if (data["log_type"] == "error") {
+                  msg_to_show = data["log_type"] +"<br>"+ data["log_msg"];
+                  keep_process_alive = false;
+              }else if (show_warning) {
+                if (data["log_type"] == "warning") {
+                  msg_to_show = data["log_type"] +"<br>"+ data["log_msg"];
+                }
+              }else if (show_info) {
+                if (data["log_type"] == "info") {
+                  msg_to_show = data["log_type"] +"<br>"+ data["log_msg"];
+                }
+              }
+          }
+        }
+    }else {
+      msg_to_show = "error" +"<br>"+ "the provided data is undefined";
+      keep_process_alive = false;
+    }
+
+    if (msg_to_show != null) {
+      var popup_msg_container = this.DOMS.WORKFLOW.POPUP_CONTAINER;
+      popup_msg_container.style.display = "block";
+      popup_msg_container.innerHTML = msg_to_show;
+      setTimeout(function() {
+        popup_msg_container.style.display = "none";
+      }, 5000);
+    }
+    return keep_process_alive;
+  }
+
+  show_popupmsg_warning(data){
+    return this.show_popupmsg(data, true, false);
+  }
+
+  show_popupmsg_all(data){
+    return this.show_popupmsg(data, true, true);
+  }
+
 
   //************************************************************//
   //********* Events handlers **********************************//
@@ -729,15 +772,12 @@ class dipam_interface {
                             .then(response => {return response.json();})
                             .then(data => {
                                 console.log("New node added (id = "+data["id"]+") Data = ", data);
+                                if (! (interface_instance.show_popupmsg(data)) ) {
+                                    return false;
+                                }
+
                                 //add a node to the diagram of a specific <type> with the corresponding <data>
                                 diagram_instance.add_node(type, data);
-
-                                //save also the new diagram workflow
-                                fetch("/save/workflow?time="+(new Date().getTime()).toString(), {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({workflow_data: diagram_instance.get_workflow_data()})
-                                });
 
                                 _elem_onclick_handle();
                                 diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click',[]);
@@ -747,9 +787,17 @@ class dipam_interface {
                                 //diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
                                 //document.getElementById('edit').click();
                                 ADD_UNIT_LIST.style.display = "none";
+
+                                // save also the new diagram workflow
+                                // with callback function in case of errors or warnings
+                                diagram_instance.save_workflow( false,interface_instance.show_popupmsg_warning);
                             })
                             .catch(error => {
-                                console.error('[ERROR] There has been a problem in the API to create a new data unit – ', error);
+                                interface_instance.show_popupmsg({
+                                    "data": null,
+                                    "log_type": "error",
+                                    "log_msg": "Error in the DIPAM API while creating a new data unit – "+error
+                                });
                             });
                 });
             })
@@ -810,22 +858,8 @@ class dipam_interface {
     $(this.DOMS.WORKFLOW.SAVE_BTN).on("click", function() {
           //e.preventDefault();
           document.getElementById('list_options_trigger').click();
-          //interface_instance.click_save_workflow();
-          var workflow_data = diagram_instance.get_workflow_data();
-          console.log("Saving ... ",workflow_data);
-
-          // Use the fetch API to send a POST request
-          fetch("/save/workflow?time="+(new Date().getTime()).toString(), {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({workflow_data: workflow_data, store_checkpoint: true})
-          })
-          .then(response => {return response;})
-          .then(data => {
-            console.log('Success:', data);
-            interface_instance.DOMS.WORKFLOW.SAVE_BTN_DOWNLOAD.click();
-          })
-          .catch(error => {console.error('Error:', error);});
+          var _data = diagram_instance.save_workflow(store_checkpoint = true);
+          interface_instance.show_popupmsg(_data);
     });
 
     $(this.DOMS.WORKFLOW.EXPORT_BTN).on("click", function() {

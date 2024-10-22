@@ -17,8 +17,8 @@ class T_TABCUTTER(T_DIPAM_UNIT):
             description = "This tool takes a table as input and splits it in more tables",
             family = "General",
 
-            param = [
-                ("p_rowsnum",True)
+            direct_input = [
+                ("din_rowsnum",True)
             ],
 
             input = [
@@ -36,8 +36,8 @@ class T_TABCUTTER(T_DIPAM_UNIT):
     #   Each method describes how to normalize the value of a specific parameter returned from the view
     #   The method to manage a param must be named as: param_manager__{PARAM_NAME}__(p_val)
     #   -----
-    def param_manager__p_rowsnum__(self, p_val):
+    def direct_input_manager__din_rowsnum__(self, _val):
         try:
-            return int( p_val.strip() )
+            return int( _val.strip() )
         except:
-            return None, "error", "The value of this param is not supported"
+            return None, "error", "The row number value is not supported"

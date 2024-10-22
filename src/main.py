@@ -47,10 +47,8 @@ DIPAM_SRC_DIR = "src"
 
 
 # DIPAM globs: config and runtime
-dipam_messenger = DIPAM_MESSENGER()
 dipam_config = DIPAM_CONFIG(  os.path.join( DIPAM_SRC_DIR, "app","base","config.yaml" )  )
 dipam_app_dir = dipam_config.get_config_value("dirs.dipam_app")
-
 dipam_runtime = DIPAM_RUNTIME(dipam_config)
 
 
@@ -97,9 +95,9 @@ def _save(type):
                     os.path.join( dipam_app_dir, "runtime" ),
                     os.path.join( dipam_app_dir, "data", "checkpoint" )
                 )
-                
-        return dipam_messenger.build_view_msg(code=200)
-    return dipam_messenger.build_view_msg(code=304)
+
+        return DIPAM_MESSENGER.build_view_msg(code=200)
+    return DIPAM_MESSENGER.build_view_msg(code=304)
 
 @app.route("/load/<type>",methods = ['POST'])
 def _load(type):
@@ -290,20 +288,12 @@ def _save_runtime_unit():
         unit_data = data.get('data')
         if unit_data:
             print("Saving the data",unit_data," – of: ", unit_id)
-
             # Save unit data, and specifiy source_is_view to True
             # This also saves/updates the runtime index metadata
             res_save  = dipam_runtime.save_unit_data(unit_data, unit_id, True)
-            if isinstance(res_save, tuple):
-                return dipam_messenger.build_view_msg(res_save)
+            return DIPAM_MESSENGER.build_view_msg(res_save)
 
-            new_value = res_save[0]
-            storage_dir = res_save[1]
-
-            # Save the status of the runtime
-            dipam_runtime.save_runtime_status(storage_dir)
-
-    return dipam_messenger.build_view_msg(new_value)
+    return DIPAM_MESSENGER.build_view_msg(code = 304)
 
 
 @app.route('/runtime/check_compatibility',methods=['GET'])

@@ -21,22 +21,33 @@ def mkjson_at(path, name, data):
         json.dump(data, json_file, indent=4)
     return file_path
 
-def copy_dir_to(dir, dest_dir):
-    """
-    Copy a dir <dir> into a directory <dest_dir>
-    """
-    source_dir_name = dir.split(os.path.sep)[-1]
-    dest_dir_full_path = os.path.join(dest_dir,source_dir_name)
+import os
+import shutil
 
-    # in case it exists first remove it
-    if os.path.exists(dest_dir_full_path):
-        shutil.rmtree(dest_dir_full_path)
 
-    shutil.copytree(
-        dir,
-        dest_dir_full_path
-    )
-    return dest_dir_full_path
+def copy_dir_to(source_dir, dest_dir):
+    """
+    Copy a directory <source_dir> into a destination directory <dest_dir>.
+    @param:
+        source_dir (str): The directory to be copied.
+        dest_dir (str): The destination directory where the copy will be placed.
+    @return:
+        str: The full path to the copied directory.
+    """
+    # Get the name of the source directory
+    source_dir_name = os.path.basename(os.path.normpath(source_dir))
+    dest_dir_full_path = os.path.join(dest_dir, source_dir_name)
+
+    try:
+        # If the destination directory already exists, remove it
+        if os.path.exists(dest_dir_full_path):
+            shutil.rmtree(dest_dir_full_path)
+
+        # Copy the directory
+        shutil.copytree(source_dir, dest_dir_full_path)
+        return dest_dir_full_path
+    except Exception as e:
+        return None
 
 
 def clear_directory(directory_path):

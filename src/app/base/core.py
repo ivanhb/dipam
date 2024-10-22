@@ -3,10 +3,11 @@ import os
 import re
 import ast
 import json
-import app.base.util as util
 import zipfile
 import io
-from concurrent.futures import ThreadPoolExecutor
+
+import app.base.util as util
+from app.base.messenger import DIPAM_MESSENGER
 
 class DIPAM_RUNTIME:
 
@@ -122,13 +123,13 @@ class DIPAM_RUNTIME:
         self.runtime_units[unit_id] = new_unit
 
         # dump values on filesystem
-        if dump_values:
-            self.runtime_units[unit_id].write(
-                data = None,
-                source_is_view = False,
-                unit_base_dir = os.path.join(self.runtime_dir, "unit")
-            );
+        unit_runtime_dir = os.path.join(self.runtime_dir, "unit", unit_id)
+        if unit_type == "tool":
+            unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
 
+        if dump_values:
+            self.runtime_units[unit_id].write(None, False, unit_runtime_dir);
+            
         return new_unit
 
     def delete_unit(self, unit_id):
@@ -156,16 +157,19 @@ class DIPAM_RUNTIME:
         """
         unit_type = "data" if unit_id.startswith("d-") else "tool"
 
-        unit_runtime_dir = os.path.join(self.runtime_dir, "unit",unit_id)
+        # set the base runtime directory
+        unit_runtime_dir = os.path.join(self.runtime_dir, "unit", unit_id)
         if unit_type == "tool":
             unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
 
         res_write = self.runtime_units[unit_id].write(data, source_is_view, unit_runtime_dir)
-        if isinstance(res_write, tuple):
-            return res_write
 
-        new_value = self.runtime_units[unit_id].value
-        return [new_value, unit_runtime_dir]
+        res_app_msg = DIPAM_MESSENGER.build_app_msg(res_write)
+        if not res_app_msg[1] == "error":
+            return res_app_msg
+
+        self.save_runtime_status(unit_runtime_dir)
+        return res_app_msg
 
 
     # LINK HANDLER METHODS

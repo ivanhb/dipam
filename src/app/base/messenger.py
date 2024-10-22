@@ -1,43 +1,56 @@
 
 class DIPAM_MESSENGER:
 
-    def __init__(
-        self,
-        msg = {}
-    ):
-        self.type = {
-            200: "DIPAM operated correctly",
-            304: "No operation done by DIPAM",
-            400: "Bad Request",
-            401: "Not authorized operation",
-            404: "Resource not found"
+    type = {
+        200: ("error","DIPAM operated correctly"),
+        304: ("warning","No operation done by DIPAM"),
+        400: ("error","Bad Request"),
+        401: ("error","Not authorized operation"),
+        404: ("error","Resource not found")
+    }
+
+    @classmethod
+    def build_app_msg(cls, data = None, code =None):
+        """
+        @param:
+            <data>: a single value or a tuple of 3 items storing: (data, log_type, log_msg)
+                e.g. "Hi my name is Ivan" or (None, 'error', 'Some mandatory parameters are not set')
+            <code>: a code for the log_type (e.g. 200, 400, etc)
+        @return:
+            a Tuple storing the data, log_type, and log_msg
+        """
+        # if data is already a tuple
+        if data:
+            if isinstance(data, tuple):
+                return data
+            else:
+                return (data, None, None)
+        if code:
+            return (None, cls.type[code][0], cls.type[code][1])
+        return (None,None,None)
+
+    @classmethod
+    def build_view_msg(cls, data=None, code=None):
+        """
+        @param:
+            <data>: a tuple of 3 items storing: (data, log_type, log_msg)
+                e.g. (None, 'error', 'Some mandatory parameters are not set')
+            <code>: a code for the log_type (e.g. 200, 400, etc)
+        @return:
+            a JSON storing the data, log_type, and log_msg
+        """
+        res = {
+            "data": None,
+            "log_type": None,
+            "log_msg": None
         }
 
+        if isinstance(data,tuple) and len(data) == 3:
+            res["data"], res["log_type"], res["log_msg"] = data[:3]
+        elif data:
+            res["data"], res["log_type"], res["log_msg"] = data, "success", None
 
-    def build_app_msg(self, data, msg, type = "error"):
-        if type == "error":
-            return data,"[ERROR] "+msg
-        if type == "warning":
-            return data,"[WARNING] "+msg
-        return data,"[INFO] "+msg
-
-
-    def build_view_msg(self, data= None, code = None, integrate_data = False):
-        """
-        """
         if code:
-            return self.type[code], code
-        elif isinstance(data,tuple):
-            if data[1].startswith("[ERROR]"):
-                return self.type[400] +" – "+ data[1], 400
+            res["data"], res["log_type"], res["log_msg"] = None, cls.type[code][0], cls.type[code][1]
 
-            elif data[1].startswith("[WARNING]"):
-                return self.type[304] +" – "+ data[1], 304
-        else:
-            if data == None:
-                return self.type[304], 304
-
-        if integrate_data:
-            return data, 200
-
-        return self.type[200], 200
+        return res
