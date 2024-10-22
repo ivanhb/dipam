@@ -1,5 +1,5 @@
 # Always import:
-from app.unit.data.__d_dipam__ import D_DIPAM_UNIT
+from app.unit.data.base.__d_dipam__ import D_DIPAM_UNIT
 
 import os
 import csv
@@ -18,10 +18,13 @@ class D_TABLE(D_DIPAM_UNIT):
             description = "A general table type of data (in .csv or .tsv format)",
             family = "General"
         )
-        # custom attributes
+
+        # set the attributes of this data unit
         self.header = None
         self.rows_limit = None
         self.tab_direct_raw = None
+
+        # set the initial value of this data unit
         self.value = []
 
     def store_value(self, unit_dir_path):
@@ -92,18 +95,16 @@ class D_TABLE(D_DIPAM_UNIT):
     def direct_input_manager(self, a_value):
         """
         """
-        if "tab_direct_raw" in a_value:
-            try:
-                res = []
-                rows = a_value["tab_direct_raw"].strip().split("\n")
-                if len(rows) > 0:
-                    rows = [row.split(",") for row in rows]
-                    header = rows[0]
-                    for r_cells in rows:
-                        if len(r_cells) != len(header):
-                            return None, "error", "The provided value is not convertable into table format – rows have different number of cells"
-                        res.append(r_cells)
-                return res
-            except:
-                return None, "error", "The provided value is not convertable into table format"
-        return None, "error", "No values have been provided"
+        try:
+            res = []
+            rows = a_value["tab_direct_raw"].strip().split("\n")
+            if len(rows) > 0:
+                rows = [row.split(",") for row in rows]
+                header = rows[0]
+                for r_cells in rows:
+                    if len(r_cells) != len(header):
+                        return None, "error", "The provided value is not convertable into table format – rows have different number of cells"
+                    res.append(r_cells)
+            return res
+        except:
+            return None, "error", "The provided value is not convertable into table format"

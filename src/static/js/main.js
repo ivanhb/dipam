@@ -42,7 +42,8 @@ vw_interface.set_events();
 //******************************************//
 //********** First Operations **************//
 //******************************************//
-vw_interface.build_overview(diagram_instance.get_gen_elem('diagram'));
+
+vw_interface.build_overview(  diagram_instance.get_diagram()  );
 vw_interface.click_overview_nav();
 if (check_updates) {
   vw_interface.check_version();

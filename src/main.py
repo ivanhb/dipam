@@ -269,12 +269,12 @@ def _add_link():
     source_id = request.args.get('source')
     target_id = request.args.get('target')
     if source_id and target_id:
-        dipam_runtime.add_link(
+        res = dipam_runtime.add_link(
             source_id,
             target_id
         )
-        return "Link done"
-    return "[ERROR]: value not specified", 400
+        DIPAM_MESSENGER.build_view_msg(res)
+    return DIPAM_MESSENGER.build_view_msg( (False, "error", "Source/Target Id(s) are not specified") )
 
 
 @app.route("/runtime/save_unit",methods = ['POST'])

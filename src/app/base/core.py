@@ -8,6 +8,7 @@ import io
 
 import app.base.util as util
 from app.base.messenger import DIPAM_MESSENGER
+from app.base.__edge_dipam__ import EDGE_DIPAM_UNIT
 
 class DIPAM_RUNTIME:
 
@@ -18,6 +19,7 @@ class DIPAM_RUNTIME:
 
         self.unit_base = {
             "diagram": dipam_config.get_base_unit("diagram"),
+            "edge": dipam_config.get_base_unit("edge"),
             "data": dipam_config.get_base_unit("data"),
             "tool": dipam_config.get_base_unit("tool")
         }
@@ -129,7 +131,7 @@ class DIPAM_RUNTIME:
 
         if dump_values:
             self.runtime_units[unit_id].write(None, False, unit_runtime_dir);
-            
+
         return new_unit
 
     def delete_unit(self, unit_id):
@@ -187,22 +189,11 @@ class DIPAM_RUNTIME:
         """
         # check if both source and target are part of runtime units;
         if source_id in self.runtime_units and target_id in self.runtime_units:
-            # check if source is compatible with target;
-            # i.e., source output might be connected to tool input
-            if self.check_unit_compatibility(source_id, target_id):
-
-                s_obj = self.runtime_units[source_id]
-                t_obj = self.runtime_units[target_id]
-
-                input_data = [s_obj]
-                if s_obj.type == "tool":
-                    input_data = s_obj.output
-
-                t_obj.set_data_input( input_data )
-                return True
-
-        # for all other cases
-        return False
+            source_unit = self.runtime_units[source_id]
+            target_unit = self.runtime_units[target_id]
+            target_unit.value.input[ source_unit.unit_class ] = source_id
+            return True, "info", "Link added"
+        return False, "error", "Something worng happend"
 
     def delete_link(self, source_id, target_id):
         """
@@ -269,18 +260,26 @@ class DIPAM_RUNTIME:
         @return:
             HTML content ready to be inserted in the interface
         """
-        base_view_fpath = None
-        unit_type = None
-        if unit_id.startswith("diagram"):
+        if unit_id.startswith("e-"):
+            base_view_fpath = self.unit_base["edge"]["view_fpath"]
+            return EDGE_DIPAM_UNIT.gen_view_template(
+                base_view_fpath,
+                data = {"id":unit_id}
+            )
+
+        elif unit_id.startswith("diagram"):
             base_view_fpath = self.unit_base["diagram"]["view_fpath"]
-            return self.diagram_unit.gen_view_template(base_view_fpath)
-        elif unit_id.startswith("d-"):
+            return self.diagram_unit.gen_view_template(
+                base_view_fpath
+            )
+
+        unit_type = None
+        if unit_id.startswith("d-"):
             unit_type = "data"
-            base_view_fpath = self.unit_base["data"]["view_fpath"]
         elif unit_id.startswith("t-"):
             unit_type = "tool"
-            base_view_fpath = self.unit_base["tool"]["view_fpath"]
 
+        base_view_fpath = self.unit_base[unit_type]["view_fpath"]
         class_name = self.runtime_units[unit_id].__class__.__name__
         unit_view_fpath = self.unit_index[unit_type][class_name]["view_fpath"]
 
@@ -394,12 +393,19 @@ class DIPAM_CONFIG:
                 fname = "t_dipam"
 
             return {
-                "model_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.py"),
-                "view_fpath": os.path.join(dir,"unit",unit_type,"__"+fname+"__.html")
+                "model_fpath": os.path.join(dir,"unit",unit_type,"base","__"+fname+"__.py"),
+                "view_fpath": os.path.join(dir,"unit",unit_type,"base","__"+fname+"__.html")
             }
         elif unit_type=="diagram":
             fname = "diagram_dipam"
             return {
                 "model_fpath": os.path.join(dir,"base","__"+fname+"__.py"),
+                "view_fpath": os.path.join(dir,"base","__"+fname+"__.html")
+            }
+
+        elif unit_type=="edge":
+            fname = "edge_dipam"
+            return {
+                "model_fpath": None,
                 "view_fpath": os.path.join(dir,"base","__"+fname+"__.html")
             }

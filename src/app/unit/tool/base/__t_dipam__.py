@@ -48,8 +48,8 @@ class T_DIPAM_UNIT:
 
         self.value = {
             "direct_input": {},
-            "input": [],
-            "output": []
+            "input": {},
+            "output": {}
         }
 
     def set_id(self, id):
@@ -120,18 +120,6 @@ class T_DIPAM_UNIT:
             if "input" in data:
                 new_value["input"] = self.inputs_manage(  data["input"]  )
 
-
-            # # check if all mandatory params have been set
-            # check_mandatory = all(_k in new_value["direct_input"] and new_value["direct_input"][_k] != None for _k in [_p[0] for _p in self.direct_input if _p[1] ])
-            # if not check_mandatory:
-            #     return None,"error","Some mandatory direct inputs are not set"
-            #
-            # # check if all mandatory inputs have been set
-            # check_mandatory = all(_k in new_value["input"] for _k in [_in[0] for _in in self.input if _in[1] ])
-            # if not check_mandatory:
-            #     return None,"error","Some mandatory inputs are not set"
-
-
         self.value = new_value
         if unit_base_dir:
             new_val = self.store_value(unit_base_dir)
@@ -161,6 +149,16 @@ class T_DIPAM_UNIT:
         [NOT-OVERWRITABLE]
         Executes the process and returns the corresponding output
         """
+        # check if all mandatory params have been set
+        check_mandatory = all(_k in self.value["direct_input"] for _k in [_p[0] for _p in self.direct_input if _p[1] ])
+        if not check_mandatory:
+            return None,"error","Some mandatory direct inputs are not set"
+
+        # check if all mandatory inputs have been set
+        check_mandatory = all(_k in self.value["input"] for _k in [_in[0] for _in in self.input if _in[1] ])
+        if not check_mandatory:
+            return None,"error","Some mandatory inputs are not set"
+
         self.output = self.process()
         return self.output
 
@@ -243,6 +241,4 @@ class T_DIPAM_UNIT:
         @return:
             a list of dipam data unit id(s)
         """
-        if a_inputs:
-            return [k_in for k_in in a_inputs]
-        return []
+        return a_inputs

@@ -1,5 +1,5 @@
 # Always import:
-from app.unit.tool.__t_dipam__ import T_DIPAM_UNIT
+from app.unit.tool.base.__t_dipam__ import T_DIPAM_UNIT
 
 class T_TABCUTTER(T_DIPAM_UNIT):
     """

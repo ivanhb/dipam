@@ -1,5 +1,5 @@
 # Always import:
-from app.unit.data.__d_dipam__ import D_DIPAM_UNIT
+from app.unit.data.base.__d_dipam__ import D_DIPAM_UNIT
 
 import os
 

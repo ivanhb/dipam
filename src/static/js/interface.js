@@ -77,7 +77,7 @@ class dipam_interface {
 
     set_corresponding_diagram(diagram){
       this.DIAGRAM_INSTANCE_OBJ = diagram;
-      this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_obj();
+      this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_cy();
       //a temp internal data structure
       this.temp_dipam_value = {};
 
@@ -146,6 +146,9 @@ class dipam_interface {
         elem_data = diagram_instance.get_diagram();
         elem_id = "diagram";
       }
+
+      console.log("Elem <",elem_id,"> of type:",elem_class,", has been clicked. Data:", elem);
+
       /*build info only if the */
       fetch("/runtime/get_template?id="+elem_id)
           .then(response => { return response.json(); })
@@ -177,7 +180,6 @@ class dipam_interface {
       if ('_private' in node) {
         node = node._private;
       }
-      console.log("Node clicked:",node);
 
       // Rebuild info only if its a new node
       if (this.DOMS.CONTROL.BASE.children.length === 0) {
@@ -780,11 +782,11 @@ class dipam_interface {
                                 diagram_instance.add_node(type, data);
 
                                 _elem_onclick_handle();
-                                diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click',[]);
+                                diagram_instance.get_diagram_cy().nodes()[diagram_instance.get_diagram_cy().nodes().length - 1].emit('click',[]);
                                 diagram_instance.fit_diagram();
                                 // TODO v1.0
                                 //interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
-                                //diagram_instance.get_diagram_obj().nodes()[diagram_instance.get_diagram_obj().nodes().length - 1].emit('click', []);
+                                //diagram_instance.get_diagram_cy().nodes()[diagram_instance.get_diagram_cy().nodes().length - 1].emit('click', []);
                                 //document.getElementById('edit').click();
                                 ADD_UNIT_LIST.style.display = "none";
 
@@ -858,8 +860,7 @@ class dipam_interface {
     $(this.DOMS.WORKFLOW.SAVE_BTN).on("click", function() {
           //e.preventDefault();
           document.getElementById('list_options_trigger').click();
-          var _data = diagram_instance.save_workflow(store_checkpoint = true);
-          interface_instance.show_popupmsg(_data);
+          var _data = diagram_instance.save_workflow( true, interface_instance.show_popupmsg_warning);
     });
 
     $(this.DOMS.WORKFLOW.EXPORT_BTN).on("click", function() {
@@ -928,8 +929,8 @@ class dipam_interface {
         diagram_cy.edges().on('click', function(e){
             //console.log("Edge clicked !", this._private.data.id,this);
             //diagram_instance.click_elem_style(this,'edge');
-            //interface_instance.click_on_edge(this);
-            //elem_remove_handler();
+            interface_instance.click_on_edge(this);
+            elem_remove_handler();
         });
 
         function elem_remove_handler() {

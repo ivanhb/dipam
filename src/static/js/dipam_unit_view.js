@@ -68,7 +68,12 @@ class DIPAM_UNIT_VIEW {
 
     // check if its a tool
     if (node_type == "tool") {
-      res["input"] = diagram_instance.get_connected_nodes(node_id, "incoming");
+      var t_node = diagram_instance.get_node_by_id(node_id);
+      res["input"] = {};
+      if ("input" in t_node._private.data.value) {
+        res["input"] = t_node._private.data.value["input"];
+        //res["input"] = diagram_instance.get_connected_nodes(node_id, "incoming");
+      }
     }
 
     return res;
@@ -87,7 +92,7 @@ class DIPAM_UNIT_VIEW {
         var _id = $(this).attr('data-dipam-metavalue');
         $(this).val( current_value[_id] );
     });
-    console.log(current_value);
+
     if ("direct_input" in current_value) {
       $('#input_section').find('[data-dipam-value]').each(function() {
           var _id = $(this).attr('data-dipam-value');

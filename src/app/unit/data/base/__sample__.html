@@ -1,0 +1,31 @@
+
+<!--
+To init a DIPAM data unit template you can define 3 different components:
+
+(1) HTML-TEMPLATE - the actual HTML template of the unit. The value assignment for the Dipam Data Units might happen in two different ways:
+  (1.1) Directly from the view interface: in this case each DOM must be mapped to a dipam unit view value; this is done by adding a <data-dipam-value> attribute in the desired DOM and assign to it the name of the view value variable;
+    e.g. data-dipam-value="input_freetxt", in this case input_freetxt must be an attribute of the class in __sample__.py
+  (1.2) By file: by adding a DIV with a <data-dipam-filevalue> attribute in it;
+    you can add additional attributes in the DOM, such as:
+    * <data-multiple> to accept more than one file to be uploaded
+
+[DEPRECATED] (2) VIEW-VALUE – define the view value of this dipam data unit;
+
+(3) EVENT-TRIGGER - here you can define JS code related to the defined DOMs of (1)
+-->
+
+
+<!--START:HTML-TEMPLATE-->
+<p>This is an HTML element mapped to a dipam unit view value (input_freetxt)</p>
+<input placeholder="Set a string value ..." type="text" data-dipam-value="input_freetxt"></input>
+<p>This is another HTML element mapped to a dipam unit view value (div_freetext)</p>
+<div data-dipam-value="div_freetext"></div>
+<!--HTML-TEMPLATE:END-->
+
+
+<!--START:VIEW-VALUE-->
+<!--VIEW-VALUE:END-->
+
+
+<!--START:EVENT-TRIGGER-->
+<!--EVENT-TRIGGER:END-->

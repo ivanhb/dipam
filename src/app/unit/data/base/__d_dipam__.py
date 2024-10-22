@@ -100,6 +100,10 @@ class D_DIPAM_UNIT:
 
             elif "direct_input" in data:
                 try:
+
+                    if not all( [hasattr(self, _k) for _k in data["direct_input"].keys()] ):
+                        return None,"error","Some of the view values have no corresponding attributes in the unit class or have not been provided"
+
                     new_value = self.direct_input_manager(data["direct_input"])
                     msg = DIPAM_MESSENGER.build_app_msg(new_value)
                     if msg[1] == "error":

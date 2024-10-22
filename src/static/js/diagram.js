@@ -138,6 +138,18 @@ class dipam_diagram {
     this.get_edges().style(this.STYLE.edge.edge);
   }
 
+  zoom_in(){
+    this.cy.zoom(this.cy.zoom() + 0.1);
+  }
+
+  zoom_out(){
+    this.cy.zoom(this.cy.zoom() - 0.1);
+  }
+
+  fit_diagram(){
+    this.cy.fit();
+  }
+
 
   set_diagram_layout(workflow) {
     var list_nodes = workflow.nodes;
@@ -154,6 +166,7 @@ class dipam_diagram {
     }
   }
 
+
   set_events(){
     var eh = this.cy.edgehandles();
     this.cy.on('ehshow', (event, sourceNode) => {
@@ -162,23 +175,16 @@ class dipam_diagram {
           }
     });
   }
-  get_diagram_obj(){
+  get_diagram(){
+    return this.DIAGRAM_GENERAL;
+  }
+  get_diagram_cy(){
     return this.cy;
   }
   get_undo_redo() {
     return this.cy_undo_redo;
   }
-  get_gen_elem(type){
-    switch (type) {
-      case 'diagram':
-        return this.get_diagram();
-        break;
-      case 'edge':
-        return this.get_edges();
-      default:
-        return this.get_nodes(type);
-    }
-  }
+
   get_gen_elem_by_id(id){
     if (this.get_diagram().data.id == id) {
       return this.get_diagram();
@@ -190,15 +196,14 @@ class dipam_diagram {
     return -1;
   }
 
-  get_diagram(){
-    return this.DIAGRAM_GENERAL;
-  }
+
   get_nodes(type = null){
     if (type != null) {
       return this.cy.nodes('node[type = "'+type+'"]');
     }
     return this.cy.nodes('node[type = "data"]').union(this.cy.nodes('node[type = "tool"]'));
   }
+
   get_node_by_id(n_id){
     var nodes = this.cy.nodes('node[id = "'+n_id+'"]');
     if (nodes.length == 1) {
@@ -206,6 +211,7 @@ class dipam_diagram {
     }
     return null;
   }
+
   set_node_data(n_id, n_data){
     var nodes = this.cy.nodes('node[id = "'+n_id+'"]');
     if (nodes.length == 1) {
@@ -269,18 +275,6 @@ class dipam_diagram {
       return {"data":res_obj};
     }
 
-  }
-  get_keys(type){
-    var res = {'label':[],'value':[]};
-    if (this.CONFIG.hasOwnProperty(type)) {
-      for (var a_k in this.CONFIG[type]) {
-        res.value.push(a_k);
-        res.label.push(this.CONFIG[type][a_k].label);
-      }
-    }
-    return res;
-  }
-  get_data_keys(){
   }
 
   get_terminal_tools(){
@@ -347,6 +341,8 @@ class dipam_diagram {
   }
 
 
+  // <---- DIPAM v2.0
+
   /**
   * Add a node (data or tool) to the diagram
   * @param {string} n_type – the type of the node to be added, it's either "data" or "tool"
@@ -388,7 +384,7 @@ class dipam_diagram {
     return node_obj;
   }
 
-  // <---- DIPAM v2.0
+
   /**
   * Things to do after an edge is created;
   * an API call is done to create the link between the two units;
@@ -400,7 +396,9 @@ class dipam_diagram {
     var source_node = edge._private.data.source;
     var target_node = edge._private.data.target;
     var target_node_input = target_node._private.data.value.input;
-    target_node_input = target_node_input.filter(item => item !== source_node);
+    if (source_node in target_node_input) {
+        delete target_node_input[source_node];
+    }
     return true;
   }
 
@@ -412,10 +410,9 @@ class dipam_diagram {
 
     // add it as input to the target node
     if (!("input" in target_node._private.data.value)) {
-      target_node._private.data.value["input"] = [];
+      target_node._private.data.value["input"] = {};
     }
-    target_node._private.data.value.input.push(edge_data.source);
-
+    target_node._private.data.value.input[ source_node._private.data["class"] ] = edge_data.source;
 
     if (!(target_node._private.active)) {
       console.log("Can't connect to non-active nodes");
@@ -435,12 +432,12 @@ class dipam_diagram {
                 console.log("New edge creates a cycle!");
               }else {
                 // API to create the link between the two units
-                // fetch("/runtime/add_link?source="+edge_data.source+"&target="+edge_data.target)
-                //     .then(response => {
-                //       this.cy_undo_redo.do("add", cy_instance.$("#"+edge_data.id));
-                //       console.log("The edge was created:",response);
-                //     });
-                return diagram_instance.save_workflow();
+                fetch("/runtime/add_link?source="+edge_data.source+"&target="+edge_data.target)
+                  .then(response => response.json())
+                  .then(data => {
+                    return diagram_instance.save_workflow();
+                  })
+                  .catch(error => { return {"data":null, "log_type":"error", "log_msg":""} });
               }
             }
           });
@@ -473,23 +470,6 @@ class dipam_diagram {
       }
   }
 
-  get_connected_nodes(_id, direction){
-    let node = this.cy.getElementById(_id);
-
-    let connectedNodes = node.connectedEdges().connectedNodes();
-    if (direction === 'incoming') {
-        connectedNodes = node.incomers('node');
-    } else if (direction === 'outgoing') {
-        connectedNodes = node.outgoers('node');
-    }
-
-    // Extract the IDs of the connected nodes
-    let connectedNodeIds = connectedNodes.map(function(n) {
-        return n.id();
-    });
-    return connectedNodeIds;
-  }
-
   gen_edge_data(source_id,target_id){
     var edge_obj = { data: {} , group: 'edges'};
     edge_obj.data.id = "e-"+source_id+"_"+target_id;
@@ -510,95 +490,6 @@ class dipam_diagram {
     return this.DIAGRAM_GENERAL;
   }
 
-  //Update an element
-  // (1) Its data in the cy diagram
-  // (2) Its style in the cy diagram
-  // (3) The realtime correlated items (Remove edges in case not suitable anymore)
-  // (4) The real time compatible elements of the cy diagram
-  update_elem(id, type, data){
-    //console.log("Data to update: ",data);
-    //first check if it's the Diagram
-    if (id == this.DIAGRAM_GENERAL.data.id) {
-      for (var k_data in data) {
-        if (data[k_data] != -1) {
-          if (k_data == "name") {
-            if (this.DIAGRAM_GENERAL.data.hasOwnProperty(k_data)) {
-              this.DIAGRAM_GENERAL.data[k_data] = data[k_data];
-            }
-          }else {
-            //is a param
-            if (this.DIAGRAM_GENERAL.data.hasOwnProperty("param")) {
-              this.DIAGRAM_GENERAL.data.param[k_data] = data[k_data];
-            }
-          }
-        }
-      }
-      return this.DIAGRAM_GENERAL;
-    }
-
-    var d_elem = this.cy.getElementById(id);
-
-    // (1) update it's data first
-    var value_updated = false;
-    for (var k_data in data) {
-      if (data[k_data] != -1) {
-
-        if (k_data == "value")
-          if (data.value != -1)
-            value_updated = true;
-
-        if (d_elem._private.data.hasOwnProperty(k_data)) {
-          d_elem._private.data[k_data] = data[k_data];
-        }else if ('param' in d_elem._private.data) {
-          //its a param
-          if (d_elem._private.data.param.hasOwnProperty(k_data)) {
-            d_elem._private.data.param[k_data] = data[k_data];
-          }
-        }
-      }
-    }
-    if (value_updated) {
-        var new_node_data = this.gen_node_data(type, data.value).data;
-        d_elem._private.data.value = data.value;
-        d_elem._private.data.param = new_node_data.param;
-    }
-
-    // (2) Its style in the cy diagram
-    // In case is an Edge then STOP here!
-    this.adapt_style(d_elem);
-    if(d_elem.isEdge()){
-      return d_elem;
-    }
-
-    // (3) The realtime correlated items (Remove neighborhood edges in case not suitable anymore)
-    // In v2.0:
-    this.apply_node_compatibility(id);
-
-    // In v1.0:
-    //this.check_node_compatibility(d_elem, true);
-    // (4) The real time compatible elements of the cy diagram
-    //this.check_node_compatibility(d_elem);
-
-    //update diagram
-    this.cy.style().update();
-
-    //undo_redo update
-    //this.cy_undo_redo.do("add", this.cy.$("#"+d_elem._private.data.id));
-
-    return d_elem;
-  }
-
-  //adapt the style to an element:<elem>
-  //returns the new style of the element
-  adapt_style(elem){
-    var elem_type = 'node';
-    if(elem.isEdge()){
-      elem_type = 'edge';
-    }
-    var elem_style = this.STYLE[elem_type][elem._private.data.type];
-    elem.style(elem_style);
-    return elem_style;
-  }
 
   // <---- DIPAM v2.0
   /**
@@ -871,17 +762,6 @@ class dipam_diagram {
         return false;
       }
     }
-  }
-
-
-  zoom_in(){
-    this.cy.zoom(this.cy.zoom() + 0.1);
-  }
-  zoom_out(){
-    this.cy.zoom(this.cy.zoom() - 0.1);
-  }
-  fit_diagram(){
-    this.cy.fit();
   }
 
 }
