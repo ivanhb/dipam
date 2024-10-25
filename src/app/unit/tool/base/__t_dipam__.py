@@ -84,7 +84,7 @@ class T_DIPAM_UNIT:
 
 
     # IO operations
-    def write(self, data = None, source_is_view = False, unit_base_dir = None):
+    def write_value(self, data = None, source_is_view = False, unit_base_dir = None):
 
         """
         [NOT-OVERWRITABLE]
@@ -122,9 +122,9 @@ class T_DIPAM_UNIT:
 
         self.value = new_value
         if unit_base_dir:
-            new_val = self.store_value(unit_base_dir)
+            self.store_value(unit_base_dir)
 
-        return new_val
+        return new_value
 
     def store_value(self, unit_dir_path):
         """
@@ -143,6 +143,15 @@ class T_DIPAM_UNIT:
             return self.value
         except:
             return None,"error","Something wrong happend while storing the tool values"
+
+    def read_value(self, unit_dir_path):
+        """
+        [NOT-OVERWRITABLE]
+        Reads the value of the unit; if <unit_dir_path> then it reads it from the filesystem;
+        """
+        file_path = os.path.join(unit_dir_path, str(self.id)+".json")
+        with open(file_path, 'r') as f_json:
+            return json.load(f_json)
 
     def tool_run(self):
         """
@@ -242,3 +251,23 @@ class T_DIPAM_UNIT:
             a list of dipam data unit id(s)
         """
         return a_inputs
+
+    def remove_input(self, din_id):
+        """
+        [NOT-OVERWRITABLE]
+        This method is responsible for removing an input from <self.value>;
+        @param:
+            <din_id> the id of the input (d_dipam)
+        @return:
+            True/False
+        """
+        new_val = {}
+        found_it = False, "warning", "element not found"
+        for k,v in self.value["input"].items():
+            if v != din_id:
+                new_val[k] = v
+            else:
+                found_it = True, "info", "element found and removed"
+
+        self.value = new_val
+        return found_it

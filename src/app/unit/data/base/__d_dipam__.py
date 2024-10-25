@@ -73,7 +73,7 @@ class D_DIPAM_UNIT:
     #   Methods to manage writing/updating self.value
     #   -----
 
-    def write(self, data = None, source_is_view = False, unit_base_dir = None):
+    def write_value(self, data = None, source_is_view = False, unit_base_dir = None):
         """
         [NOT-OVERWRITABLE]
         This method writes a given value into a "FILE" or "VALUE" (<type>);
@@ -113,9 +113,8 @@ class D_DIPAM_UNIT:
 
         # control if the new value passes the check
         _check = self.check_value(new_value)
-        msg = DIPAM_MESSENGER.build_app_msg(_check)
-        if msg[1] == "error":
-            return msg
+        if not _check:
+            return _check
 
         # control if the new value is different from the current one
         # stop here in case this was not the init of the unit
@@ -151,6 +150,13 @@ class D_DIPAM_UNIT:
             also it must always contain <unit_dir_path> as param
         """
         return True
+
+    def read_value(self, unit_dir_path):
+        """
+        [OVERWRITABLE]
+        Reads the value of the unit; <unit_dir_path> is the dir on file system to read data from;
+        """
+        return None
 
     def is_value_match(self, a_value):
         """

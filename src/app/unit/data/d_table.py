@@ -75,6 +75,19 @@ class D_TABLE(D_DIPAM_UNIT):
 
         return False
 
+    def read_value(self, unit_dir_path):
+        """
+        """
+        all_tab = []
+        for filename in os.listdir(unit_dir_path):
+            if filename.endswith('.csv'):
+                file_path = os.path.join(unit_dir_path, filename)
+                with open(file_path, mode='r', newline='') as csvfile:
+                    reader = csv.reader(csvfile)
+                    for row in reader:
+                        all_tab.append(row)
+        return all_tab
+
 
     def manage_view_file(self, l_files):
         new_value = []

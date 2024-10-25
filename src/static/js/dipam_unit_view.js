@@ -38,16 +38,18 @@ class DIPAM_UNIT_VIEW {
   * This methods goes throught the interface of the visulized node and reads all the input(s)
   * inputs are converted into: "direct-input", "file-input", and all the metadata (e.g., label, description)
   */
-  get_node_data_from_interface( node_id, node_type ) {
+  get_node_data_from_interface( node_id, node_type, include_metadata = false ) {
 
     var res = {};
 
     // (1) get metadata
+    res["metavalue"] = {}
     $('[data-dipam-metavalue]').each(function() {
         var _id = $(this).attr('data-dipam-metavalue');
-        res[_id] = $(this).val();
+        res["metavalue"][_id] = $(this).val();
     });
 
+    res["value"] = {}
     // (2) check for direct values
     var direct_values = {};
     $('#input_section').find('[data-dipam-value]').each(function() {
@@ -55,14 +57,14 @@ class DIPAM_UNIT_VIEW {
         direct_values[  _id  ] = $(this).val();
     });
     if (Object.keys(direct_values).length > 0) {
-      res["direct_input"] = direct_values;
+      res["value"]["direct_input"] = direct_values;
     }
 
     // (3) check if a file input is given instead
     const fileInput = document.getElementById('f_input');
     if (fileInput != undefined) {
       if (fileInput.files.length > 0) {
-        res["file_input"] = fileInput.files;
+        res["value"]["file_input"] = fileInput.files;
       }
     }
 
@@ -71,8 +73,7 @@ class DIPAM_UNIT_VIEW {
       var t_node = diagram_instance.get_node_by_id(node_id);
       res["input"] = {};
       if ("input" in t_node._private.data.value) {
-        res["input"] = t_node._private.data.value["input"];
-        //res["input"] = diagram_instance.get_connected_nodes(node_id, "incoming");
+        res["value"]["input"] = t_node._private.data.value["input"];
       }
     }
 
@@ -154,8 +155,11 @@ class DIPAM_UNIT_VIEW {
     }
 
 
-    if ((node_type == "tool") || (node_type == "data")) {
-      dipam_unit_value.set_node_interface_from_data(  node_id,node_type );
+    if ((node_type == "tool") || (node_type == "data") || (node_type == "edge")) {
+
+      if (node_type != "edge") {
+          dipam_unit_value.set_node_interface_from_data(  node_id,node_type );
+      }
 
       DOMS.EDIT_BUTTON.on('click', function() {
         if ($(this).text() === 'Edit') {
@@ -223,8 +227,8 @@ class DIPAM_UNIT_VIEW {
       });
 
       DOMS.REMOVE_BUTTON.on('click', function() {
-        diagram_instance.remove_elem(node_id);
-        diagram_instance.get_diagram_obj().emit('tap',[]);
+        diagram_instance.remove_elem( node_id, vw_interface.show_popupmsg_all );
+        diagram_instance.get_diagram_cy().emit('tap',[]);
       });
     }
 

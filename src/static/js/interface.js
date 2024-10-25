@@ -766,7 +766,7 @@ class dipam_interface {
                 }
                 ADD_UNIT_LIST.innerHTML = html_content;
                 ADD_UNIT_LIST.style.display = "block";
-                ADD_UNIT_LIST.className = "list-options "+unit_type+"-unit";
+                ADD_UNIT_LIST.className = "list-options "+unit_type+"-unit-text";
 
                 $(".dropdown-additem").on("click", function() {
 

@@ -59,13 +59,17 @@ class DIPAM_RUNTIME:
         workflow = json.load(open( os.path.join(dir_dipam_app,"runtime","workflow.json") ))
         for _node in workflow["nodes"]:
             _node_data = _node["data"]
-            self.add_unit(
+            _n = self.add_unit(
                 _node_data["type"],
                 _node_data["class"],
                 _node_data["id"],
-                _node_data["value"],
-                False
+                True
             )
+
+            # TEST
+            for attr, value in _n.__dict__.items():
+                print(f"{attr}: {value}")
+            print("\n")
 
         return True
 
@@ -91,7 +95,7 @@ class DIPAM_RUNTIME:
 
     # UNIT HANDLER METHODS
     # ------
-    def add_unit(self, unit_type, unit_class = None, unit_id = None, unit_metadata = None, dump_values = True):
+    def add_unit(self, unit_type, unit_class = None, unit_id = None, reload_value = False):
         """
         """
         unit_type = unit_type.lower()
@@ -119,18 +123,27 @@ class DIPAM_RUNTIME:
             # use the given one
             new_unit.set_id(unit_id)
 
-        if unit_metadata:
-            new_unit.set_meta_attributes(unit_metadata)
-
-        self.runtime_units[unit_id] = new_unit
-
-        # dump values on filesystem
         unit_runtime_dir = os.path.join(self.runtime_dir, "unit", unit_id)
         if unit_type == "tool":
             unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
 
-        if dump_values:
-            self.runtime_units[unit_id].write(None, False, unit_runtime_dir);
+        # either:
+        #   (1) reload and don't dump on file filesystem
+        #   (2) or init the unit data in the filesystem
+        value_data = None
+        store_unit_dir = None
+        if reload_value:
+            value_data = new_unit.read_value( unit_runtime_dir )
+            store_unit_dir = unit_runtime_dir
+
+
+        new_unit.write_value(
+            data = value_data,
+            source_is_view = False,
+            unit_base_dir = store_unit_dir
+        )
+
+        self.runtime_units[unit_id] = new_unit
 
         return new_unit
 
@@ -164,7 +177,7 @@ class DIPAM_RUNTIME:
         if unit_type == "tool":
             unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
 
-        res_write = self.runtime_units[unit_id].write(data, source_is_view, unit_runtime_dir)
+        res_write = self.runtime_units[unit_id].write_value(data["value"], source_is_view, unit_runtime_dir)
 
         res_app_msg = DIPAM_MESSENGER.build_app_msg(res_write)
         if not res_app_msg[1] == "error":
@@ -207,10 +220,8 @@ class DIPAM_RUNTIME:
         # check if both source and target are part of runtime units;
         if source_id in self.runtime_units and target_id in self.runtime_units:
             # delete it from the inputs of target
-            t_obj = self.runtime_units[target_id]
-            t_obj.delete_data_input(source_id)
-            return True
-        return False
+            return self.runtime_units[target_id].remove_input(source_id)
+        return False, "error", "source/target node of the edge has not been found"
 
     def check_unit_compatibility(self, unit_id, unit_b_id = None):
         """

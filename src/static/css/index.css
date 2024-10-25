@@ -754,7 +754,6 @@ ul + label{
 }
 
 
-
 .tool-unit{
   background-color: var(--tool-color-hover);
 }
@@ -764,9 +763,7 @@ ul + label{
 .tool-unit select{
   background-color: var(--tool-color-hover);
 }
-.tool-unit a{
-  color: white;
-}
+
 .data-unit{
   background-color: var(--data-color-hover);
 }
@@ -776,16 +773,17 @@ ul + label{
 .data-unit select{
   background-color: var(--data-color-hover);
 }
-.data-unit a{
+
+.data-unit a, .tool-unit a{
   color: white;
 }
-.diagram-unit{
+.diagram-unit, .edge-unit{
   background-color: var(--diagram-color);
 }
-.diagram-unit input{
+.diagram-unit input, .edge-unit{
   background-color: var(--diagram-color);
 }
-.diagram-unit textarea{
+.diagram-unit textarea, .edge-unit{
   background-color: var(--diagram-color);
 }
 

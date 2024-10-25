@@ -8,11 +8,36 @@ class dipam_diagram {
 
     this.STYLE = {
       node: {
-        tool: {'font-family': 'sans-serif', 'font-weight':"300", 'font-size':'14pt', 'shape': 'diamond','background-color': '#b56576'},
-        data: {'font-family': 'sans-serif', 'font-weight':"300", 'font-size':'14pt', 'shape': 'round-rectangle','background-color': '#2E9D99'},
+        tool: {
+          'font-family': 'sans-serif',
+          'font-weight':"300",
+          'font-size':'14pt',
+          'shape': 'diamond',
+          'background-image': this.gen_svg_gradient("rgba(144,80,94,0.5)","rgba(144,80,94,1)"),
+          'background-fit': 'cover',
+          'background-image-opacity': 1
+          //'background-color': '#b56576'
+        },
+        data: {
+          'font-family': 'sans-serif',
+          'font-weight':"300",
+          'font-size':'14pt',
+          'shape': 'round-rectangle',
+          'background-image': this.gen_svg_gradient("rgba(36,126,123,0.5)","rgba(36,126,123,1)"),
+          'background-fit': 'cover',
+          'background-image-opacity': 1
+          //'background-color': '#2E9D99'
+        },
       },
       edge:{
-        edge: {'line-color': '#bfbfbf', 'target-arrow-color': '#bfbfbf'}
+        edge: {
+          'line-fill': 'linear-gradient',
+          'line-gradient-stop-colors': 'rgba(79,79,79,1) rgba(169,169,169,1)',
+          'target-arrow-color': 'rgba(169,169,169,1)',
+          'target-arrow-shape': 'triangle',
+          'width': 2,
+          'curve-style': 'bezier'
+        }
       }
     };
 
@@ -136,6 +161,19 @@ class dipam_diagram {
     this.get_nodes('tool').style(this.STYLE.node.tool);
     this.get_nodes('data').style(this.STYLE.node.data);
     this.get_edges().style(this.STYLE.edge.edge);
+  }
+
+  gen_svg_gradient(startColor, endColor) {
+      const svgGradient = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:${startColor};stop-opacity:1" />
+            <stop offset="100%" style="stop-color:${endColor};stop-opacity:1" />
+          </linearGradient>
+          <rect width="10" height="10" fill="url(#gradient)" />
+        </svg>
+      `;
+      return `data:image/svg+xml;base64,${btoa(svgGradient)}`;
   }
 
   zoom_in(){
@@ -499,22 +537,32 @@ class dipam_diagram {
   * @param {elem_id} - id of the node to remove
   * @returns: the removed element
   */
-  remove_elem(elem_id){
+  remove_elem(elem_id,  f_callback = null){
+
+    var api_call = "";
+
     if ((elem_id.startsWith("d-")) || (elem_id.startsWith("t-"))){
-            return fetch("/runtime/delete_unit?value="+elem_id)
-                    .then(response => {return this.cy.remove("#"+elem_id);});
-    }else {
-      if (elem_id.startsWith("e-")) {
-        var edge_obj = this.cy.$("#"+elem_id);
-        var source_id = edge_obj.data("source");
-        var target_id = edge_obj.data("target");
-        return fetch("/runtime/delete_link?source="+source_id+"&target="+target_id)
-                .then(response => {return this.cy.remove("#"+elem_id);});
-      }
+      api_call = "/runtime/delete_unit?value="+elem_id;
     }
+    else if (elem_id.startsWith("e-")) {
+      var edge_obj = this.cy.$("#"+elem_id);
+      var source_id = edge_obj.data("source");
+      var target_id = edge_obj.data("target");
+      api_call = "/runtime/delete_link?source="+source_id+"&target="+target_id;
+    }
+
+    fetch(api_call)
+      .then(response => response.json())
+      .then(data => {
+          this.cy.remove("#"+elem_id);
+          if (f_callback != null) { f_callback(data); }
+          return data;
+        })
+        .catch(error => { return {"data":null, "log_type":"error", "log_msg":""} });
+
     // TODO: check this from dipam v1.0
-    this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
-    this.save_workflow();
+    //this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));
+    //this.save_workflow();
 
   }
   // DIPAM v2.0 ---->

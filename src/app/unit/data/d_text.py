@@ -26,6 +26,18 @@ class D_TEXT(D_DIPAM_UNIT):
     def is_value_match(self, a_value):
         return a_value == self.value
 
+    def read_value(self, unit_dir_path):
+        """
+        """
+        all_text = ""
+        for filename in os.listdir(unit_dir_path):
+            if filename.endswith('.txt'):
+                file_path = os.path.join(unit_dir_path, filename)
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    all_text += file.read()
+                    all_text += "\n"
+        return all_text
+
     def manage_view_file(self, l_files):
         new_value = ""
         for file in l_files:

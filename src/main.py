@@ -249,13 +249,13 @@ def _delete_link():
     source_id = request.args.get('source')
     target_id = request.args.get('target')
     if source_id and target_id:
-        dipam_runtime.delete_link(
+        res = dipam_runtime.delete_link(
             source_id,
             target_id
         )
-        return "Link deleted!", 200
-    return "[ERROR]: value(s) not specified", 400
-
+        return DIPAM_MESSENGER.build_view_msg(res)
+    return DIPAM_MESSENGER.build_view_msg( (False, "error", "value(s) not specified") )
+    
 
 @app.route('/runtime/add_link',methods=['GET'])
 def _add_link():
