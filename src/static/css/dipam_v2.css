@@ -32,7 +32,7 @@
   height: var(--cy-height);
   z-index: 999;
   width: 100%;
-  min-width: 850px;
+  min-width: 500px;
   background-color: var(--bg-boxes);
 
 }
@@ -233,7 +233,8 @@
   margin-top: 5px;
   display: inline-block !important;
   left: calc(30% + 0.5px);
-  width: 100%;
+  width: 70%;
+  min-width: unset;
   height: 100%;
 }
 
@@ -260,6 +261,28 @@ DIAGRAM TOP
   padding: 2px;
   padding-top: 2px;
   padding-bottom: 2px;
+}
+
+#gui_bottom{
+  z-index: 1000;
+  position: absolute;
+  background-color: unset;
+  width: 38%;
+  top: 88%;
+  left: -40%;
+  height: 10%;
+  color: whitesmoke;
+  padding-left: 10px;
+}
+#gui_bottom *{
+  display: inline-block;
+}
+#gui_bottom #popup_container{
+  padding: 0px;
+}
+#gui_bottom #popup_container h3{
+  padding: 0px;
+  font-size: 11pt;
 }
 
 

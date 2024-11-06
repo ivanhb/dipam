@@ -12,10 +12,14 @@ class D_TEXT(D_DIPAM_UNIT):
         super().__init__(
             label = "Dipam Any Text",
             description = "A general textual content. If specified by file any open format textual file is supported (e.g. txt, md, yaml, xml, html, etc)",
-            family = "General"
+            family = "General",
+
+            direct_input = [
+                ("input_freetxt", True, None)
+            ],
+
+            value = ""
         )
-        self.input_freetxt = None
-        self.value = "..."
 
     def store_value(self, unit_dir_path):
         file_path = os.path.join(unit_dir_path, "gtext.txt")
@@ -56,14 +60,16 @@ class D_TEXT(D_DIPAM_UNIT):
             value = file.read()
         return value
 
-    def direct_input_manager(self, a_value):
+    def direct_input_manager(self, data):
         """
         """
-        if "input_freetxt" in a_value:
-            try:
-                data = a_value["input_freetxt"]
-                if isinstance(data, str):
-                    return data
-            except:
-                return None, "error", "The provided value is not a string value"
+        try:
+            _freetxt = data["direct_input"]["input_freetxt"]    
+            if isinstance(_freetxt, str):
+                return _freetxt
+            else:
+                return ""
+        except:
+            return None, "error", "The provided value is not a string value"
+
         return None, "error", "No values have been provided"

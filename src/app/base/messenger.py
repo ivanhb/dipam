@@ -2,7 +2,7 @@
 class DIPAM_MESSENGER:
 
     type = {
-        200: ("error","DIPAM operated correctly"),
+        200: ("success","DIPAM operated correctly"),
         304: ("warning","No operation done by DIPAM"),
         400: ("error","Bad Request"),
         401: ("error","Not authorized operation"),
@@ -20,13 +20,14 @@ class DIPAM_MESSENGER:
             a Tuple storing the data, log_type, and log_msg
         """
         # if data is already a tuple
-        if data:
+        if data != None:
             if isinstance(data, tuple):
                 return data
             else:
                 return (data, None, None)
         if code:
             return (None, cls.type[code][0], cls.type[code][1])
+
         return (None,None,None)
 
     @classmethod
@@ -48,7 +49,7 @@ class DIPAM_MESSENGER:
         if isinstance(data,tuple) and len(data) == 3:
             res["data"], res["log_type"], res["log_msg"] = data[:3]
         elif data:
-            res["data"], res["log_type"], res["log_msg"] = data, "success", None
+            res["data"], res["log_type"], res["log_msg"] = data, "success", ""
 
         if code:
             res["data"], res["log_type"], res["log_msg"] = None, cls.type[code][0], cls.type[code][1]

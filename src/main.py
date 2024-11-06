@@ -177,8 +177,9 @@ def _download(type):
     # except Exception as e:
         # return render_template('error.html', error_msg="[ERROR]: wrong download parameters! – "+str(e), port=5000, type="browser")
 
-@app.route('/runtime/all_unit',methods=['GET'])
-def _all_units():
+
+@app.route('/runtime/units',methods=['GET'])
+def _units():
     """
     [GET-METHOD]
     This call is used to get the list of all available unit classes for a specific <type>
@@ -193,7 +194,7 @@ def _all_units():
             unit_classes[_c]["model_fpath"],
             _c
         )
-        res.append(_unit.dump_attributes())
+        res.append(_unit.meta_attributes)
         del _unit
     return jsonify( res )
 
@@ -220,7 +221,8 @@ def _add_unit():
     return jsonify( {
         "id": _unit.id,
         "type":_unit.type,
-        "class":_unit.unit_class
+        "class":_unit.unit_class,
+        "view_value": _unit.view_attributes
     } )
 
 @app.route('/runtime/delete_unit',methods=['GET'])
@@ -234,8 +236,33 @@ def _delete_unit():
     unit_id = None
     if request.args.get('value'):
         unit_id = request.args.get('value')
-    dipam_runtime.delete_unit(unit_id)
-    return "Unit deleted"
+    return DIPAM_MESSENGER.build_view_msg( dipam_runtime.delete_unit(unit_id) )
+
+
+@app.route("/runtime/save_unit",methods = ['POST'])
+def _save_runtime_unit():
+    res = None
+    data = request.get_json()
+    if data:
+        unit_id = data.get('unit_id')
+        unit_type = data.get('unit_type')
+        unit_class = data.get('unit_class')
+        _data = data.get('data')
+        if _data:
+            print("Saving the data",_data," – of: ", unit_id)
+            # Save unit data, and specifiy source_is_view to True
+            # This also saves/updates the runtime index metadata
+            res_save  = dipam_runtime.save_unit_data(
+                _data,
+                unit_type,
+                unit_class,
+                unit_id,
+                True
+            )
+            return DIPAM_MESSENGER.build_view_msg(res_save)
+
+    return DIPAM_MESSENGER.build_view_msg(code = 304)
+
 
 @app.route('/runtime/delete_link',methods=['GET'])
 def _delete_link():
@@ -255,7 +282,7 @@ def _delete_link():
         )
         return DIPAM_MESSENGER.build_view_msg(res)
     return DIPAM_MESSENGER.build_view_msg( (False, "error", "value(s) not specified") )
-    
+
 
 @app.route('/runtime/add_link',methods=['GET'])
 def _add_link():
@@ -275,25 +302,6 @@ def _add_link():
         )
         DIPAM_MESSENGER.build_view_msg(res)
     return DIPAM_MESSENGER.build_view_msg( (False, "error", "Source/Target Id(s) are not specified") )
-
-
-@app.route("/runtime/save_unit",methods = ['POST'])
-def _save_runtime_unit():
-    res = None
-    data = request.get_json()
-    if data:
-        unit_id = data.get('unit_id')
-        unit_type = data.get('unit_type')
-        unit_class = data.get('unit_class')
-        unit_data = data.get('data')
-        if unit_data:
-            print("Saving the data",unit_data," – of: ", unit_id)
-            # Save unit data, and specifiy source_is_view to True
-            # This also saves/updates the runtime index metadata
-            res_save  = dipam_runtime.save_unit_data(unit_data, unit_id, True)
-            return DIPAM_MESSENGER.build_view_msg(res_save)
-
-    return DIPAM_MESSENGER.build_view_msg(code = 304)
 
 
 @app.route('/runtime/check_compatibility',methods=['GET'])
@@ -333,13 +341,14 @@ def _get_template():
     """
     res = {}
     unit_id = request.args.get('id')
-    html_content, script_content = dipam_runtime.build_view_template(unit_id)
+    html_content, script_content, view_value = dipam_runtime.build_view_template(unit_id)
     if unit_id:
         res = {
             "html_content": html_content,
-            "script_content": script_content
+            "script_content": script_content,
+            "view_value": view_value
         }
-    return jsonify( res )
+    return DIPAM_MESSENGER.build_view_msg( res )
 
 
 if __name__ == '__main__':
@@ -352,5 +361,5 @@ if __name__ == '__main__':
     # Load last workflow saved in checkpoint
     _load("checkpoint")
 
-    ui = FlaskUI(app, width=1400, height=800)
+    ui = FlaskUI(app, width=1500, height=800)
     ui.run()

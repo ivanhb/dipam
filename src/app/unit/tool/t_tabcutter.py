@@ -7,7 +7,7 @@ class T_TABCUTTER(T_DIPAM_UNIT):
         + label: name of the dipam tool
         + description: a description of the dipam tool,
         + family: the macro family of the tool,
-        + param: a list of optional/mandatory values to use as input
+        + direct_input: a list of optional/mandatory values to use as input
         + input: a list of optional/mandatory dipam data unit(s) to use as input
         + output: a list of dipam data unit(s) produced as output by the tool
     """
@@ -37,7 +37,11 @@ class T_TABCUTTER(T_DIPAM_UNIT):
     #   The method to manage a param must be named as: param_manager__{PARAM_NAME}__(p_val)
     #   -----
     def direct_input_manager__din_rowsnum__(self, _val):
+        _val = _val.strip()
+        if _val == "":
+            return None, "error", "Please provide the number of rows to cut!"
         try:
-            return int( _val.strip() )
+            _val_int = int( _val.strip() )
+            return _val_int
         except:
             return None, "error", "The row number value is not supported"

@@ -21,7 +21,13 @@ class D_DIPAM_UNIT:
             self,
             label = "Dipam data title",
             description = "A description of the Dipam data",
-            family = "The macro family of the Dipam data"
+            family = "The macro family of the Dipam data",
+
+            direct_input = [
+                # ( DIRECT-INPUT-NAME, True/False if mandatory, initial value)
+            ],
+
+            value = None
         ):
         self.type = "data"
         self.id = "d-NN"
@@ -32,11 +38,55 @@ class D_DIPAM_UNIT:
         self.description = description
         self.family = family
 
-        self.value = None
+        self.direct_input = {t[0]:t[2] for t in direct_input}
+
+        self.value = value
 
     #   -----
     #   Methods to manage base and indexing operations
     #   -----
+
+    @property
+    def view_attributes(self):
+        """
+        To be called when exchanging values with the view
+        Dynamically fetches the latest attribute values each time it's accessed;
+        """
+        return {
+            "family": self.family,
+            "label": self.label,
+            "description": self.description,
+            "direct_input": self.direct_input
+        }
+
+    @property
+    def meta_attributes(self):
+        """
+        [NOT-OVERWRITABLE]
+        @return: a dict with all the attributes of this class
+        """
+        return self.__dict__
+
+    def assign_view_values(self, data):
+        """
+        [NOT-OVERWRITABLE]
+        Assign the values of <self.direct_input>
+        """
+        try:
+            for k,v in data.items():
+                if k != "direct_input":
+                    setattr(self, k, v)
+        except:
+            return False,"error","wrong names for the view attributes"
+
+        if "direct_input" in data:
+            for k,v in data["direct_input"].items():
+                if k in self.direct_input:
+                    self.direct_input[k] = v
+
+        print("here",self.direct_input)
+        return True
+
 
     def set_id(self, id):
         """
@@ -48,13 +98,6 @@ class D_DIPAM_UNIT:
         """
         self.id = str(id)
         return self.id
-
-    def dump_attributes(self):
-        """
-        [NOT-OVERWRITABLE]
-        @return: a dict with all the attributes of this class
-        """
-        return self.__dict__
 
     def set_meta_attributes(self,data):
         """
@@ -91,30 +134,27 @@ class D_DIPAM_UNIT:
         # if source_is_view, then a convertion of the data into self.value is needed first;
         if source_is_view:
 
-            if "file_input" in data:
-                l_files = [ data["file_input"] ]
-                if isinstance(data["file_input"], list):
-                    l_files = data["file_input"]
-                # Manage view file(s) and convert it into self.value format
-                new_value = self.manage_view_file(data_to_convert)
+            try:
+                if "file_input" in data:
+                    l_files = [ data["file_input"] ] if isinstance(data["file_input"], list) else data["file_input"]
+                    new_value = self.manage_view_file(l_files)
 
-            elif "direct_input" in data:
-                try:
+                if "direct_input" in data:
+                    new_value = self.direct_input_manager(data)
+            except:
+                return None,"error","Something wrong in the input(s) management"
 
-                    if not all( [hasattr(self, _k) for _k in data["direct_input"].keys()] ):
-                        return None,"error","Some of the view values have no corresponding attributes in the unit class or have not been provided"
-
-                    new_value = self.direct_input_manager(data["direct_input"])
-                    msg = DIPAM_MESSENGER.build_app_msg(new_value)
-                    if msg[1] == "error":
-                        return msg
-                except:
-                    return None,"error","Something wrong in the direct input(s) assignment"
+        if new_value == None or new_value == False:
+            return DIPAM_MESSENGER.build_app_msg(None,400)
 
         # control if the new value passes the check
         _check = self.check_value(new_value)
         if not _check:
             return _check
+
+        # all went fine: assign view values to to self attributes
+        if source_is_view:
+            self.assign_view_values(data)
 
         # control if the new value is different from the current one
         # stop here in case this was not the init of the unit
@@ -129,8 +169,9 @@ class D_DIPAM_UNIT:
         # Dump it in case <unit_dir_path> is given
         if unit_base_dir:
             if not os.path.exists(unit_base_dir):
-                Path(unit_base_dir).mkdir(parents=True, exist_ok=True)
-            self.store_value(unit_base_dir)
+                os.mkdir(unit_base_dir)
+            if self.value:
+                self.store_value(unit_base_dir)
 
         return self.value
 
@@ -187,7 +228,7 @@ class D_DIPAM_UNIT:
             new_value = new_value +"\n"+ file_content.decode('utf-8')
         return new_value
 
-    def direct_input_manager(self, a_value):
+    def direct_input_manager(self, data):
         """
         [OVERWRITABLE]
         This method is responsible for processing/normalizing an uploaded direct input from the view;
@@ -198,7 +239,7 @@ class D_DIPAM_UNIT:
         @return:
             a new normalized value to assign to the direct_input of the tool
         """
-        return a_value
+        return True
 
 
     #   -----
@@ -245,8 +286,6 @@ class D_DIPAM_UNIT:
         Generates the view template to send to the view
         @return: a HTML template of this data unit
         """
-        # get a dictionary for all the sub-args of "value"
-        template_args = self.dump_attributes()
 
         # load the html template of this data unit;
         # the html template file must be in same dir with same name of this class but lowercase
@@ -257,6 +296,7 @@ class D_DIPAM_UNIT:
 
         # Extract divs from the <template_unit> and place them in <template_base>
         for pattern, placeholder in [
+            (r"<!--START:CSS-->(.*?)<!--CSS:END-->", "<!--CSS-UNIT-->"),
             (r"<!--START:HTML-TEMPLATE-->(.*?)<!--HTML-TEMPLATE:END-->", "<!--HTML-TEMPLATE-UNIT-->"),
             (r"<!--START:VIEW-VALUE-->(.*?)<!--VIEW-VALUE:END-->", "<!--VIEW-VALUE-UNIT-->"),
             (r"<!--START:EVENT-TRIGGER-->(.*?)<!--EVENT-TRIGGER:END-->", "<!--EVENT-TRIGGER-UNIT-->")
@@ -266,15 +306,19 @@ class D_DIPAM_UNIT:
 
         # put args in the HTML part
         # Use regex to extract the desired parts
-        match = re.search(r"<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->(.*)", template_base, re.DOTALL)
+        match = re.search(r"(.*)<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->(.*)", template_base, re.DOTALL)
         if match:
-            html_template = match.group(1).format(**template_args)
-            script_template = match.group(2).strip()
+
+            css_template = match.group(1).strip()
+            html_template = match.group(2).format(**self.meta_attributes)
+            script_template = match.group(3).strip()
+
+            html_template = css_template + html_template
 
             # to make it just clean code
             # remove the script tag from it
             script_template = re.sub(r'<script type="text/javascript">(.*?)</script>', r'\1', script_template, flags=re.DOTALL)
             # remove the html comments
             script_template = re.sub(r'<!--.*?-->', '', script_template, flags=re.DOTALL)  # Remove comments
-            return html_template, script_template
-        return None, None
+            return html_template, script_template, self.view_attributes
+        return None, None, None

@@ -35,12 +35,9 @@ class T_DIPAM_UNIT:
         self.type = "tool"
         self.id = "t-NN"
         self.unit_class = self.__class__.__name__
-
-        # These are metadata values
         self.label = label
         self.description = description
         self.family = family
-
 
         self.direct_input = direct_input
         self.input = input
@@ -52,6 +49,28 @@ class T_DIPAM_UNIT:
             "output": {}
         }
 
+    @property
+    def view_attributes(self):
+        """
+        To be called when exchanging values with the view
+        Dynamically fetches the latest attribute values each time it's accessed;
+        """
+        return {
+            "family": self.family,
+            "label": self.label,
+            "description": self.description,
+            "direct_input": self.value["direct_input"],
+            "input": self.value["input"]
+        }
+
+    @property
+    def meta_attributes(self):
+        """
+        [NOT-OVERWRITABLE]
+        @return: a dict with all the attributes of this class
+        """
+        return self.__dict__
+
     def set_id(self, id):
         """
         [NOT-OVERWRITABLE]
@@ -62,13 +81,6 @@ class T_DIPAM_UNIT:
         """
         self.id = str(id)
         return self.id
-
-    def dump_attributes(self):
-        """
-        [NOT-OVERWRITABLE]
-        @return: a dict with all the attributes of this class
-        """
-        return self.__dict__
 
     def set_meta_attributes(self,data):
         """
@@ -192,8 +204,6 @@ class T_DIPAM_UNIT:
         Generates the view template to send to the view
         @return: a HTML template of this unit
         """
-        # get a dictionary for all the attributes
-        template_args = self.dump_attributes()
 
         # load the html template of this unit;
         # the html template file must be in same dir with same name of this class but lowercase
@@ -204,6 +214,7 @@ class T_DIPAM_UNIT:
 
         # Extract divs from the <template_unit> and place them in <template_base>
         for pattern, placeholder in [
+            (r"<!--START:CSS-->(.*?)<!--CSS:END-->", "<!--CSS-UNIT-->"),
             (r"<!--START:HTML-TEMPLATE-->(.*?)<!--HTML-TEMPLATE:END-->", "<!--HTML-TEMPLATE-UNIT-->"),
             (r"<!--START:VIEW-VALUE-->(.*?)<!--VIEW-VALUE:END-->", "<!--VIEW-VALUE-UNIT-->"),
             (r"<!--START:EVENT-TRIGGER-->(.*?)<!--EVENT-TRIGGER:END-->", "<!--EVENT-TRIGGER-UNIT-->")
@@ -213,18 +224,22 @@ class T_DIPAM_UNIT:
 
         # put args in the HTML part
         # Use regex to extract the desired parts
-        match = re.search(r"<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->(.*)", template_base, re.DOTALL)
+        match = re.search(r"(.*)<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->(.*)", template_base, re.DOTALL)
         if match:
-            html_template = match.group(1).format(**template_args)
-            script_template = match.group(2).strip()
+            css_template = match.group(1).strip()
+            html_template = match.group(2).format(**self.meta_attributes)
+            script_template = match.group(3).strip()
+
+            html_template = css_template + html_template
 
             # to make it just clean code
             # remove the script tag from it
             script_template = re.sub(r'<script type="text/javascript">(.*?)</script>', r'\1', script_template, flags=re.DOTALL)
             # remove the html comments
             script_template = re.sub(r'<!--.*?-->', '', script_template, flags=re.DOTALL)  # Remove comments
-            return html_template, script_template
-        return None, None
+
+            return html_template, script_template, self.view_attributes
+        return None, None, None
 
 
     def direct_input_manager__DIRECT_INPUT_NAME__(self, a_value):

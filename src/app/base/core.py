@@ -16,30 +16,19 @@ class DIPAM_RUNTIME:
         self,
         dipam_config
     ):
-
-        self.unit_base = {
-            "diagram": dipam_config.get_base_unit("diagram"),
-            "edge": dipam_config.get_base_unit("edge"),
-            "data": dipam_config.get_base_unit("data"),
-            "tool": dipam_config.get_base_unit("tool")
+        # Dirs to use
+        self.dir = {
+            "app": dipam_config.get_config_value("dirs.dipam_app"),
+            "runtime": os.path.join( dipam_config.get_config_value("dirs.dipam_app"), "runtime")
         }
-        self.unit_index = {
-            "data": dipam_config.get_enabled_units("data"),
-            "tool": dipam_config.get_enabled_units("tool")
-        }
-        self.diagram_unit = util.create_instance(
-            self.unit_base["diagram"]["model_fpath"],
-            "DIAGRAM_DIPAM_UNIT")
 
+        # Create an index to store conf of the units
+        self.conf_units = {k_type: {"base": dipam_config.get_base_unit(k_type), "units": dipam_config.get_enabled_units(k_type)} for k_type in ["diagram","edge","data","tool"]}
 
-        self.runtime_dir = os.path.join(
-            dipam_config.get_config_value("dirs.dipam_app"),
-            "runtime"
-        )
+        # The index of all running units (including the diagram and edges)
         self.runtime_units = dict()
 
-        self.config = dipam_config
-
+        # init the runtime status
         self.init_runtime_status()
 
 
@@ -48,28 +37,30 @@ class DIPAM_RUNTIME:
         Builds/creates the DIPAM runtime defaults data
         """
         # upload last runtime checkpoint
-        dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
-        #if not os.path.exists( os.path.join(dir_dipam_app,"runtime") ):
         util.copy_dir_to(
-            os.path.join( dir_dipam_app,"data","checkpoint","runtime"),
-            dir_dipam_app
+            os.path.join( self.dir["app"], "data" , "checkpoint" , "runtime" ),
+            self.dir["app"]
         )
 
+        # reload the diagram unit
+        diagram_unit = util.create_instance(
+            self.conf_units["diagram"]["base"]["model_fpath"],
+            list(self.conf_units["diagram"]["units"].keys())[0], # DIAGRAM_DIPAM_UNIT
+        )
+        self.runtime_units[diagram_unit.id] = diagram_unit
+
         # reload all units
-        workflow = json.load(open( os.path.join(dir_dipam_app,"runtime","workflow.json") ))
+        workflow = json.load(open( os.path.join(self.dir["app"],"runtime","workflow.json") ))
         for _node in workflow["nodes"]:
-            _node_data = _node["data"]
-            _n = self.add_unit(
-                _node_data["type"],
-                _node_data["class"],
-                _node_data["id"],
+            n_data = _node["data"]
+            self.add_unit(
+                n_data["type"],
+                n_data["class"],
+                n_data["id"],
                 True
             )
 
-            # TEST
-            for attr, value in _n.__dict__.items():
-                print(f"{attr}: {value}")
-            print("\n")
+        print("HERE:",self.runtime_units.keys())
 
         return True
 
@@ -77,17 +68,15 @@ class DIPAM_RUNTIME:
         """
         Builds/creates the DIPAM runtime defaults data
         """
-        dir_dipam_app = self.config.get_config_value("dirs.dipam_app")
-
-        dir_to_copy = storage_dir
-        dest_dir = os.path.join(dir_dipam_app, "data", "checkpoint","runtime","unit")
+        source_dir = storage_dir
+        dest_dir = os.path.join(self.dir["app"], "data", "checkpoint","runtime","unit")
         if not storage_dir:
             # take entire runtime directory
-            dir_to_copy = os.path.join( dir_dipam_app,"runtime")
-            dest_dir = os.path.join(dir_dipam_app, "data", "checkpoint")
+            source_dir = os.path.join( self.dir["app"],"runtime")
+            dest_dir = os.path.join(self.dir["app"], "data", "checkpoint")
 
         util.copy_dir_to(
-            dir_to_copy,
+            source_dir,
             dest_dir
         )
         return True
@@ -101,7 +90,7 @@ class DIPAM_RUNTIME:
         unit_type = unit_type.lower()
 
         # in case a unit class is not specified, get first one in the list with a view tempalte
-        unit_type_pool = self.unit_index[unit_type]
+        unit_type_pool = self.conf_units[unit_type]["units"]
         if not unit_class:
             for _unit in unit_type_pool:
                 # check if has a view template
@@ -118,30 +107,30 @@ class DIPAM_RUNTIME:
 
         if not unit_id:
             pref = "d-" if unit_type == "data" else "t-"
-            unit_id = new_unit.set_id( util.get_first_available_id(self.runtime_units, pref) )
+            new_unit.set_id( util.get_first_available_id(self.runtime_units, pref) )
+            unit_id = new_unit.id
         else:
             # use the given one
             new_unit.set_id(unit_id)
 
-        unit_runtime_dir = os.path.join(self.runtime_dir, "unit", unit_id)
-        if unit_type == "tool":
-            unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
 
-        # either:
-        #   (1) reload and don't dump on file filesystem
-        #   (2) or init the unit data in the filesystem
-        value_data = None
-        store_unit_dir = None
-        if reload_value:
-            value_data = new_unit.read_value( unit_runtime_dir )
-            store_unit_dir = unit_runtime_dir
+        if unit_type == "data" or unit_type == "tool":
+            unit_runtime_dir = os.path.join(self.dir["runtime"], "unit", unit_id)
+            if unit_type == "tool":
+                unit_runtime_dir = os.path.join(self.dir["runtime"], "unit")
 
+            # either:
+            #   (1) reload and don't dump on file filesystem
+            #   (2) or init the unit data in the filesystem
+            value_data = None
+            if reload_value:
+                value_data = new_unit.read_value( unit_runtime_dir )
 
-        new_unit.write_value(
-            data = value_data,
-            source_is_view = False,
-            unit_base_dir = store_unit_dir
-        )
+            new_unit.write_value(
+                data = value_data,
+                source_is_view = False,
+                unit_base_dir = unit_runtime_dir
+            )
 
         self.runtime_units[unit_id] = new_unit
 
@@ -158,33 +147,38 @@ class DIPAM_RUNTIME:
 
         # remove its corresponding data
         if unit_type == "data":
-            util.delete_path( os.path.join(self.runtime_dir, "unit",unit_id) )
+            util.delete_path( os.path.join(self.dir["runtime"], "unit",unit_id) )
         elif unit_type == "tool":
-            util.delete_file( os.path.join(self.runtime_dir, "unit",unit_id+".json") )
+            util.delete_file( os.path.join(self.dir["runtime"], "unit",unit_id+".json") )
         return unit_id
 
-    def save_unit_data(self, data, unit_id, source_is_view = False):
+    def save_unit_data(self, data, unit_type, unit_class, unit_id, source_is_view = False):
         """
         Save the given <data> for a unit identified by <unit_id>
         @param:
             <unit_id>: the id of the unit to edit;
             <data>: the data to save
         """
-        unit_type = "data" if unit_id.startswith("d-") else "tool"
 
-        # set the base runtime directory
-        unit_runtime_dir = os.path.join(self.runtime_dir, "unit", unit_id)
-        if unit_type == "tool":
-            unit_runtime_dir = os.path.join(self.runtime_dir, "unit")
+        if unit_type == "data" or unit_type == "tool":
+            unit_runtime_dir = os.path.join(self.dir["runtime"], "unit", unit_id)
+            if unit_type == "tool":
+                unit_runtime_dir = os.path.join(self.dir["runtime"], "unit")
 
-        res_write = self.runtime_units[unit_id].write_value(data["value"], source_is_view, unit_runtime_dir)
+            res_write = self.runtime_units[unit_id].write_value(
+                data,
+                source_is_view,
+                unit_runtime_dir
+            )
 
-        res_app_msg = DIPAM_MESSENGER.build_app_msg(res_write)
-        if not res_app_msg[1] == "error":
+            res_app_msg = DIPAM_MESSENGER.build_app_msg(res_write)
+            if not res_app_msg[1] == "error":
+                return res_app_msg
+
+            self.save_runtime_status()
             return res_app_msg
 
-        self.save_runtime_status(unit_runtime_dir)
-        return res_app_msg
+        return None, "error", "Not a data or tool unit"
 
 
     # LINK HANDLER METHODS
@@ -272,31 +266,22 @@ class DIPAM_RUNTIME:
             HTML content ready to be inserted in the interface
         """
         if unit_id.startswith("e-"):
-            base_view_fpath = self.unit_base["edge"]["view_fpath"]
             return EDGE_DIPAM_UNIT.gen_view_template(
-                base_view_fpath,
+                self.conf_units["edge"]["base"]["view_fpath"],
                 data = {"id":unit_id}
             )
 
         elif unit_id.startswith("diagram"):
-            base_view_fpath = self.unit_base["diagram"]["view_fpath"]
-            return self.diagram_unit.gen_view_template(
-                base_view_fpath
+            return self.runtime_units[unit_id].gen_view_template(
+                self.conf_units["diagram"]["base"]["view_fpath"]
             )
 
-        unit_type = None
-        if unit_id.startswith("d-"):
-            unit_type = "data"
-        elif unit_id.startswith("t-"):
-            unit_type = "tool"
-
-        base_view_fpath = self.unit_base[unit_type]["view_fpath"]
+        unit_type = "data" if unit_id.startswith("d-") else "tool"
         class_name = self.runtime_units[unit_id].__class__.__name__
-        unit_view_fpath = self.unit_index[unit_type][class_name]["view_fpath"]
 
         return self.runtime_units[unit_id].gen_view_template(
-            base_view_fpath,
-            unit_view_fpath
+            self.conf_units[unit_type]["base"]["view_fpath"],
+            self.conf_units[unit_type]["units"][class_name]["view_fpath"]
         )
 
 
@@ -388,35 +373,25 @@ class DIPAM_CONFIG:
         """
         unit_type = unit_type.lower()
         dir = self.get_config_value("dirs.src_app")
-        _path = os.path.join(dir,"unit",unit_type)
-        return self.get_classes_in_dir(_path)
+
+        if unit_type == "diagram" or unit_type == "edge":
+            return {unit_type.upper()+"_DIPAM_UNIT": self.get_base_unit(unit_type)}
+
+        return self.get_classes_in_dir( os.path.join(dir,"unit",unit_type) )
+
 
     def get_base_unit(self, unit_type):
         """
         Return the model and view file path of a specific unit type
         """
         unit_type = unit_type.lower()
-        dir = self.get_config_value("dirs.src_app")
-
+        dir_unit = os.path.join( self.get_config_value("dirs.src_app"),"base" )
+        pref_fname = unit_type
         if unit_type == "tool" or unit_type == "data":
-            fname = "d_dipam"
-            if unit_type == "tool":
-                fname = "t_dipam"
+            pref_fname = unit_type[0]
+            dir_unit = os.path.join( self.get_config_value("dirs.src_app"),"unit",unit_type,"base")
 
-            return {
-                "model_fpath": os.path.join(dir,"unit",unit_type,"base","__"+fname+"__.py"),
-                "view_fpath": os.path.join(dir,"unit",unit_type,"base","__"+fname+"__.html")
-            }
-        elif unit_type=="diagram":
-            fname = "diagram_dipam"
-            return {
-                "model_fpath": os.path.join(dir,"base","__"+fname+"__.py"),
-                "view_fpath": os.path.join(dir,"base","__"+fname+"__.html")
-            }
-
-        elif unit_type=="edge":
-            fname = "edge_dipam"
-            return {
-                "model_fpath": None,
-                "view_fpath": os.path.join(dir,"base","__"+fname+"__.html")
-            }
+        return {
+            "model_fpath": os.path.join(dir_unit,"__"+pref_fname+"_dipam__.py"),
+            "view_fpath": os.path.join(dir_unit,"__"+pref_fname+"_dipam__.html")
+        }

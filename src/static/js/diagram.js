@@ -2,7 +2,7 @@
 class dipam_diagram {
 
 
-  constructor(config_data, workflow={}) {
+  constructor(workflow={}) {
 
     this.DIAGRAM_GENERAL = workflow.diagram;
 
@@ -163,6 +163,25 @@ class dipam_diagram {
     this.get_edges().style(this.STYLE.edge.edge);
   }
 
+  get_diagram() {
+      // if there is no data related to the diagram, this should be taken from the Dipam App
+      if (Object.keys(this.DIAGRAM_GENERAL).length === 0) {
+        fetch('/runtime/add_unit?type=diagram&class=DIAGRAM_DIPAM_UNIT')
+                .then(response => {return response.json();})
+                .then(data => {
+                    console.log("Diagram data retrieved from DIPAM",data);
+                    this.set_diagram_data(data)
+                })
+                .catch(error => {});
+      }else {
+        return this.DIAGRAM_GENERAL;
+      }
+  }
+
+  set_diagram_data(data) {
+    this.DIAGRAM_GENERAL["data"] = data;
+  }
+
   gen_svg_gradient(startColor, endColor) {
       const svgGradient = `
         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">
@@ -213,9 +232,6 @@ class dipam_diagram {
           }
     });
   }
-  get_diagram(){
-    return this.DIAGRAM_GENERAL;
-  }
   get_diagram_cy(){
     return this.cy;
   }
@@ -250,14 +266,17 @@ class dipam_diagram {
     return null;
   }
 
-  set_node_data(n_id, n_data){
+  set_node_data(n_type, n_id, n_data){
+    if (n_type == "diagram") {
+      this.set_diagram_data(n_data);
+    }
     var nodes = this.cy.nodes('node[id = "'+n_id+'"]');
     if (nodes.length == 1) {
       for (const _k in n_data) {
-        nodes[0]._private.data.value[_k] = n_data[_k];
+        nodes[0]._private.data.view_value[_k] = n_data[_k];
       }
     }
-    return nodes[0]._private.data.value;
+    return nodes[0]._private.data.view_value;
   }
   get_target_nodes(node){
     var out_nodes = this.cy.edges('edge[source="'+node._private.data.id+'"]').targets();
@@ -380,6 +399,13 @@ class dipam_diagram {
 
 
   // <---- DIPAM v2.0
+  set_diagram(d_data) {
+    var diagram_data = {
+      "data": d_data
+    }
+    console.log("The added node in cy = ",  this.cy.$("#"+node_n.data.id) );
+  }
+
 
   /**
   * Add a node (data or tool) to the diagram
@@ -396,8 +422,6 @@ class dipam_diagram {
     // Print test
     console.log("The added node in cy = ",  this.cy.$("#"+node_n.data.id) );
   }
-
-
   gen_node_data(n_type, n_data, a_value = null) {
 
     var node_obj = {
@@ -550,15 +574,20 @@ class dipam_diagram {
       var target_id = edge_obj.data("target");
       api_call = "/runtime/delete_link?source="+source_id+"&target="+target_id;
     }
-
+    //console.log("Removing ",elem_id," calling:",api_call);
     fetch(api_call)
       .then(response => response.json())
       .then(data => {
+          console.log(data);
           this.cy.remove("#"+elem_id);
           if (f_callback != null) { f_callback(data); }
           return data;
         })
-        .catch(error => { return {"data":null, "log_type":"error", "log_msg":""} });
+        .catch(error => {
+          if (f_callback != null) {
+            return f_callback( {"data":null, "log_type":"error", "log_msg":""} );
+          }
+        });
 
     // TODO: check this from dipam v1.0
     //this.cy_undo_redo.do("remove", this.cy.$("#"+elem_id));

@@ -4,9 +4,22 @@
 
       <div id="control_mid row">
           <div class="dipam-unit-template col">
-              <h1>{base-label}</h1>
-              <p>{base-description}</p>
-              <br>
+
+            <div class="row">
+                <div class="btn-edit col">
+                  <span><button id="edit_btn" class="btn btn-primary">Edit</button></span>
+                  <span><button id="cancel_btn" class="btn btn-default">Cancel</button></span>
+                </div>
+            </div>
+
+            <div id="node_data">
+                <div id="input_section">
+                    <h1><input class="input-metadata" type="text" data-dipam-value="label"></h1>
+                    <br>
+                    <p><textarea rows="10" cols="30" type="text" data-dipam-value="description"></textarea>
+                </div>
+            </div>
+
           </div>
       </div>
       <div id="control_foot"></div>

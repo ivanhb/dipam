@@ -15,71 +15,86 @@ class DIAGRAM_DIPAM_UNIT:
             description = "This is DIPAM v2.0, designed to be more configurable and customizable. The core functionality is powered entirely by Python, allowing new data and tool units to be easily defined, along with their corresponding interface templates."
         ):
         self.type = "diagram"
-        self.id = "diagram"
+        self.id = "diagram-1"
         self.unit_class = self.__class__.__name__
         self.label = label
         self.description = description
 
-    def dump_metadata(self):
+    @property
+    def view_attributes(self):
         """
-        [NOT-OVERWRITABLE]
-        Returns the data to be used when storing the index data describing this unit
+        To be called when exchanging values with the view
+        Dynamically fetches the latest attribute values each time it's accessed;
         """
-        data = {
-            "type": self.type,
-            "id": self.id,
-            "unit_class": self.unit_class,
+        return {
             "label": self.label,
             "description": self.description
         }
-        return data
 
-    def set_metadata(self,data):
+    @property
+    def meta_attributes(self):
         """
         [NOT-OVERWRITABLE]
-        Returns the data to be used when storing the index data describing this unit
+        @return: a dict with all the attributes of this class
         """
-        updated_keys = set()
-        for k in data:
-            if hasattr(self, k):
-                setattr(self, k, data[k])
-                updated_keys.add(k)
-        return updated_keys
+        return self.__dict__
 
-    def gen_view_template(self, base_view_fpath):
+    def set_id(self, id):
+        """
+        [NOT-OVERWRITABLE]
+        Defines the id of the data unit.
+        @param:
+            + idx: a number to concat with the rest of the identifier
+        @return: the id of the data unit
+        """
+        return self.id
+
+    def write_value(self, data = None, source_is_view = False, unit_base_dir = None):
+        """
+        [NOT-OVERWRITABLE]
+        This method writes a new given value;
+        """
+
+        if new_value == None or new_value == False:
+            return DIPAM_MESSENGER.build_app_msg(None,400)
+
+        # all went fine: assign view values to to self attributes
+        if source_is_view:
+            self.assign_view_values(data)
+
+        # Dump it in case <unit_dir_path> is given
+        if unit_base_dir:
+            self.store_value(unit_base_dir)
+
+        return True
+
+
+    def store_value(self, unit_dir_path):
+        """
+        [NOT-OVERWRITABLE]
+        This methods defines how to write a json file contating the data of this unit;
+        """
+        try:
+            file_path = os.path.join(unit_dir_path, str(self.id)+".json")
+            with open(file_path, 'w') as file:
+                json.dump(self.value, file, indent=4)
+            return self.value
+        except:
+            return None,"error","Something wrong happend while storing the tool values"
+
+    def gen_view_template(self, template_path):
         """
         [NOT-OVERWRITABLE]
         Generates the view template to send to the view
         @return: a HTML template of this data unit
         """
-
-        # Add base attributes to <template_args>
-        template_args_base = self.map_base_to_template_args()
-
         # load the html template of this data unit;
-        # the html template file must be in same dir with same name of this class but lowercase
-        # Use the format method to replace placeholders
-        with open(base_view_fpath, 'r') as file_base:
+        with open(template_path, 'r') as file_base:
             template_base = file_base.read()
 
-        # put args in the HTML part
         # Use regex to extract the desired parts
         match = re.search(r"<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->", template_base, re.DOTALL)
         if match:
-            html_template = match.group(1).format(**template_args_base)
-            return html_template, None
-        return None, None
-
-    def map_base_to_template_args(self):
-        """
-        [NOT-OVERWRITABLE]
-        @return: a dict with all the base.{} arguments to subtitute in the HTML template of this data unit
-        """
-        res = {
-            "base-id": self.id,
-            "base-type": self.type,
-            "base-unit_class": self.unit_class,
-            "base-label": self.label,
-            "base-description": self.description
-        }
-        return res
+            html_template = match.group(1).format(**self.meta_attributes)
+            return html_template, None, self.view_attributes
+        return None, None, None

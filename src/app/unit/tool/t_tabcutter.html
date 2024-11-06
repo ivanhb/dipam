@@ -1,29 +1,18 @@
-<!--
-
-To init a DIPAM tool unit template you need to define 3 components:
-
-(1) HTML-TEMPLATE - the actual HTML template of the unit
-(2) VIEW-VALUE – define the view settings;
-(3) EVENT-TRIGGER - define events
--->
-
+<!--START:CSS-->
+<style>
+       .input-metadata {
+         width: 100%;
+         border: none;
+       }
+</style>
+<!--CSS:END-->
 
 <!--START:HTML-TEMPLATE-->
+<h1><input class="input-metadata" type="text" data-dipam-value="label"></h1>
+<p><input class="input-metadata" type="text" data-dipam-value="description"></p>
+<br>
 <p>Set the number of rows to cut:
 <br>
-<input placeholder="E.G. 5" type="text" data-dipam-value="din_rowsnum" />
+<input placeholder="E.G. 5" type="text" data-dipam-value="direct_input.din_rowsnum" />
 </p>
 <!--HTML-TEMPLATE:END-->
-
-
-<!--START:VIEW-VALUE-->
-<!--VIEW-VALUE:END-->
-
-
-<!--START:EVENT-TRIGGER-->
-<!--<script type="text/javascript">
-  $("#input_1").on('input', function(){
-    dipam_unit_value.set_value( $(this).val() );
-  });
-</script>-->
-<!--EVENT-TRIGGER:END-->

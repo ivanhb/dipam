@@ -16,16 +16,17 @@ class D_TABLE(D_DIPAM_UNIT):
         super().__init__(
             label = "Dipam Table",
             description = "A general table type of data (in .csv or .tsv format)",
-            family = "General"
+            family = "General",
+
+            direct_input = [
+                ("header", False, None),
+                ("rows_limit", False, None),
+                ("tab_direct_raw", True, None)
+            ],
+
+            value = []
+
         )
-
-        # set the attributes of this data unit
-        self.header = None
-        self.rows_limit = None
-        self.tab_direct_raw = None
-
-        # set the initial value of this data unit
-        self.value = []
 
     def store_value(self, unit_dir_path):
 
@@ -36,7 +37,7 @@ class D_TABLE(D_DIPAM_UNIT):
 
         # Split data into chunks and write each chunk to a new CSV file
         # in case no limit is given the for step is equal all rows (the iteration is done one time only)
-        step = self.rows_limit
+        step = self.direct_input["rows_limit"]
         if step == None:
             step = total_rows + 1
 
@@ -45,8 +46,8 @@ class D_TABLE(D_DIPAM_UNIT):
             end_idx = min(start_idx + step, total_rows)
             chunk = value[start_idx:end_idx]
 
-            if self.header:
-                chunk.insert(0,self.header)
+            if self.direct_input["header"]:
+                chunk.insert(0,self.direct_input["header"])
 
             # Write this chunk to a new file
             dest_file = os.path.join(unit_dir_path,"gtab-"+str(file_count)+".csv")
@@ -105,12 +106,12 @@ class D_TABLE(D_DIPAM_UNIT):
         return new_value
 
 
-    def direct_input_manager(self, a_value):
+    def direct_input_manager(self, data):
         """
         """
         try:
             res = []
-            rows = a_value["tab_direct_raw"].strip().split("\n")
+            rows = data["direct_input"]["tab_direct_raw"].strip().split("\n")
             if len(rows) > 0:
                 rows = [row.split(",") for row in rows]
                 header = rows[0]

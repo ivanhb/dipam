@@ -1,7 +1,8 @@
 class dipam_interface {
 
-    constructor() {
-        this.DIAGRAM_INSTANCE_OBJ = null;
+    constructor(diagram) {
+        this.DIAGRAM_INSTANCE_OBJ = diagram;
+        this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_cy();
         this.DOMS = {
           "DIAGRAM": {
               "CONTAINER": document.getElementById('cy'),
@@ -75,39 +76,6 @@ class dipam_interface {
         this.DOMS.DIAGRAM.REDO_BTN.style["opacity"] = 0.3;
     }
 
-    set_corresponding_diagram(diagram){
-      this.DIAGRAM_INSTANCE_OBJ = diagram;
-      this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_cy();
-      //a temp internal data structure
-      this.temp_dipam_value = {};
-
-      //The doms that should trigger events
-      this.DOM_EVENT_ELEMS = {
-          'edit-trigger':{},
-          'remove-trigger': {},
-          'cancel-trigger': {},
-          'save-trigger': {},
-          'input-text-trigger': {},
-          'input-text-large-trigger': {},
-          'input-text-group-trigger': {},
-          'select-file-trigger': {},
-          'select-value-trigger': {},
-          'check-value-trigger': {}
-      };
-
-      this.DIAGRAM_INSTANCE_OBJ.fit_diagram();
-    }
-
-    set_dipam_temp_val(key, new_val){
-      this.temp_dipam_value[key] = new_val;
-    }
-    get_dipam_temp_val(key){
-      if (key in this.temp_dipam_value) {
-        return this.temp_dipam_value[key];
-      }
-      return -1;
-    }
-
     check_version(){
       var interface_instance = this;
       $.ajax({
@@ -137,45 +105,47 @@ class dipam_interface {
     */
     build_info(elem, elem_class= 'node') {
 
-      var elem_id = null;
-      var elem_data = null;
-      if ((elem_class == "node") || (elem_class == "edge")){
-        elem_data = elem.data;
-        elem_id = elem_data.id;
-      }else if (elem_class == "diagram") {
-        elem_data = diagram_instance.get_diagram();
-        elem_id = "diagram";
-      }
 
-      console.log("Elem <",elem_id,"> of type:",elem_class,", has been clicked. Data:", elem);
+      console.log("Elem <",elem.data.id,"> of type:",elem_class,", has been clicked. Data:", elem.data);
 
       /*build info only if the */
-      fetch("/runtime/get_template?id="+elem_id)
+      fetch("/runtime/get_template?id="+elem.data.id)
           .then(response => { return response.json(); })
           .then(data => {
+              console.log(data);
+              if ( !(vw_interface.show_popupmsg(data)) ) {
+                  return false;
+              }
+              var view_data = data["data"];
+
               // (1) Set HTML and Script contents
-              this.DOMS.CONTROL.BASE.innerHTML = data["html_content"];
+              this.DOMS.CONTROL.BASE.innerHTML = view_data["html_content"];
               const unit_template_script = document.getElementById("unit_template_js");
               if (unit_template_script) {
                   unit_template_script.remove();
               }
               var script = document.createElement('script');
               script.id = "unit_template_js";
-              script.textContent = data["script_content"];
+              if (view_data["script_content"]) {
+                script.textContent = view_data["script_content"];
+              }
               document.body.appendChild(script);
 
               // (2) if this is the first time this element is visulized;
               //    then: its corresponding view value must be initialized
-              if (!(elem_data.hasOwnProperty('value'))) {
-                elem_data["value"] = dipam_unit_value.get_node_data_from_interface();
-              }
+              // if (!(elem_data.hasOwnProperty('value'))) {
+              //   elem_data["value"] = dipam_unit_value.get_node_data_from_interface();
+              // }
 
               // (3) Run the default template operations
-              dipam_unit_value.run_defaults();
+              dipam_unit_value.set_events();
           });
     }
 
     /*on click methods*/
+    click_on_diagram(diagram_node){
+      this.build_info(diagram_node,'diagram');
+    }
     click_on_node(node){
       if ('_private' in node) {
         node = node._private;
@@ -675,6 +645,14 @@ class dipam_interface {
     }
   }
 
+  show_popupmsg_warning(data){
+    return vw_interface.show_popupmsg(data, true, false);
+  }
+
+  show_popupmsg_all(data){
+    return vw_interface.show_popupmsg(data, true, true);
+  }
+
   show_popupmsg(data, show_warning = false, show_info = false){
     var keep_process_alive = true;
     var msg_to_show = null;
@@ -682,21 +660,20 @@ class dipam_interface {
         if ("log_type" in data) {
           if ((data["log_type"] != undefined) && (data["log_type"] != null)) {
               if (data["log_type"] == "error") {
-                  msg_to_show = data["log_type"] +"<br>"+ data["log_msg"];
+                  msg_to_show = "<h3>["+_capitalize(data["log_type"]) +"]</h3> "+ data["log_msg"];
                   keep_process_alive = false;
-              }else if (show_warning) {
-                if (data["log_type"] == "warning") {
-                  msg_to_show = data["log_type"] +"<br>"+ data["log_msg"];
+              }else if (data["log_type"] == "warning") {
+                if (show_warning) {
+                  msg_to_show = "<h3>["+_capitalize(data["log_type"]) +"]</h3> "+ data["log_msg"];
                 }
               }else if (show_info) {
-                if (data["log_type"] == "info") {
-                  msg_to_show = data["log_type"] +"<br>"+ data["log_msg"];
-                }
+                msg_to_show = "<h3>["+_capitalize(data["log_type"]) +"]</h3> "+ data["log_msg"];
               }
+
           }
         }
     }else {
-      msg_to_show = "error" +"<br>"+ "the provided data is undefined";
+      msg_to_show = "<h3>["+"ERROR" +"]</h3> "+ "the provided data is undefined";
       keep_process_alive = false;
     }
 
@@ -709,14 +686,11 @@ class dipam_interface {
       }, 5000);
     }
     return keep_process_alive;
-  }
 
-  show_popupmsg_warning(data){
-    return this.show_popupmsg(data, true, false);
-  }
-
-  show_popupmsg_all(data){
-    return this.show_popupmsg(data, true, true);
+    function _capitalize(str) {
+      //return str.charAt(0).toUpperCase() + str.slice(1);
+      return str.toUpperCase();
+    }
   }
 
 
@@ -756,7 +730,7 @@ class dipam_interface {
     function __build_dropdown_opts(unit_type) {
       var ADD_UNIT_LIST = document.getElementById('list_options_unit_add');
       if (ADD_UNIT_LIST.style.display != "block") {
-        fetch("/runtime/all_unit?type="+unit_type)
+        fetch("/runtime/units?type="+unit_type)
             .then(response => { return response.json(); })
             .then(data => {
                 var html_content = "";
@@ -785,9 +759,6 @@ class dipam_interface {
                                 diagram_instance.get_diagram_cy().nodes()[diagram_instance.get_diagram_cy().nodes().length - 1].emit('click',[]);
                                 diagram_instance.fit_diagram();
                                 // TODO v1.0
-                                //interface_instance.show_undo_redo(diagram_instance.get_undo_redo().isUndoStackEmpty(),diagram_instance.get_undo_redo().isRedoStackEmpty());
-                                //diagram_instance.get_diagram_cy().nodes()[diagram_instance.get_diagram_cy().nodes().length - 1].emit('click', []);
-                                //document.getElementById('edit').click();
                                 ADD_UNIT_LIST.style.display = "none";
 
                                 // save also the new diagram workflow
@@ -902,26 +873,19 @@ class dipam_interface {
 
         //diagram on click handler
         diagram_cy.on('tap', function(event){
-          // target holds a reference to the originator
-          // of the event (core or element)
-          var evtTarget = event.target;
-          if (Object.keys(evtTarget).length == 1) {
-            $( "#"+interface_instance.DOMS.CONTROL.OVERVIEW_BTN.getAttribute('id')).click();
+          if (Object.keys(event.target).length == 1) {
+            // $( "#"+interface_instance.DOMS.CONTROL.OVERVIEW_BTN.getAttribute('id')).click();
             diagram_instance.highlight_diagram();
-            interface_instance.build_info(
-              diagram_instance.get_diagram(),
-              'diagram'
-            );
+            let diagram_node = diagram_instance.get_diagram();
+            interface_instance.click_on_diagram(diagram_node);
           }
         });
 
         //nodes on click handler
         diagram_cy.nodes().on('click', function(e){
             diagram_instance.click_elem_style(this,'node');
-            // DIPAM v2.0
             diagram_instance.apply_node_compatibility(this);
             interface_instance.click_on_node(this);
-            // DIPAM v2.0
             elem_remove_handler();
         });
 
