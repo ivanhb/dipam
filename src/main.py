@@ -221,8 +221,7 @@ def _add_unit():
     return jsonify( {
         "id": _unit.id,
         "type":_unit.type,
-        "class":_unit.unit_class,
-        "view_value": _unit.view_attributes
+        "class":_unit.unit_class
     } )
 
 @app.route('/runtime/delete_unit',methods=['GET'])
@@ -341,12 +340,11 @@ def _get_template():
     """
     res = {}
     unit_id = request.args.get('id')
-    html_content, script_content, view_value = dipam_runtime.build_view_template(unit_id)
+    html_content, script_content = dipam_runtime.build_view_template(unit_id)
     if unit_id:
         res = {
             "html_content": html_content,
-            "script_content": script_content,
-            "view_value": view_value
+            "script_content": script_content
         }
     return DIPAM_MESSENGER.build_view_msg( res )
 

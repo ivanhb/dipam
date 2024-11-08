@@ -1,5 +1,5 @@
 # Always import:
-from app.unit.data.base.__d_dipam__ import D_DIPAM_UNIT
+from app.unit.base.__d_dipam__ import D_DIPAM_UNIT
 
 import os
 import csv
@@ -17,16 +17,10 @@ class D_TABLE(D_DIPAM_UNIT):
             label = "Dipam Table",
             description = "A general table type of data (in .csv or .tsv format)",
             family = "General",
-
-            direct_input = [
-                ("header", False, None),
-                ("rows_limit", False, None),
-                ("tab_direct_raw", True, None)
-            ],
-
             value = []
-
         )
+        self.rows_limit = None
+        self.header = None
 
     def store_value(self, unit_dir_path):
 
@@ -37,7 +31,7 @@ class D_TABLE(D_DIPAM_UNIT):
 
         # Split data into chunks and write each chunk to a new CSV file
         # in case no limit is given the for step is equal all rows (the iteration is done one time only)
-        step = self.direct_input["rows_limit"]
+        step = self.rows_limit
         if step == None:
             step = total_rows + 1
 
@@ -46,19 +40,28 @@ class D_TABLE(D_DIPAM_UNIT):
             end_idx = min(start_idx + step, total_rows)
             chunk = value[start_idx:end_idx]
 
-            if self.direct_input["header"]:
-                chunk.insert(0,self.direct_input["header"])
+            if self.header:
+                chunk.insert(0,self.header)
 
             # Write this chunk to a new file
             dest_file = os.path.join(unit_dir_path,"gtab-"+str(file_count)+".csv")
             with open(dest_file, mode='w', newline='') as file:
                 csv.writer(file).writerows(chunk)
             file_count += 1
-
             res_files.append(dest_file)
 
         return True
 
+    def load_value(self, unit_dir_path):
+        all_tab = []
+        for filename in os.listdir(unit_dir_path):
+            if filename.endswith('.csv'):
+                file_path = os.path.join(unit_dir_path, filename)
+                with open(file_path, mode='r', newline='') as csvfile:
+                    reader = csv.reader(csvfile)
+                    for row in reader:
+                        all_tab.append(row)
+        return all_tab
 
     def is_value_match(self, a_value):
         a = a_value
@@ -76,24 +79,21 @@ class D_TABLE(D_DIPAM_UNIT):
 
         return False
 
-    def read_value(self, unit_dir_path):
-        """
-        """
-        all_tab = []
-        for filename in os.listdir(unit_dir_path):
-            if filename.endswith('.csv'):
-                file_path = os.path.join(unit_dir_path, filename)
-                with open(file_path, mode='r', newline='') as csvfile:
-                    reader = csv.reader(csvfile)
-                    for row in reader:
-                        all_tab.append(row)
-        return all_tab
 
+    # ---
+    # Methods to manage the view inputs:
+    # (1) finput_manager(): to manage the uploaded files
+    # (2) vinput_manager(): to manage the <data-dipam-value>(s) defined in the HTML template;
+    # ---
 
-    def manage_view_file(self, l_files):
+    def finput_manager(self, files):
+        """
+        If defined then the view will integrate the possibility of uploading a file.
+        It reads and elaborates the given files and returns a new value to assign for this data unit.
+        """
         new_value = []
 
-        for file in l_files:
+        for file in files:
             # Check if the file is a CSV by checking the extension
             if not file.endswith('.csv'):
                 return None
@@ -105,13 +105,15 @@ class D_TABLE(D_DIPAM_UNIT):
 
         return new_value
 
+    def vinput_manager(self, data):
+        """
+        This method manages all the <data-dipam-value>(s) defined in the HTML template;
+        It reads and elaborates the given values and returns a new value to assign for this data unit.
+        """
 
-    def direct_input_manager(self, data):
-        """
-        """
         try:
             res = []
-            rows = data["direct_input"]["tab_direct_raw"].strip().split("\n")
+            rows = data["tab_direct_raw"].strip().split("\n")
             if len(rows) > 0:
                 rows = [row.split(",") for row in rows]
                 header = rows[0]

@@ -1,6 +1,6 @@
 
 <!--START:HTML-TEMPLATE-BASE-->
-<div id="control_body" data-type="diagram" data-id="diagram" data-class="DIAGRAM_DIPAM_UNIT" class="diagram-unit">
+<div id="control_body" data-type="diagram" data-id="{id}" data-class="DIAGRAM_DIPAM_UNIT" class="diagram-unit">
 
       <div id="control_mid row">
           <div class="dipam-unit-template col">
@@ -14,9 +14,11 @@
 
             <div id="node_data">
                 <div id="input_section">
-                    <h1><input class="input-metadata" type="text" data-dipam-value="label"></h1>
+                    <h1><input type="text" value="{label}" data-dipam-value="label"></input></h1>
                     <br>
-                    <p><textarea rows="10" cols="30" type="text" data-dipam-value="description"></textarea>
+                    <p>
+                      <textarea rows="10" cols="30" type="text" value="{description}" data-dipam-value="description"></textarea>
+                    </p>
                 </div>
             </div>
 

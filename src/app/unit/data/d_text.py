@@ -1,5 +1,5 @@
 # Always import:
-from app.unit.data.base.__d_dipam__ import D_DIPAM_UNIT
+from app.unit.base.__d_dipam__ import D_DIPAM_UNIT
 
 import os
 
@@ -13,11 +13,6 @@ class D_TEXT(D_DIPAM_UNIT):
             label = "Dipam Any Text",
             description = "A general textual content. If specified by file any open format textual file is supported (e.g. txt, md, yaml, xml, html, etc)",
             family = "General",
-
-            direct_input = [
-                ("input_freetxt", True, None)
-            ],
-
             value = ""
         )
 
@@ -30,9 +25,7 @@ class D_TEXT(D_DIPAM_UNIT):
     def is_value_match(self, a_value):
         return a_value == self.value
 
-    def read_value(self, unit_dir_path):
-        """
-        """
+    def load_value(self, unit_dir_path):
         all_text = ""
         for filename in os.listdir(unit_dir_path):
             if filename.endswith('.txt'):
@@ -42,9 +35,20 @@ class D_TEXT(D_DIPAM_UNIT):
                     all_text += "\n"
         return all_text
 
-    def manage_view_file(self, l_files):
+
+    # ---
+    # Methods to manage the view inputs:
+    # (1) finput_manager(): to manage the uploaded files
+    # (2) vinput_manager(): to manage the <data-dipam-value>(s) defined in the HTML template;
+    # ---
+
+    def finput_manager(self, files):
+        """
+        If defined then the view will integrate the possibility of uploading a file.
+        It reads and elaborates the given files and returns a new value to assign for this data unit.
+        """
         new_value = ""
-        for file in l_files:
+        for file in files:
             pref = file.filename.split(".")[-1]
             if not pref == 'txt':
                 return False, "[ERROR] Some files have a non-supported format for this type of data"
@@ -52,19 +56,13 @@ class D_TEXT(D_DIPAM_UNIT):
             new_value = new_value +"\n"+ file_content.decode('utf-8')
         return new_value
 
-    def f_read(self, file_path):
+    def vinput_manager(self, data):
         """
-        """
-        value = None
-        with open(file_path, 'r') as file:
-            value = file.read()
-        return value
-
-    def direct_input_manager(self, data):
-        """
+        This method manages all the <data-dipam-value>(s) defined in the HTML template;
+        It reads and elaborates the given values and returns a new value to assign for this data unit.
         """
         try:
-            _freetxt = data["direct_input"]["input_freetxt"]    
+            _freetxt = data["input_freetxt"]
             if isinstance(_freetxt, str):
                 return _freetxt
             else:

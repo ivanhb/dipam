@@ -1,5 +1,6 @@
 import re
 import os
+from app.base.messenger import DIPAM_MESSENGER
 
 class DIAGRAM_DIPAM_UNIT:
     """
@@ -82,7 +83,7 @@ class DIAGRAM_DIPAM_UNIT:
         except:
             return None,"error","Something wrong happend while storing the tool values"
 
-    def gen_view_template(self, template_path):
+    def gen_view_template(self, template_path, unit_path = None):
         """
         [NOT-OVERWRITABLE]
         Generates the view template to send to the view
@@ -93,8 +94,12 @@ class DIAGRAM_DIPAM_UNIT:
             template_base = file_base.read()
 
         # Use regex to extract the desired parts
-        match = re.search(r"<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->", template_base, re.DOTALL)
+        match = re.search(r"(.*?)<!--START:HTML-TEMPLATE-BASE-->(.*?)<!--HTML-TEMPLATE-BASE:END-->", template_base, re.DOTALL)
         if match:
-            html_template = match.group(1).format(**self.meta_attributes)
-            return html_template, None, self.view_attributes
+            css_template = match.group(1)
+            html_template = match.group(2).format(**self.meta_attributes)
+
+            html_template = css_template + html_template
+
+            return html_template, None, None
         return None, None, None

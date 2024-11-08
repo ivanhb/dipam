@@ -112,7 +112,6 @@ class dipam_interface {
       fetch("/runtime/get_template?id="+elem.data.id)
           .then(response => { return response.json(); })
           .then(data => {
-              console.log(data);
               if ( !(vw_interface.show_popupmsg(data)) ) {
                   return false;
               }
@@ -132,10 +131,10 @@ class dipam_interface {
               document.body.appendChild(script);
 
               // (2) if this is the first time this element is visulized;
-              //    then: its corresponding view value must be initialized
-              // if (!(elem_data.hasOwnProperty('value'))) {
-              //   elem_data["value"] = dipam_unit_value.get_node_data_from_interface();
-              // }
+              //  > its corresponding view value must be initialized
+              if (!(elem.data.hasOwnProperty('view_value'))) {
+                elem.data["view_value"] = dipam_unit_value.get_node_data_from_interface();
+              }
 
               // (3) Run the default template operations
               dipam_unit_value.set_events();
@@ -755,10 +754,11 @@ class dipam_interface {
                                 //add a node to the diagram of a specific <type> with the corresponding <data>
                                 diagram_instance.add_node(type, data);
 
+                                // update diagram events (e.g. clicks); and click the added node (last one added)
                                 _elem_onclick_handle();
                                 diagram_instance.get_diagram_cy().nodes()[diagram_instance.get_diagram_cy().nodes().length - 1].emit('click',[]);
                                 diagram_instance.fit_diagram();
-                                // TODO v1.0
+
                                 ADD_UNIT_LIST.style.display = "none";
 
                                 // save also the new diagram workflow

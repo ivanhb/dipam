@@ -166,7 +166,7 @@ class dipam_diagram {
   get_diagram() {
       // if there is no data related to the diagram, this should be taken from the Dipam App
       if (Object.keys(this.DIAGRAM_GENERAL).length === 0) {
-        fetch('/runtime/add_unit?type=diagram&class=DIAGRAM_DIPAM_UNIT')
+        fetch('/runtime/add_unit?type=diagram')
                 .then(response => {return response.json();})
                 .then(data => {
                     console.log("Diagram data retrieved from DIPAM",data);
@@ -266,7 +266,7 @@ class dipam_diagram {
     return null;
   }
 
-  set_node_data(n_type, n_id, n_data){
+  set_node_view_value(n_type, n_id, n_data){
     if (n_type == "diagram") {
       this.set_diagram_data(n_data);
     }
@@ -347,8 +347,8 @@ class dipam_diagram {
     var res = [];
     var all_nodes = this.get_nodes();
     for (var i = 0; i < all_nodes.length; i++) {
-      if(arr.indexOf(all_nodes[i]._private.data.value) != -1){
-        res.push({"id":all_nodes[i]._private.data.id, "value": all_nodes[i]._private.data.value});
+      if(arr.indexOf(all_nodes[i]._private.data.view_value) != -1){
+        res.push({"id":all_nodes[i]._private.data.id, "view_value": all_nodes[i]._private.data.view_value});
       }
     }
 
@@ -457,7 +457,7 @@ class dipam_diagram {
     var edge = this.get_gen_elem_by_id(id);
     var source_node = edge._private.data.source;
     var target_node = edge._private.data.target;
-    var target_node_input = target_node._private.data.value.input;
+    var target_node_input = target_node._private.data.view_value.input;
     if (source_node in target_node_input) {
         delete target_node_input[source_node];
     }
@@ -471,10 +471,10 @@ class dipam_diagram {
     var target_node = diagram_instance.cy.nodes("node[id='"+edge_data.target+"']")[0];
 
     // add it as input to the target node
-    if (!("input" in target_node._private.data.value)) {
-      target_node._private.data.value["input"] = {};
+    if (!("input" in target_node._private.data.view_value)) {
+      target_node._private.data.view_value["input"] = {};
     }
-    target_node._private.data.value.input[ source_node._private.data["class"] ] = edge_data.source;
+    target_node._private.data.view_value.input[ source_node._private.data["class"] ] = edge_data.source;
 
     if (!(target_node._private.active)) {
       console.log("Can't connect to non-active nodes");
@@ -717,7 +717,7 @@ class dipam_diagram {
   get_output(node){
     var res = [];
     var node_type = node._private.data.type;
-    var node_value = node._private.data.value;
+    var node_value = node._private.data.view_value;
     if (node_type == 'data') {
       res.push(node_value);
     }else {
@@ -737,7 +737,7 @@ class dipam_diagram {
   get_compatible_input(node){
     var res = [];
     var node_type = node._private.data.type;
-    var node_value = node._private.data.value;
+    var node_value = node._private.data.view_value;
     if (node_type != 'data') {
       var node_conf_obj = this.CONFIG[node_type][node_value];
       if (node_conf_obj != undefined) {
@@ -779,7 +779,7 @@ class dipam_diagram {
       //console.log(ids_queue.length, ids_queue, topological_ordered_list);
       var n_id = ids_queue.shift();
       var a_node = this.get_gen_elem_by_id(n_id);
-      var a_node_config = this.CONFIG[a_node._private.data.type][a_node._private.data.value];
+      var a_node_config = this.CONFIG[a_node._private.data.type][a_node._private.data.view_value];
 
       //define the node method for both cases
       var a_node_class = null;

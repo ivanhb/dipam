@@ -1,10 +1,7 @@
 
-<!--CSS-UNIT-->
+<!--CSS-->
 
-<!--START:HTML-TEMPLATE-BASE-->
-<!--
-  * This part is the macro structure to be used when initializing a DIPAM data unit view;
--->
+<!--START:HTML-->
 <div id="control_body" data-type="tool" data-id="{id}" data-class="{unit_class}" class="tool-unit">
 
       <div id="control_mid row">
@@ -21,24 +18,28 @@
               </div>
 
               <div id="node_data">
+
+                  <!--START:INPUTS-->
                   <div id="input_section">
 
-                      <!--HTML-TEMPLATE-UNIT-->
+                      <h1><input class="input-metadata" value="{label}" type="text" data-dipam-value="label"></h1>
+                      <p><input class="input-metadata" value="{description}" type="text" data-dipam-value="description"></p>
 
+                      <div id="input_group">
+                          <!--HTML-->
+                      </div>
                   </div>
+                  <!--END:INPUTS-->
+
               </div>
 
 
           </div>
 
       </div>
-
-      <!-- THIS PART IS FIXED -->
       <div id="control_foot"></div>
 
 </div>
-<!--HTML-TEMPLATE-BASE:END-->
+<!--END:HTML-->
 
-<!--VIEW-VALUE-UNIT-->
-
-<!--EVENT-TRIGGER-UNIT-->
+<!--JS-->

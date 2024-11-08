@@ -1,5 +1,5 @@
 # Always import:
-from app.unit.tool.base.__t_dipam__ import T_DIPAM_UNIT
+from app.unit.base.__t_dipam__ import T_DIPAM_UNIT
 
 class T_TABCUTTER(T_DIPAM_UNIT):
     """
@@ -17,7 +17,7 @@ class T_TABCUTTER(T_DIPAM_UNIT):
             description = "This tool takes a table as input and splits it in more tables",
             family = "General",
 
-            direct_input = [
+            param = [
                 ("din_rowsnum",True)
             ],
 

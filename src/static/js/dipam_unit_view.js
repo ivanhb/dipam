@@ -31,31 +31,32 @@ class dipam_unit_view {
 
     $('#input_section').find('[data-dipam-value]').each(function() {
         var _id = $(this).attr('data-dipam-value');
-        Object.assign(res, __create_nested_obj( _id.split('.'), $(this).val()) );
+        res[_id] = $(this).attr('value');
+        //Object.assign(res, __create_nested_obj( _id.split('.'), $(this).val()) );
     });
 
-    const fileInput = document.getElementById('f_input');
-    if (fileInput != undefined) {
-      if (fileInput.files.length > 0) {
-        res["value"]["file_input"] = fileInput.files;
+    const dom_finput = document.getElementById('finput_dipam');
+    if (dom_finput != undefined) {
+      if (dom_finput.files.length > 0) {
+        res["finput_dipam"] = dom_finput.files;
       }
     }
 
     return res;
 
-    function __create_nested_obj(keys, value) {
-      const result = {};
-      let currentLevel = result;
-      keys.forEach((key, index) => {
-        if (index === keys.length - 1) {
-          currentLevel[key] = value;
-        } else {
-          currentLevel[key] = {};
-          currentLevel = currentLevel[key];
-        }
-      });
-      return result;
-    }
+    // function __create_nested_obj(keys, value) {
+    //   const result = {};
+    //   let currentLevel = result;
+    //   keys.forEach((key, index) => {
+    //     if (index === keys.length - 1) {
+    //       currentLevel[key] = value;
+    //     } else {
+    //       currentLevel[key] = {};
+    //       currentLevel = currentLevel[key];
+    //     }
+    //   });
+    //   return result;
+    // }
   }
 
   /**
@@ -75,14 +76,14 @@ class dipam_unit_view {
       current_value = elem.data.view_value;
     }
 
-    console.log(current_value);
     $('[data-dipam-value]').each(function() {
         var _id = $(this).attr('data-dipam-value');
-        var a_val = _id.split('.').reduce((acc, key) => acc && acc[key], current_value);
+        var a_val = current_value[_id];
+        
         if ((a_val != undefined) || (a_val != null)) {
-            $(this).val( __normal_html_value( a_val ) );
+            this.value = __normal_html_value( a_val );
         }
-        console.log($(this).val());
+
         // if ("file_input" in current_value) {
         //   $('#f_input_btn').val( current_value["file_input"]["file"].length.toString() +" files uploaded"  );
         // }
@@ -203,6 +204,12 @@ class dipam_unit_view {
       diagram_instance.remove_elem( node_id, vw_interface.show_popupmsg_all );
       diagram_instance.save_workflow( false );
       diagram_instance.get_diagram_cy().emit('tap',[]);
+    });
+
+    $('#input_section').find('[data-dipam-value]').on('input', function() {
+      let view_value = {};
+      view_value[$(this).attr('data-dipam-value')] = $(this).val();
+      diagram_instance.set_node_view_value( node_type, node_id, view_value);
     });
 
     dipam_unit_value.set_node_interface_from_data(  node_id,node_type );
