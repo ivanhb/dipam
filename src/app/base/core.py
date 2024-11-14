@@ -166,7 +166,7 @@ class DIPAM_RUNTIME:
             if not res_app_msg[1] == "error":
                 return res_app_msg
 
-            self.save_runtime_status()
+            #self.save_runtime_status()
             return res_app_msg
 
         return None, "error", "Not a data or tool unit"
@@ -202,7 +202,6 @@ class DIPAM_RUNTIME:
 
             self.runtime_units[edge_unit.id] = edge_unit
             target_unit.value["input"][ source_unit.unit_class ] = source_id
-            print("HERE:", self.runtime_units.keys() )
             return True, "info", "Link added"
 
         return False, "error", "Something worng happend"

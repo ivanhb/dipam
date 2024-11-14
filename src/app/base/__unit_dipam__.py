@@ -62,21 +62,25 @@ class DIPAM_UNIT:
 
         # load the html template of this data unit;
         # the html template file must be in same dir with same name of this class but lowercase
-        with open(base_view_fpath, 'r') as file_base, open(unit_view_fpath, 'r') as file_unit:
+        with open(base_view_fpath, 'r') as file_base:
             template_base = file_base.read()
-            template_unit = file_unit.read()
 
         # replace vars in template_base
         template_base = template_base.format(**self.meta_attributes)
 
-        # Extract divs from the <template_unit> and place them in <template_base>
-        for pattern, placeholder in [
-            (r"<!--START:CSS-->(.*?)<!--END:CSS-->", "<!--CSS-->"),
-            (r"<!--START:HTML-->(.*?)<!--END:HTML-->", "<!--HTML-->"),
-            (r"<!--START:JS-->(.*?)<!--END:JS-->", "<!--JS-->")
-        ]:
-            match = re.search(pattern, template_unit, re.DOTALL)
-            template_base = template_base.replace(placeholder, match.group(1) if match else "")
+        # in case there is a unit template
+        if unit_view_fpath:
+            with open(unit_view_fpath, 'r') as file_unit:
+                template_unit = file_unit.read()
+
+            # Extract divs from the <template_unit> and place them in <template_base>
+            for pattern, placeholder in [
+                (r"<!--START:CSS-->(.*?)<!--END:CSS-->", "<!--CSS-->"),
+                (r"<!--START:HTML-->(.*?)<!--END:HTML-->", "<!--HTML-->"),
+                (r"<!--START:JS-->(.*?)<!--END:JS-->", "<!--JS-->")
+            ]:
+                match = re.search(pattern, template_unit, re.DOTALL)
+                template_base = template_base.replace(placeholder, match.group(1) if match else "")
 
         # put args in the HTML part
         # Use regex to extract the desired parts

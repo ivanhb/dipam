@@ -4,7 +4,7 @@
 <!--START:HTML-->
 <div id="control_body" data-type="data" data-id="{id}" data-class="{unit_class}" class="data-unit">
 
-      <div id="control_mid row">
+      <div id="control_mid">
 
           <div class="dipam-unit-template col">
 
@@ -17,22 +17,32 @@
                   </div>
               </div>
 
-              <div id="node_data">
+              <div id="node_data" class="row">
 
                 <!--START:INPUTS-->
                 <div id="input_section">
 
-                    <h1><input class="input-metadata" value="{label}" type="text" data-dipam-value="label"></h1>
-                    <p><input class="input-metadata" value="{description}" type="text" data-dipam-value="description"></p>
+                    <h1><input class="input-metadata" value="{label}" type="text" data-dipam-value="label"/></h1>
+                    <textarea class="input-metadata lbox" value="{description}" type="text" data-dipam-value="description">{description}</textarea>
+
+                    <!--<input id="switch_data_input_btn" type="checkbox" data-toggle="switchbutton" checked data-onlabel="<i class='fa fa-play'></i> Play" data-offlabel="<i class='fa fa-pause'></i> Pause">-->
+
+                    <div id="switch_data_input_btn" class="switch-container">
+                      <input type="checkbox" id="switch_input" class="switch" />
+                      <label for="switch_input" class="switch-label">
+                          <span class="switch-text vinput">Insert value(s)</span>
+                          <span class="switch-text finput">Upload file(s)</span>
+                      </label>
+                    </div>
 
                     <div id="input_group">
 
                         <!--HTML-->
 
                     </div>
-                  </div>
-                  <!--END:INPUTS-->
-                  
+                </div>
+                <!--END:INPUTS-->
+
               </div>
           </div>
 

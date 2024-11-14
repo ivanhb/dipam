@@ -4,11 +4,11 @@ var workflow = JSON.parse(decode_json(workflow));
 
 // Create the diagram
 var diagram_instance = new dipam_diagram(workflow);
-diagram_instance.set_events();
+//diagram_instance.set_interface();
 
 // Create the interface
 var vw_interface = new dipam_interface(diagram_instance);
-vw_interface.set_events();
+vw_interface.set_interface();
 
 // Create the interface
 var dipam_unit_value = new dipam_unit_view();

@@ -1,7 +1,16 @@
 
-input[data-dipam-value]{
+[data-dipam-value]{
   width: 100%;
+  color: white;
   background-color: rgba(0, 0, 0, 0.3);
+}
+[data-dipam-value].input-metadata{
+  border: unset;
+  background-color: unset;
+}
+
+input[data-dipam-value].lbox{
+  height: 200px;
 }
 
 textarea[data-dipam-value]{
@@ -9,4 +18,19 @@ textarea[data-dipam-value]{
   width: 100%;
   font-size: 12pt;
   border-radius: 5px;
+  min-height: 150px;
+}
+
+.finput-ul{
+  padding-left: 0px;
+}
+.finput-ul li{
+  list-type: circle;
+  padding-left: 10px;
+  display: inline-block;
+}
+.finput-ul .li-header {
+  color: lightgreen;
+  list-style-type: none;
+  padding-left: 0px;
 }

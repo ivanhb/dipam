@@ -75,17 +75,17 @@ class D_DIPAM_UNIT(DIPAM_UNIT):
             except:
                 return None,"error","Something wrong in the input(s) management"
 
-        if new_value == None or new_value == False:
-            return DIPAM_MESSENGER.build_app_msg(None,400)
+        if (
+            new_value is None
+            or new_value is False
+            or (isinstance(new_value, tuple) and new_value[1] == "error")
+        ):
+            return DIPAM_MESSENGER.build_app_msg(new_value)
 
         # control if the new value passes the check
         _check = self.check_value(new_value)
         if not _check:
             return _check
-
-        # all went fine: assign view values to to self attributes
-        if source_is_view:
-            self.assign_view_values(data)
 
         # control if the new value is different from the current one
         # stop here in case this was not the init of the unit
@@ -99,7 +99,7 @@ class D_DIPAM_UNIT(DIPAM_UNIT):
 
         # Dump it in case <unit_dir_path> is given
         if unit_base_dir:
-            self.mk_storage(unit_base_dir)
+            unit_dir = self.mk_storage(unit_base_dir)
             if self.value:
                 self.store_value(unit_dir)
 
@@ -145,10 +145,7 @@ class D_DIPAM_UNIT(DIPAM_UNIT):
         unit_dir = os.path.join(unit_dir_path, self.id)
         if not os.path.exists(unit_dir):
             os.mkdir(unit_dir)
-            return True
-        return None
-
-
+        return unit_dir
 
     def is_value_match(self, a_value):
         """

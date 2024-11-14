@@ -19,8 +19,12 @@
   --running: #7CD775;
   --error: white;
 }
+
+.disabled{
+  opacity: 0.5;
+}
 :disabled{
-  opacity: 0.6;
+  pointer-events: none;
 }
 .disable-elem{
   opacity: 0.25;
@@ -29,25 +33,11 @@
 .to-do-style{
   color: #ff3b3b!important;
 }
-.noselect {
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome, Edge, Opera and Firefox */
-}
-.group{
-  border-left: double 6px white!important;
-}
-
-
 .not-active {
   pointer-events: none;
 }
 
-button,a { cursor: pointer; }
+/* button,a { cursor: pointer; }
 button:hover{
   opacity: 1!important;
   outline:0!important;
@@ -70,7 +60,7 @@ textarea{
   color: white;
   min-height:10px;
   border: none;
-}
+} */
 
 body {
   background-color: var(--bg-app);
@@ -84,15 +74,19 @@ body {
   width:100%;
 }
 #left{
-  position:absolute;
-  width: 350px;
-  margin-left: 20px;
+  position: absolute;
+  width: 30%;
+  margin-left: 0px;
+  height: 100% !important;
 }
 #right{
   position:absolute;
-  left: 350px;
-  min-width: 900px;
-  width: 65%;
+  margin-top: 5px;
+  display: inline-block !important;
+  left: calc(30% + 0.5px);
+  width: 70%;
+  min-width: unset;
+  height: 100%;
 }
 
 
@@ -100,17 +94,19 @@ body {
 
 
 #control{
+  padding: 5px;
   position: relative;
-  margin-top: 120px;
-  left: 20px;
+  margin-top: 0px;
+  left: 0px;
   width: 100%;
   min-width: 300px;
   vertical-align: top;
   display: inline-block;
   min-height: 300px;
-  position: relative;
   z-index: 1000;
-  border-radius: 10px 15px 15px 10px;
+  border-radius: 0px 0px 0px 0px;
+  height: 100%;
+  margin-right: 0px;
   /*background-color: var(--diagram-color);*/
 }
 
@@ -121,11 +117,11 @@ DIAGRAM TOP
 
 #gui_top{
   position: relative;
-  margin-bottom: 30px;
+  margin-bottom: 0px;
   height: fit-content;
   width: 100%;
-  padding: 10px;
-  padding-top: 30px;
+  padding: 2px;
+  padding-top: 0px;
   padding-bottom: 0px;
   display: inline-block;
   max-height: 50px;
@@ -147,134 +143,90 @@ DIAGRAM TOP
   vertical-align: bottom;
 }
 #diagram_elems{
-  vertical-align: bottom;
   display: inline-block;
 }
 #diagram_elems button{
-  font-size: 12pt;
+  font-size: 13pt;
+  border: unset;
+  color: white;
 }
 #diagram_elems button#add_tool{
-  border: var(--tool-color);
   background-color: var(--tool-color);
-  color: white;
-  font-weight: 340pt;
-  height:45px;
-}
-#diagram_elems button svg{
-  width: 25pt;
-  height: 70%;
-  padding-right: 5px;
-  vertical-align: top;
 }
 #diagram_elems button#add_tool:hover{
-  background-color: var(--tool-color-hover)!important;
+  background-color: var(--tool-color-hover);
 }
-
 #diagram_elems button#add_data{
-  border: var(--data-color);
   background-color: var(--data-color);
-  color: white;
-  font-weight: 340pt;
-  height:45px;
 }
 #diagram_elems button#add_data:hover{
   background-color: var(--data-color-hover);
 }
 
 
-#diagram_view{
-  margin-top: 10px;
-  width: 300px;
-  min-width: 300px;
+#gui_top #diagram_view{
+  /* margin-top: 2px; */
   vertical-align: bottom;
   display: inline-block;
-  background-color: var(--bg-color);
-  border-radius: 5px;
+  background-color: var(--bg-boxes-lvl-2);
+  border-radius: 1px;
   text-align: center;
-  border: solid 1px lightgray;
 }
-
-#diagram_view .comp{
+#gui_top #diagram_view .comp{
   display: inline-block;
   border-radius: 5px;
   padding: 5px;
-  padding-left: 10px;
   font-size: 13pt;
   vertical-align: bottom;
 }
-#diagram_view .comp *{
+#gui_top #diagram_view .comp button{
   background: none;
   border: none;
-  color: black;
+  color: ghostwhite;
 }
-#diagram_view .comp *:focus{
-  background: none;
-  border: none;
-  outline:0;
-}
-#diagram_view .comp#diagram_zoom{
+#gui_top #diagram_view .comp#diagram_zoom{
   display: none;
 }
 
-#diagram_view .comp#remove_elem{
+#gui_middle .comp#remove_elem{
   position: absolute;
-  right: calc(0px + 3%);
-  top: calc(var(--cy-height) + 25px);
-  z-index: 1000;
+  top: 90%;
+  left: 5%;
   display: none;
-  background-color: var(--bg-color);
-  border: solid 2px lightgray;
+  width: 200px;
+  z-index: 1100;
 }
-#diagram_view .comp#remove_elem:hover{
-  background-color: var(--bg-color-hover);
+
+#gui_middle button{
+  font-size: 13pt;
+  border-radius: 5px;
+  background-color: var(--bg-boxes);
+  border: solid 0.5px var(--bg-boxes-lvl-2);
+  width: 100%;
 }
-#diagram_view .comp#remove_elem *{
-  vertical-align: middle;
-  opacity: 0.9;
-  color: black;
+#gui_middle button:hover{
+  background-color: var(--bg-boxes-lvl-2);
 }
 
 #general{
-  position: absolute;
-  right: 10px;
+  position: relative;
+  right: 0px;
   display: inline-block;
-  margin-top: 3px;
+  margin-top: 0px;
 }
 #general button{
   font-size: 13pt;
+  border-radius: 1px;
+  background-color: var(--bg-boxes-lvl-2);
+  border: solid 0px var(--bg-boxes);
+}
+#general button:hover{
+  background-color: var(--bg-boxes-lvl-2);
 }
 #general .comp{
-  height:45px;
-  font-size: 12pt;
   vertical-align: bottom;
 }
-#general .comp#list_options_trigger{
-  background-color: var(--bg-color);
-  border: none;
-  color: black;
-  width: 40px;
-  border: solid 1px lightgray;
-}
-#general .comp#list_options_trigger:hover{
-  background-color: var(--bg-color-hover);
-}
-#general button#btn_run_workflow{
-  font-weight: 340;
-  background-color: var(--bg-color);
-  border: solid 1px lightgray;
-  color: black;
-  height:45px;
-  width: 150px;
-}
-#general button#btn_run_workflow svg{
-  width: 25px;
-  height: 25px;
-  padding-right: 5px;
-  vertical-align: top;
-}
-#general button#btn_run_workflow:hover{
-  background-color: var(--bg-color-hover)!important;
-}
+
 .navbar-toggle{
   display: block;
 }
@@ -289,35 +241,37 @@ DIAGRAM TOP
     height: 20px;
     display: none;
 }
-.list-options{
+
+.list-options, #list_options_unit_add{
   margin-top: 1px;
   position: absolute;
   display: none;
   z-index: 1000;
-  background-color: var(--bg-color);
+  background-color: var(--bg-boxes);
   min-width: 250px;
-  border-radius: 10px 10px 10px 10px;
-  border: solid 2px lightgray;
-  right: 3%;
-  margin-top: 20px;
+  border-radius: 3px;
+  border: solid 0.5px var(--bg-boxes);
+  right: 0px;
+  margin-top: 10px;
 }
 .list-options button{
   vertical-align: middle;
   font-size: 12pt;
-  font-weight: 340;
+  font-weight: 10;
   display: block;
-  width: 98%;
+  width: 100%;
   margin: 0 auto;
-  margin-top: 3px;
-  margin-bottom: 5px;
-  background-color: var(--bg-color);
-  border: none;
-  border-bottom: dotted 1.5px white;
-  color: black;
+  margin-top: 1px;
+  margin-bottom: 0px;
+  background-color: unset;
+  border-bottom: 1.5px var(--bg-boxes);
+  border-radius: 0px;
+  color: whitesmoke;
 }
 .list-options button:hover{
-  border-bottom: solid 1.5px gray;
-  background-color: var(--bg-color-hover);
+  border-bottom: none;
+  background-color: var(--bg-boxes);
+  color: whitesmoke;
 }
 .list-options a{
   font-size: 14pt;
@@ -332,20 +286,21 @@ DIAGRAM TOP
 
 #gui_middle{
   width: 100%;
-  padding: 10px;
+  height: 100%;
+  padding: 2px;
   padding-top: 2px;
   padding-bottom: 2px;
 }
 
 #gui_middle #cy{
-  padding-left: 30px;
+  padding-left: 0px;
   display: inline-block;
-  border-radius: 5px;
-  border: solid 2px lightgray;
+  border-radius: 1px;
+  border: solid 0px var(--bg-boxes);
   height: var(--cy-height);
   z-index: 999;
   width: 100%;
-  min-width: 850px;
+  min-width: 500px;
   background-color: var(--bg-boxes);
 }
 
@@ -354,7 +309,25 @@ DIAGRAM TOP
 */
 
 #gui_bottom{
-  width: 100%;
+  z-index: 1000;
+  position: absolute;
+  background-color: unset;
+  width: 38%;
+  top: 88%;
+  left: -40%;
+  height: 10%;
+  color: whitesmoke;
+  padding-left: 10px;
+}
+#gui_bottom *{
+  display: inline-block;
+}
+#gui_bottom #popup_container{
+  padding: 0px;
+}
+#gui_bottom #popup_container h3{
+  padding: 0px;
+  font-size: 11pt;
 }
 /*
 ------------------------
@@ -370,15 +343,37 @@ label{
 }
 
 #control_body{
-  padding-top: 20px;
-  width: 100%;
-  padding-bottom: 20px;
-  opacity: 1;
+  border-radius: 5px;
+  height: 100%;
+  padding: 20px;
+  background-color: linear-gradient(red,black);
+}
+#control_body .btn-edit button{
+  background-color: var(--bg-boxes) !important;
+  border-color: var(--bg-boxes) !important;
+}
+#control_body .btn-edit button#remove_btn{
+  color: var(--error)  !important;
+  display: none;
+}
+#control_body .btn-edit button#cancel_btn{
+  color: whitesmoke !important;
+  display: none;
+}
+#control_body .btn-edit button#save_btn{
+  color: green !important;
 }
 #control_mid{
-  max-height: 400px;
+  max-height: 75%;
   transition: max-height 0.5s;
   overflow: auto;
+}
+#node_data{
+  margin-top: 20px;
+}
+#control_mid .dipam-unit-template #node_data #input_group{
+  margin-top: 20px;
+  font-size: 11pt;
 }
 #control_mid .elem-logo{
   font-size: 16pt;
@@ -437,7 +432,7 @@ label{
   padding-top: 15%;
   padding-right: 10px;
   width: 100%;
-  display: none;
+  display: block;
 }
 #control_foot .foot-dom{
   display:inline-block;
@@ -476,6 +471,7 @@ select, .dropdown-toggle{
 }
 
 #edit_buttons{
+  display: none;
   padding-left: 10%;
 }
 .edit-switch{
@@ -635,6 +631,11 @@ ul + label{
 
 
 
+.switch-input-btn{
+    width: 100%;
+    margin-bottom: 10px;
+    display: none;
+}
 
 .dropdown{
   max-width: 250px;
@@ -755,36 +756,62 @@ ul + label{
 
 
 .tool-unit{
-  background-color: var(--tool-color-hover);
+  background-image: linear-gradient(to bottom, var(--tool-color-hover), black);
+  color: white;
 }
 .tool-unit input{
-  background-color: var(--tool-color-hover);
+  background-color: unset;
 }
 .tool-unit select{
-  background-color: var(--tool-color-hover);
+  background-color: unset;
+}
+.tool-unit-text a{
+  color: var(--tool-color-text);
+}
+.tool-unit-text a:hover{
+  color: whitesmoke;
 }
 
 .data-unit{
-  background-color: var(--data-color-hover);
+  background-image: linear-gradient(to bottom, var(--data-color-hover), black);
+  color: ghostwhite;
 }
 .data-unit input{
-  background-color: var(--data-color-hover);
+  background-color: unset;
 }
-.data-unit select{
-  background-color: var(--data-color-hover);
-}
-
-.data-unit a, .tool-unit a{
+.data-unit #f_input_btn{
+  background-color: var(--bg-boxes) !important;
+  border-color: var(--bg-boxes) !important;
+  width: 100%;
+  padding: 10px;
+  opacity: 0.8;
   color: white;
 }
+.data-unit #f_input_btn:hover{
+  opacity: 1;
+}
+.data-unit select{
+  background-color: unset;
+}
+.data-unit a, .tool-unit a{
+  color: ghostwhite;
+}
+.data-unit-text a{
+  color: var(--data-color-text);
+}
+.data-unit-text a:hover{
+  color: whitesmoke;
+}
+
 .diagram-unit, .edge-unit{
-  background-color: var(--diagram-color);
+  background-image: linear-gradient(to bottom, var(--diagram-color), black);
+  color: ghostwhite;
 }
 .diagram-unit input, .edge-unit{
-  background-color: var(--diagram-color);
+  background-color: unset;
 }
 .diagram-unit textarea, .edge-unit{
-  background-color: var(--diagram-color);
+  background-color: unset;
 }
 
 

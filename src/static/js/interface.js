@@ -133,11 +133,11 @@ class dipam_interface {
               // (2) if this is the first time this element is visulized;
               //  > its corresponding view value must be initialized
               if (!(elem.data.hasOwnProperty('view_value'))) {
-                elem.data["view_value"] = dipam_unit_value.get_node_data_from_interface();
+                elem.data["view_value"] = dipam_unit_value.get_node_view_value_from_interface();
               }
 
               // (3) Run the default template operations
-              dipam_unit_value.set_events();
+              dipam_unit_value.set_interface();
           });
     }
 
@@ -575,7 +575,7 @@ class dipam_interface {
   }
 
   in_light_node(node_id){
-    this.DIAGRAM_INSTANCE_OBJ.get_gen_elem_by_id(node_id).style({"opacity": "1"})
+    this.DIAGRAM_INSTANCE_OBJ.get_cy_elem_by_id(node_id).style({"opacity": "1"})
   }
 
   //add a html block to timeline and update percentage
@@ -697,7 +697,7 @@ class dipam_interface {
   //********* Events handlers **********************************//
   //************************************************************//
   //set all the interface events
-  set_events(reload = false){
+  set_interface(reload = false){
 
     var interface_instance = this;
     var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
@@ -763,7 +763,7 @@ class dipam_interface {
 
                                 // save also the new diagram workflow
                                 // with callback function in case of errors or warnings
-                                diagram_instance.save_workflow( false,interface_instance.show_popupmsg_warning);
+                                //diagram_instance.save_workflow( false,interface_instance.show_popupmsg_warning);
                             })
                             .catch(error => {
                                 interface_instance.show_popupmsg({
