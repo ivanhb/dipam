@@ -94,7 +94,7 @@
                   </div>
                 </div>
 
-                <div id="general" class="noselect">
+              <div id="general" class="noselect">
                 <span>
                   <div id="diagram_elems" class="">
 
@@ -110,7 +110,9 @@
                         </button>
                       </span>
 
+                      <div id="list_options_unit_add" class="list-options"></div>
                   </div>
+
                 </span>
 
                 <span class="comp">
@@ -126,29 +128,30 @@
                   <span id="badge_notification" class="badge-notification"></span>
                 </span>
 
-                <div id="list_options" class="list-options">
-
+                <div id="list_options_menu" class="list-options">
+                  <ul>
+                      <li>
                         <button id="btn_save_workflow" type="button" value="save" class="btn btn-default">Save</button>
                         <a id="btn_save_workflow_a" href="/download/runtime&id=workflow" value="save" target="_blank" download></a>
-
+                      </li>
+                      <li>
                         <!-- To import/load a new workflow and corresponding data -->
                         <button id="btn_import_work" type="button" value="load" class="btn btn-default">Load</button>
                         <form id="form_import_work" action="/load/import" method="post" enctype="multipart/form-data">
                             <input type="file" id="input_work_to_load" name="runtime" accept=".zip" style="display: none;">
                         </form>
-
+                      </li>
+                      <li>
                         <!-- To export the current workflow and corresponding data -->
                         <button id="btn_export_work" type="button" class="btn btn-default">Export</button>
                         <a id="a_export_work" href="/download/runtime" target="_blank" download></a>
-
-                        <button id="btn_help_tool" type="button" value="help" class="btn btn-default">Help</button>
-
+                      </li>
+                      <li>
+                          <button id="btn_help_tool" type="button" value="help" class="btn btn-default">Help</button>
+                      </li>
+                  </ul>
                         <!-- <button id="shutdown_btn" type="button" value="shutdown" class="btn btn-default">Shutdown</button> -->
                 </div>
-
-                <div id="list_options_unit_add" class="list-options">
-                </div>
-
               </div>
 
               </div>
@@ -158,7 +161,7 @@
               <div id="cy"></div>
 
               <div id="remove_elem" class="comp inner">
-                    <button type="button" class="btn btn-primary">
+                    <button id="remove_btn" type="button" class="btn btn-primary">
                       <i class="fas fa-trash me-2"></i> Remove element
                     </button>
               </div>

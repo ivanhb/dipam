@@ -26,7 +26,6 @@ class dipam_unit_view {
     });
 
     const dom_finput = document.getElementById('f_input');
-    console.log(dom_finput);
     if (dom_finput != undefined) {
       if (dom_finput.files.length > 0) {
         app_value["finput"] = dom_finput.files;
@@ -83,7 +82,7 @@ class dipam_unit_view {
   * This function is executed to run all default DOM creations and Events of the info control section;
   * This must be done here and DOMs need to be taken dynamically here.
   */
-  set_interface() {
+  set_events() {
 
     var DOMS = {
       // The base body
@@ -206,7 +205,7 @@ class dipam_unit_view {
 
       //DOMS.INPUT_SECTION.css('display','inline');
 
-      var direct_input = null;
+      var selected_input = new Set();
       var file_input = null;
       DOMS.VIEW_VALUES.each(function() {
         let data_dipam_value = $(this).attr('data-dipam-value');
@@ -216,15 +215,15 @@ class dipam_unit_view {
           file_input["ext"] = $(this).attr('data-ext');
           file_input["description"] = $(this).attr('data-description');
           $(this).remove();
+          selected_input.add("finput");
         }else {
-          direct_input = {};
-          direct_input[data_dipam_value] = true;
+          selected_input.add("vinput");
         }
       });
 
 
       // in case a FINPUT is specified then create its DOM
-      if (file_input != null) {
+      if (selected_input.has("finput")) {
         const button = $('<button>', { id: 'f_input_btn',class: 'file-upload-btn', text: 'Load File', click: function() { $('#f_input').click(); } });
         const fileInput = $('<input>', { type: 'file', id: 'f_input', name: 'f_input', style: 'display:none', accept: '.txt'});
         const finput_ul = __build_finput_ul(node_id, "init");
@@ -236,11 +235,15 @@ class dipam_unit_view {
             let view_value = {};
             view_value["finput"] = selected_files;
             diagram_instance.set_node_view_value( node_type, node_id, view_value);
-            console.log(__build_finput_ul(node_id, "update"));
+            __build_finput_ul(node_id, "update");
         });
       }
 
-      if ((direct_input) && (file_input)){
+      const node_view_value = diagram_instance.get_node_view_value(node_id);
+
+      if ((selected_input.has("finput")) && (selected_input.has("vinput"))){
+
+        DOMS.INPUT_SECTION.css('display','inline');
 
         // display values input only
         $("#input_file").css('display','none');
@@ -250,24 +253,41 @@ class dipam_unit_view {
         DOMS.INPUT_SWITCH_CONTAINER.after('<br style="height: 20px;">');
 
         DOMS.INPUT_SWITCH_BTN.on('change', function() {
+            var input_type = "vinput";
             if (this.checked) {
-                // here is "upload file"
-                DOMS.INPUT_GROUP_VALUES.css('display','none');
-                $("#input_file").css('display','inline');
-                diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": "finput" });
-            } else {
-                // here is "insert values"
-                DOMS.INPUT_GROUP_VALUES.css('display','inline');
-                $("#input_file").css('display','none');
-                diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": "vinput" });
+                input_type = "finput";
             }
+            __toggle_input(input_type);
+            diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": input_type });
         });
 
-        DOMS.INPUT_SECTION.css('display','inline');
-
+        if ("selected_input" in node_view_value) {
+          __toggle_input(node_view_value["selected_input"]);
+        }
       }
+
+      // set <selected_input> in case its first time
+      if (!("selected_input" in node_view_value)) {
+        var input_type = "vinput";
+        if (selected_input.size == 1) {
+          input_type = selected_input.values().next().value;
+        }
+        diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": input_type });
+      }
+
     }
 
+    function __toggle_input(input_type){
+      if (input_type == "finput") {
+        DOMS.INPUT_SWITCH_BTN.prop('checked', true);
+        DOMS.INPUT_GROUP_VALUES.css('display','none');
+        $("#input_file").css('display','inline');
+      }else if (input_type == "vinput") {
+        DOMS.INPUT_SWITCH_BTN.prop('checked', false);
+        DOMS.INPUT_GROUP_VALUES.css('display','inline');
+        $("#input_file").css('display','none');
+      }
+    }
 
     function __build_finput_ul(node_id, res = "init") {
       var finput_li = "";

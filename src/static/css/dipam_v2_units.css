@@ -21,6 +21,9 @@ textarea[data-dipam-value]{
   min-height: 150px;
 }
 
+#switch_data_input_btn{
+  display: none;
+}
 .finput-ul{
   padding-left: 0px;
 }

@@ -162,15 +162,15 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
         @return:
             True/False
         """
-        new_val = {}
+        new_input_val = {}
         found_it = False, "warning", "element not found"
         for k,v in self.value["input"].items():
             if v != din_id:
-                new_val[k] = v
+                new_input_val[k] = v
             else:
                 found_it = True, "info", "element found and removed"
 
-        self.value = new_val
+        self.value["input"] = new_input_val
         return found_it
 
 

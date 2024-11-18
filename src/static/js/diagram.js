@@ -15,7 +15,9 @@ class dipam_diagram {
           'shape': 'diamond',
           'background-image': gen_svg_gradient("rgba(144,80,94,0.5)","rgba(144,80,94,1)"),
           'background-fit': 'cover',
-          'background-image-opacity': 1
+          'background-image-opacity': 1,
+          'border-color': null,
+          'border-width': 0
           //'background-color': '#b56576'
         },
         data: {
@@ -25,7 +27,9 @@ class dipam_diagram {
           'shape': 'round-rectangle',
           'background-image': gen_svg_gradient("rgba(36,126,123,0.5)","rgba(36,126,123,1)"),
           'background-fit': 'cover',
-          'background-image-opacity': 1
+          'background-image-opacity': 1,
+          'border-color': null,
+          'border-width': 0
           //'background-color': '#2E9D99'
         },
       },
@@ -41,19 +45,37 @@ class dipam_diagram {
       }
     };
 
+    this.SELECT_COLOR = function(alpha = 1) {
+      return `rgba(82, 177, 82, ${alpha})`;
+    };
+
     this.ONCLICK_STYLE = {
       node: {
-        tool: {'background-color': '#90505E'},
-        data: {'background-color': '#247D7A'},
+        tool: {
+          'background-color': '#90505E',
+          'border-color': this.SELECT_COLOR(),
+          'border-width': 2
+        },
+        data: {
+          'background-color': '#247D7A',
+          'border-color': this.SELECT_COLOR(),
+          'border-width': 2
+        },
       },
       edge:{
-        edge: {'line-color': '#989898', 'target-arrow-color': '#989898'}
+        edge: {
+          'line-fill': 'linear-gradient',
+          'line-gradient-stop-colors': this.SELECT_COLOR() +" "+this.SELECT_COLOR(),
+          'target-arrow-color': this.SELECT_COLOR(),
+          'width': 3
+        }
       }
     };
 
+
     this.COMPATIBLE_STYLE = {
           true: {'opacity': '1', 'overlay-opacity': '0'},
-          false:{'opacity': '0.3', 'overlay-opacity': '0'}
+          false:{'opacity': '0.15', 'overlay-opacity': '0'}
     };
 
     this.cy = cytoscape({
@@ -74,56 +96,53 @@ class dipam_diagram {
 
                 {
                   selector: 'edge',
-                  style: {
-                    'curve-style': 'bezier',
-                    'target-arrow-shape': 'triangle'
-                  }
+                  style: this.STYLE.edge["edge"]
                 },
 
                 {
                   selector: '.eh-handle',
                   style: {
-                    'background-color': 'red',
+                    'background-color': this.SELECT_COLOR(0.85),
                     'width': 15,
                     'height': 15,
                     'shape': 'ellipse',
                     'overlay-opacity': 0,
-                    'border-width': 10, // makes the handle easier to hit
+                    'border-width': 0, // makes the handle easier to hit
                     'border-opacity': 0,
-                    'opacity': 0.6,
+                    'opacity': 1
                   }
                 },
 
                 {
                   selector: '.eh-hover',
                   style: {
-                    'background-color': 'red'
+                    'background-color': this.SELECT_COLOR(0.85),
                   }
                 },
 
                 {
                   selector: '.eh-source',
                   style: {
-                    'border-width': 2,
-                    'border-color': 'red'
+                    'border-width': 1,
+                    'border-color': this.SELECT_COLOR(),
                   }
                 },
 
                 {
                   selector: '.eh-target',
                   style: {
-                    'border-width': 2,
-                    'border-color': 'red'
+                    'border-width': 1,
+                    'border-color': this.SELECT_COLOR(),
                   }
                 },
 
                 {
                   selector: '.eh-preview, .eh-ghost-edge',
                   style: {
-                    'background-color': 'red',
-                    'line-color': 'red',
-                    'target-arrow-color': 'red',
-                    'source-arrow-color': 'red'
+                    'background-color': this.SELECT_COLOR(),
+                    'line-color': this.SELECT_COLOR(),
+                    'target-arrow-color': this.SELECT_COLOR(),
+                    'source-arrow-color': this.SELECT_COLOR()
                   }
                 },
 
@@ -141,6 +160,11 @@ class dipam_diagram {
               }
     });
 
+    // Initialize Edgehandles plugin with the styles you want
+    // Enable edge creation with the handle
+    const eh = this.cy.edgehandles({});
+    eh.enable();
+
     this.set_diagram_layout(workflow);
     this.cy_undo_redo = this.cy.undoRedo(
         {
@@ -155,6 +179,14 @@ class dipam_diagram {
     );
   }
 
+  set_events(){
+    var eh = this.cy.edgehandles();
+    this.cy.on('ehshow', (event, sourceNode) => {
+          if (sourceNode._private.selected == false) {
+            eh.hide();
+          }
+    });
+  }
 
   // Diagram
   get_diagram(){
@@ -384,39 +416,23 @@ class dipam_diagram {
         }
       }
     }
-
-    this.get_nodes('tool').style(this.STYLE.node.tool);
-    this.get_nodes('data').style(this.STYLE.node.data);
-    this.get_edges().style(this.STYLE.edge.edge);
+    this.highlight_diagram();
   }
-  highlight_diagram(){
-    //first color all nodes
-    var arr_elems = this.cy.nodes();
-    for (var i = 0; i < arr_elems.length; i++) {
-      var elem_obj = arr_elems[i];
-      this.cy.nodes('node[id="'+elem_obj._private.data.id+'"]').style({'opacity': '1', 'overlay-opacity': '0'});
-    }
-
-    arr_elems = this.cy.edges();
-    for (var i = 0; i < arr_elems.length; i++) {
-      var elem_obj = arr_elems[i];
-      this.cy.edges('edge[id="'+elem_obj._private.data.id+'"]').style({'opacity': '1', 'overlay-opacity': '0'});
+  init_elem_style(elem=null,type){
+    //this.highlight_diagram();
+    if ((elem != null))  {
+      elem = elem.data;
+      if (type == 'node') {
+        this.cy.nodes('node[id="'+elem.id+'"]').style(this.STYLE.node[elem.type]);
+      }else if (type == 'edge') {
+        this.cy.edges('edge[id="'+elem.id+'"]').style(this.STYLE.edge[elem.type]);
+      }
     }
   }
   click_elem_style(elem=null,type=null){
     //adapt the style of the clicked element:<elem> of type:<type>
     //first color all nodes
-    var arr_elems = this.cy.nodes();
-    for (var i = 0; i < arr_elems.length; i++) {
-      var elem_obj = arr_elems[i];
-      this.cy.nodes('node[id="'+elem_obj._private.data.id+'"]').style(this.STYLE.node[elem_obj._private.data.type]);
-    }
-
-    arr_elems = this.cy.edges();
-    for (var i = 0; i < arr_elems.length; i++) {
-      var elem_obj = arr_elems[i];
-      this.cy.edges('edge[id="'+elem_obj._private.data.id+'"]').style(this.STYLE.edge[elem_obj._private.data.type]);
-    }
+    this.highlight_diagram();
 
     if ((elem != null) && (type != null))  {
       elem = elem._private.data;
@@ -426,6 +442,13 @@ class dipam_diagram {
         this.cy.edges('edge[id="'+elem.id+'"]').style(this.ONCLICK_STYLE.edge[elem.type]);
       }
     }
+  }
+  highlight_diagram(){
+    this.get_nodes('tool').style(this.STYLE.node.tool);
+    this.get_nodes('data').style(this.STYLE.node.data);
+    this.get_edges().style(this.STYLE.edge.edge);
+    this.activate_nodes(null,true);
+    this.activate_edges(null,true);
   }
   zoom_in(){
     this.cy.zoom(this.cy.zoom() + 0.1);
@@ -472,10 +495,9 @@ class dipam_diagram {
     var node_n = _gen_node_data(n_type, n_data);
     // (2) add node to cy diagram
     diagram_instance.cy.add(node_n);
+    diagram_instance.init_elem_style( node_n,"node" );
     // (3) set undo/redo
     diagram_instance.cy_undo_redo.do("add", diagram_instance.cy.$("#"+node_n.data.id));
-    // Print test
-    //console.log("The added node in cy = ",  this.cy.$("#"+node_n.data.id) );
 
     function _gen_node_data(n_type, n_data, a_value = null) {
       var node_obj = {
@@ -516,13 +538,15 @@ class dipam_diagram {
             var nodes_compatibility = data;
 
             // (1) deactivate all all nodes of the diagram
-            this.activate_nodes(null,false, true);
+            this.activate_nodes(null,false);
+            this.activate_edges(null,false);
             // (2) activate only the root node
-            this.activate_nodes("node[id='"+node_seed+"']", true, true);
+            this.activate_nodes("node[id='"+node_seed+"']", true);
+            this.activate_edges(node_seed,true);
             // (3) activate compatible nodes
             for (var _a_node in nodes_compatibility) {
               if (nodes_compatibility[_a_node] == true) {
-                this.activate_nodes("node[id='"+_a_node+"']", true, true);
+                this.activate_nodes("node[id='"+_a_node+"']", true);
               }else {
                 /* in case not compatible check if it is connected with {node_seed};
                 in this case its edges must be removed as well;
@@ -537,12 +561,24 @@ class dipam_diagram {
             }
           });
   }
-  activate_nodes(selector= null, active = true, flag_interaction= true){
+  activate_nodes(selector= null, active = true){
     //activate/deactivate the diagram nodes. a subset could be defined through <selector>
     //returns the activated/deactivated nodes
     var target_element = this.cy.nodes();
     if (selector != null) {
       target_element = this.cy.nodes(selector);
+    }
+    for (var i = 0; i < target_element.length; i++) {
+      target_element[i].style(this.COMPATIBLE_STYLE[active]);
+      target_element[i]._private.active = active;
+    }
+    return target_element;
+  }
+  activate_edges(source_id= null, active = true){
+
+    var target_element = this.cy.edges();
+    if (source_id != null) {
+      target_element = this.cy.edges('edge[source="'+source_id+'"]');
     }
     for (var i = 0; i < target_element.length; i++) {
       target_element[i].style(this.COMPATIBLE_STYLE[active]);
@@ -650,6 +686,19 @@ class dipam_diagram {
           return (n_a._private.data.id == n_b._private.data.id);
         }
       }
+  }
+
+  gen_edge_data(source_id,target_id){
+
+    const EDGE_DATA = {id: "", name: "", type: "", view_value:"", source: "", target:""};
+    var edge_obj = { data: JSON.parse(JSON.stringify(EDGE_DATA)) , group: 'edges'};
+    edge_obj.data.id = "e-"+source_id+"_"+target_id;
+    edge_obj.data.type = 'edge';
+    edge_obj.data.name = edge_obj.data.id;
+    edge_obj.data.source = source_id;
+    edge_obj.data.target = target_id;
+    console.log("new edge data:",edge_obj);
+    return JSON.parse(JSON.stringify(edge_obj));
   }
 
 }

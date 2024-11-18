@@ -1,8 +1,7 @@
 class dipam_interface {
 
-    constructor(diagram) {
-        this.DIAGRAM_INSTANCE_OBJ = diagram;
-        this.DIAGRAM_INSTANCE_CY = diagram.get_diagram_cy();
+    constructor() {
+
         this.DOMS = {
           "DIAGRAM": {
               "CONTAINER": document.getElementById('cy'),
@@ -11,6 +10,7 @@ class dipam_interface {
               "ADD_TOOL_BTN": document.getElementById('add_tool'),
               "ADD_DATA_BTN": document.getElementById('add_data'),
               "ADD_UNIT_LIST": document.getElementById('list_options_unit_add'),
+
               //undo-redo
               "UNDO_REDO_CONTAINER": document.getElementById('diagram_undo_redo'),
               "UNDO_BTN": document.getElementById('undo_btn'),
@@ -38,7 +38,7 @@ class dipam_interface {
           "WORKFLOW": {
               //buttons
               "OPT_TRIGGER": document.getElementById('list_options_trigger'),
-              "OPT_LIST": document.getElementById('list_options'),
+              "OPT_LIST": document.getElementById('list_options_menu'),
               "RUN_BTN": document.getElementById('btn_run_workflow'),
               "HELP_TOOL_BTN": document.getElementById('btn_help_tool'),
               "SAVE_BTN": document.getElementById('btn_save_workflow'),
@@ -61,50 +61,30 @@ class dipam_interface {
           }
         };
 
-        this.info_section_html = "";
-        this.info_section_elem = {};
-        this.overview_section_html = "";
-        this.overview_section_elem = {};
-
         this.workflow = null;
         this.request_status_on = true;
         this.in_loading_status = false;
 
-        this.DOMS.DIAGRAM.UNDO_BTN.style["pointer-events"] = "none";
-        this.DOMS.DIAGRAM.UNDO_BTN.style["opacity"] = 0.3;
-        this.DOMS.DIAGRAM.REDO_BTN.style["pointer-events"] = "none";
-        this.DOMS.DIAGRAM.REDO_BTN.style["opacity"] = 0.3;
+        this.init_opr();
     }
 
-    check_version(){
-      var interface_instance = this;
-      $.ajax({
-        url: "/check_tool",
-        type: 'GET',
-        success: function(data) {
-              data = JSON.parse(data);
-              console.log(data);
-              if (!(data["is_ready"])) {
-                interface_instance.DOMS.WORKFLOW.NOTE_BADGE.style.display = "block";
-              }else {
-                interface_instance.DOMS.WORKFLOW.NOTE_BADGE.style.display = "none";
-              }
-          }
-      });
-    }
+    init_opr(){
+      this.set_events();
+      this.show_undo(false);
+      this.show_redo(false);
+      this.show_listoptions(false);
 
-    //build the info panel on the left
-    build_overview(elem, elem_class= 'all') {
-        //this.overview_section_html = this.build_control_section(elem);
-        this.overview_section_elem['elem'] = elem;
-        this.overview_section_elem['elem_class'] = elem_class;
+      // first operatios to be done on the diagram view
+      diagram_instance.fit_diagram();
+      diagram_instance.click_elem_style();
+      this.click_on_diagram( diagram_instance.get_diagram() );
     }
 
     /** DIPAM v2.0
     * Build info will call the back end to get the html to read for generating the section
     */
     build_info(elem, elem_class= 'node') {
-
+      var interface_instance = this;
 
       console.log("Elem <",elem.data.id,"> of type:",elem_class,", has been clicked. Data:", elem.data);
 
@@ -112,7 +92,7 @@ class dipam_interface {
       fetch("/runtime/get_template?id="+elem.data.id)
           .then(response => { return response.json(); })
           .then(data => {
-              if ( !(vw_interface.show_popupmsg(data)) ) {
+              if ( !(interface_instance.show_popupmsg(data)) ) {
                   return false;
               }
               var view_data = data["data"];
@@ -137,7 +117,7 @@ class dipam_interface {
               }
 
               // (3) Run the default template operations
-              dipam_unit_value.set_interface();
+              dipam_unit_value.set_events();
           });
     }
 
@@ -168,12 +148,6 @@ class dipam_interface {
       this.build_info(edge, 'edge');
     }
 
-    click_overview_nav() {
-      this.switch_nav('nav_overview');
-      this.DOMS.CONTROL.BASE.className = "diagram";
-      var overview_elem = this.overview_section_elem;
-      //document.getElementById('edit').click();
-    }
     switch_nav(nav_node_id) {
       for (var i = 0; i < document.getElementsByClassName('nav-btn').length; i++) {
         var obj = document.getElementsByClassName('nav-btn')[i];
@@ -216,9 +190,7 @@ class dipam_interface {
 
 
     removing(){
-      this.info_section_html = "";
       $( "#"+this.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')).css("display", "none");
-      this.click_overview_nav();
     }
 
     editing(action = null){
@@ -269,7 +241,6 @@ class dipam_interface {
         if (new_elem != null) {
           this.build_overview(new_elem);
         }
-        //this.click_overview_nav();
 
       }else if (active_nav == 'info') {
         //in case an element (node/edge) have been updated/edited
@@ -295,9 +266,6 @@ class dipam_interface {
       }
       return res_value;
     }
-
-
-
 
   click_run_workflow(){
     var new_status = -1;
@@ -350,7 +318,7 @@ class dipam_interface {
         opacity_val = '';
       }
       //set all single nodes style
-      var all_nodes = instance.DIAGRAM_INSTANCE_OBJ.get_nodes();
+      var all_nodes = diagram_instance.get_nodes();
       for (var i = 0; i < all_nodes.length; i++) {
         all_nodes[i].style({"opacity" : '0.3'});
       }
@@ -392,7 +360,7 @@ class dipam_interface {
       this.workflow = param;
       var workflow_to_process = this.workflow;
       var index_processed = {};
-      var terminals = this.DIAGRAM_INSTANCE_OBJ.get_terminal_tools();
+      var terminals = diagram_instance.get_terminal_tools();
       //console.log(terminals);
 
       //process workflow
@@ -575,7 +543,7 @@ class dipam_interface {
   }
 
   in_light_node(node_id){
-    this.DIAGRAM_INSTANCE_OBJ.get_cy_elem_by_id(node_id).style({"opacity": "1"})
+    diagram_instance.get_cy_elem_by_id(node_id).style({"opacity": "1"})
   }
 
   //add a html block to timeline and update percentage
@@ -645,11 +613,11 @@ class dipam_interface {
   }
 
   show_popupmsg_warning(data){
-    return vw_interface.show_popupmsg(data, true, false);
+    return this.show_popupmsg(data, true, false);
   }
 
   show_popupmsg_all(data){
-    return vw_interface.show_popupmsg(data, true, true);
+    return this.show_popupmsg(data, true, true);
   }
 
   show_popupmsg(data, show_warning = false, show_info = false){
@@ -692,25 +660,97 @@ class dipam_interface {
     }
   }
 
+  show_removebtn(show = true) {
+    if (!(show)) {show = "none";}else {show = "block";}
+    this.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.style.display = show;
+  }
+
+  show_listoptions(show = true){
+    if (!(show)) {show = "none";}else {show = "block";}
+    this.DOMS.WORKFLOW.OPT_LIST.style.display = show;
+    this.DOMS.DIAGRAM.ADD_UNIT_LIST.style.display = show;
+  }
+
+  show_addunits_list(unit_type, show = true) {
+    this.DOMS.WORKFLOW.OPT_LIST.style.display = "none";
+    var ADD_UNIT_LIST = this.DOMS.DIAGRAM.ADD_UNIT_LIST;
+    if (((!(show)) || (ADD_UNIT_LIST.style.display != "none")) && (ADD_UNIT_LIST.classList.contains("list-options-"+unit_type))) {
+      ADD_UNIT_LIST.style.display = "none";
+      return 0;
+    }else {
+      fetch("/runtime/units?type="+unit_type)
+          .then(response => { return response.json(); })
+          .then(data => {
+
+              var family = {};
+              for (let i = 0; i < data.length; i++) {
+                var elem = data[i];
+                if (!(elem.family in family)) {
+                  family[elem.family] = [];
+                }
+                family[elem.family].push('<li><a class="dropdown-additem" data-type="'+elem.type+'" data-value="'+elem.unit_class+'">'+elem.label+'</a></li>');
+              }
+
+              var html_content = "";
+              for (const _f in family) {
+                html_content += "<li class='li-header'>"+_f.toUpperCase()+"</li>" + family[_f].join('');
+              }
+
+              ADD_UNIT_LIST.innerHTML = "<ul>"+html_content+"</ul>";
+              ADD_UNIT_LIST.style.display = "block";
+              ADD_UNIT_LIST.className = "list-options list-options-"+unit_type;
+              $(ADD_UNIT_LIST).width($('#diagram_elems').width());
+
+              $(".dropdown-additem").on("click", function() {
+
+                  fetch('/runtime/add_unit?type='+this.getAttribute("data-type")+"&class="+this.getAttribute("data-value"))
+                          .then(response => {return response.json();})
+                          .then(data => {
+                              console.log("New node added (id = "+data["id"]+") Data = ", data);
+                              if (! (interface_instance.show_popupmsg(data)) ) {
+                                  return false;
+                              }
+                              //add a node to the diagram of a specific <type> with the corresponding <data>
+                              diagram_instance.add_node(type, data);
+                              // update diagram events (e.g. clicks)
+                              interface_instance.diagram_onclick_handler();
+
+                              // Click the added node (last one added)
+                              // const cy_nodes = diagram_instance.get_diagram_cy().nodes();
+                              //cy_nodes[cy_nodes.length - 1].select();
+                              //cy_nodes[cy_nodes.length - 1].emit('click',[]);
+
+                              // Fit the diagram
+                              //diagram_instance.fit_diagram();
+
+                              ADD_UNIT_LIST.style.display = "none";
+                          })
+                          .catch(error => {
+                              interface_instance.show_popupmsg({
+                                  "data": null,
+                                  "log_type": "error",
+                                  "log_msg": "Error in the DIPAM API while creating a new data unit – "+error
+                              });
+                          });
+              });
+          })
+    }
+  }
+
 
   //************************************************************//
   //********* Events handlers **********************************//
   //************************************************************//
   //set all the interface events
-  set_interface(reload = false){
+  set_events(reload = false){
 
-    var interface_instance = this;
-    var diagram_instance = this.DIAGRAM_INSTANCE_OBJ;
-    var diagram_cy = this.DIAGRAM_INSTANCE_CY;
-
-    if (reload){
-      _elem_onclick_handle();
-      return 1;
-    }
+    this.diagram_onclick_handler();
+    // if (reload){return 1;}
 
     // List of options
-    $( "#"+this.DOMS.WORKFLOW.OPT_TRIGGER.getAttribute('id')).on({
+    $( this.DOMS.WORKFLOW.OPT_TRIGGER ).on({
       click: function(e) {
+        $(interface_instance.DOMS.DIAGRAM.ADD_UNIT_LIST).css("display", "none");
         var display_val = $( "#"+interface_instance.DOMS.WORKFLOW.OPT_LIST.getAttribute('id')).css("display");
         if (display_val == "none") {
           $( "#"+interface_instance.DOMS.WORKFLOW.OPT_LIST.getAttribute('id')).css("display", "block");
@@ -719,74 +759,19 @@ class dipam_interface {
         }
       }
     });
-
-    $('#'+this.DOMS.DIAGRAM.ADD_DATA_BTN.getAttribute('id')).on({
-      click: function(e) {__build_dropdown_opts("data");}
+    $( this.DOMS.DIAGRAM.ADD_DATA_BTN ).on({
+      click: function(e) {interface_instance.show_addunits_list("data");}
     });
-    $('#'+this.DOMS.DIAGRAM.ADD_TOOL_BTN.getAttribute('id')).on({
-      click: function(e) {__build_dropdown_opts("tool");}
+    $( this.DOMS.DIAGRAM.ADD_TOOL_BTN ).on({
+      click: function(e) {interface_instance.show_addunits_list("tool");}
     });
-    function __build_dropdown_opts(unit_type) {
-      var ADD_UNIT_LIST = document.getElementById('list_options_unit_add');
-      if (ADD_UNIT_LIST.style.display != "block") {
-        fetch("/runtime/units?type="+unit_type)
-            .then(response => { return response.json(); })
-            .then(data => {
-                var html_content = "";
-                for (let i = 0; i < data.length; i++) {
-                  var elem = data[i];
-                  html_content += '<a class="dropdown-additem" data-type="'+elem.type+'" data-value="'+elem.unit_class+'">'+elem.label+'</a>';
-                }
-                ADD_UNIT_LIST.innerHTML = html_content;
-                ADD_UNIT_LIST.style.display = "block";
-                ADD_UNIT_LIST.className = "list-options "+unit_type+"-unit-text";
-
-                $(".dropdown-additem").on("click", function() {
-
-                    fetch('/runtime/add_unit?type='+this.getAttribute("data-type")+"&class="+this.getAttribute("data-value"))
-                            .then(response => {return response.json();})
-                            .then(data => {
-                                console.log("New node added (id = "+data["id"]+") Data = ", data);
-                                if (! (interface_instance.show_popupmsg(data)) ) {
-                                    return false;
-                                }
-
-                                //add a node to the diagram of a specific <type> with the corresponding <data>
-                                diagram_instance.add_node(type, data);
-
-                                // update diagram events (e.g. clicks); and click the added node (last one added)
-                                _elem_onclick_handle();
-                                diagram_instance.get_diagram_cy().nodes()[diagram_instance.get_diagram_cy().nodes().length - 1].emit('click',[]);
-                                diagram_instance.fit_diagram();
-
-                                ADD_UNIT_LIST.style.display = "none";
-
-                                // save also the new diagram workflow
-                                // with callback function in case of errors or warnings
-                                //diagram_instance.save_workflow( false,interface_instance.show_popupmsg_warning);
-                            })
-                            .catch(error => {
-                                interface_instance.show_popupmsg({
-                                    "data": null,
-                                    "log_type": "error",
-                                    "log_msg": "Error in the DIPAM API while creating a new data unit – "+error
-                                });
-                            });
-                });
-            })
-      }else {
-        ADD_UNIT_LIST.style.display = "none";
-      }
-    }
-
 
     //the info section Nav menu
-    $( "#"+this.DOMS.CONTROL.OVERVIEW_BTN.getAttribute('id')).on("click", function() {
-      //interface_instance.click_overview_nav();
+    $( this.DOMS.CONTROL.OVERVIEW_BTN ).on("click", function() {
       diagram_instance.click_elem_style();
       $( "#"+interface_instance.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')).css("display", "none");
     });
-    $( "#"+this.DOMS.CONTROL.INFO_BTN.getAttribute('id')).on("click", function() {
+    $( this.DOMS.CONTROL.INFO_BTN ).on("click", function() {
       interface_instance.click_info_nav();
     });
 
@@ -852,55 +837,38 @@ class dipam_interface {
               }
           });
     });
+  }
 
-    // $( "#"+this.DOMS.WORKFLOW.SHUTDOWN_BTN.getAttribute('id')).on({
-    //     click: function(e) {
-    //       e.preventDefault();
-    //       fetch('/shutdown');
-    //       window.close();
-    //     }
-    // });
+  diagram_onclick_handler() {
 
-    $( "#"+this.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')+" button").on('click', function(e){
-      document.getElementById('remove_btn').click();
-      $( "#"+interface_instance.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')).css("display", "none");
-    });
+      var diagram_cy_instance = diagram_instance.get_diagram_cy();
 
-    _elem_onclick_handle();
-
-
-    function _elem_onclick_handle(){
-
-        //diagram on click handler
-        diagram_cy.on('tap', function(event){
-          if (Object.keys(event.target).length == 1) {
-            // $( "#"+interface_instance.DOMS.CONTROL.OVERVIEW_BTN.getAttribute('id')).click();
-            diagram_instance.highlight_diagram();
-            let diagram_node = diagram_instance.get_diagram();
-            interface_instance.click_on_diagram(diagram_node);
-          }
-        });
-
-        //nodes on click handler
-        diagram_cy.nodes().on('click', function(e){
-            diagram_instance.click_elem_style(this,'node');
-            diagram_instance.apply_node_compatibility(this);
-            interface_instance.click_on_node(this);
-            elem_remove_handler();
-        });
-
-        //edges on click handler
-        diagram_cy.edges().on('click', function(e){
-            //console.log("Edge clicked !", this._private.data.id,this);
-            //diagram_instance.click_elem_style(this,'edge');
-            interface_instance.click_on_edge(this);
-            elem_remove_handler();
-        });
-
-        function elem_remove_handler() {
-          $( "#"+interface_instance.DOMS.DIAGRAM.REMOVE_ELEM_CONTAINER.getAttribute('id')).css("display", "block");
+      //diagram on click handler
+      diagram_cy_instance.on('tap', function(event){
+        if (Object.keys(event.target).length == 1) {
+          let diagram_node = diagram_instance.get_diagram();
+          diagram_instance.click_elem_style();
+          interface_instance.show_listoptions(false);
+          interface_instance.click_on_diagram(diagram_node);
         }
-    }
+      });
 
+      //nodes on click handler
+      diagram_cy_instance.nodes().on('click', function(e){
+          diagram_instance.click_elem_style(this,'node');
+          diagram_instance.apply_node_compatibility(this);
+          interface_instance.show_listoptions(false);
+          interface_instance.click_on_node(this);
+          interface_instance.show_removebtn();
+      });
+
+      //edges on click handler
+      diagram_cy_instance.edges().on('click', function(e){
+          //console.log("Edge clicked !", this._private.data.id,this);
+          //diagram_instance.click_elem_style(this,'edge');
+          interface_instance.show_listoptions(false);
+          interface_instance.click_on_edge(this);
+          interface_instance.show_removebtn();
+      });
   }
 }

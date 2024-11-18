@@ -1,4 +1,18 @@
 
+
+function decode_json(text){
+  //var msg = decodeURIComponent(text.replace(/\+/g, '%20')+'');
+  var msg = text;
+  var parser = new DOMParser;
+  var dom = parser.parseFromString('<!doctype html><body>' + msg,'text/html');
+  msg = dom.body.textContent;
+  //msg = msg.replace(/'/g, '"');
+  msg = msg.replace(/[\n\r]/g, '\\n');
+  msg = msg.replace(/\\/g, "\\\\");
+  return msg;
+}
+
+
 /**
 * -----
 * STYLE
