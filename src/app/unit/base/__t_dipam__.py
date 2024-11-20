@@ -78,7 +78,7 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
         """
         new_value = self.value
         if data:
-            new_value = new_value | data
+            new_value |= data
 
         # if source_is_view, then a convertion of the data coming from the view is needed
         if source_is_view:
@@ -91,25 +91,34 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
             if "uinput" in data:
                 new_value["input"] = self.uinput_manager(data["uinput"])
 
-        self.value = new_value
+        self.value |= new_value
         if unit_base_dir:
-            self.store_value(unit_base_dir)
+            unit_file_path = self.mk_storage(unit_base_dir)
+            if self.value:
+                self.store_value(unit_file_path)
 
-        return new_value
+        return self.value
 
-    def store_value(self, unit_dir_path):
+    def store_value(self, unit_file_path):
         """
         [NOT-OVERWRITABLE]
         This methods defines how to write a json file contating the data of this unit;
         its based on the values contained in <self.value>;
         @param:
-            <unit_dir_path>: to define where to store the file to write
+            <unit_file_path>: the JSON file where to store the data
         @return:
             True/False, If False, an explaination is given (tuple)
         """
         try:
-            file_path = os.path.join(unit_dir_path, str(self.id)+".json")
-            with open(file_path, 'w') as file:
+            with open(unit_file_path, 'w') as file:
+                # remove view value attributes
+                print("Store data:",self.value)
+                try:
+                    del self.value["vinput"]
+                    del self.value["uinput"]
+                    del self.value["label"]
+                except:
+                    pass
                 json.dump(self.value, file, indent=4)
             return self.value
         except:
@@ -123,6 +132,26 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
         file_path = os.path.join(unit_dir_path, str(self.id)+".json")
         with open(file_path, 'r') as f_json:
             return json.load(f_json)
+
+    def rm_storage(self, unit_dir_path):
+        """
+        [NOT-OVERWRITABLE]
+        Remove the File system storage
+        """
+        print(unit_dir_path)
+        file_path = os.path.join(unit_dir_path, str(self.id)+".json")
+        return util.delete_file( file_path )
+
+    def mk_storage(self, unit_dir_path):
+        """
+        [NOT-OVERWRITABLE]
+        Remove the File system storage
+        """
+        file_path = os.path.join(unit_dir_path, str(self.id)+".json")
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as file:
+                json.dump(self.value, file, indent=4)
+        return file_path
 
     def tool_run(self):
         """
@@ -153,7 +182,7 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
         """
         return None
 
-    def remove_uinput(self, din_id):
+    def remove_input(self, din_id):
         """
         [NOT-OVERWRITABLE]
         This method is responsible for removing an input from <self.value>;
@@ -177,8 +206,8 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
     # ---
     # Methods to manage the view:
     # (1) gen_view_template(): to generate the view template of this data unit
-    # (2) uinput_manager(): This method is responsible for managing uploaded inputs;
-    # (3) [OVERWRITABLE] input_manager(): to manage the <data-dipam-value>(s) defined in the HTML template;
+    # (2) [OVERWRITABLE] finput_manager(): to manage the uploaded files
+    # (3) [OVERWRITABLE] vinput_manager(): to manage the <data-dipam-value>(s) defined in the HTML template;
     # ---
 
     def uinput_manager(self, a_inputs):
@@ -195,12 +224,11 @@ class T_DIPAM_UNIT(DIPAM_UNIT):
     def vinput_manager(self, data):
         """
         [OVERWRITABLE]
-        This method is responsible for processing/normalizing an uploaded direct input from the view;
-        The content validation of the new value produced is out of scope for this method.
-        DIRECT_INPUT_NAME must be set as the name of the direct input that this method manages
+        This method manages all the <data-dipam-value>(s) defined in the HTML template;
+        It reads and elaborates the given values and returns a new value to assign for the param value.
         @param:
-            <a_value> the direct_input value given by the view
+            <data> the <data-dipam-value>(s) with corresponding values
         @return:
-            a new normalized value to assign to the direct_input of the tool
+            a new param dict to assign to value.param
         """
         return True

@@ -6,47 +6,73 @@ class dipam_diagram {
 
     this.DIAGRAM_MAIN = workflow.diagram;
 
+    this.SELECT_COLOR = function(alpha = 1) {
+      return `rgba(82,177,82,${alpha})`;
+    };
+    this.DATA_COLOR = function(alpha = 1) {
+      return `rgba(32,109,107,${alpha})`;
+    };
+    this.TOOL_COLOR = function(alpha = 1) {
+      return `rgba(153,88,103,${alpha})`;
+    };
+
     this.STYLE = {
       node: {
         tool: {
           'font-family': 'sans-serif',
-          'font-weight':"300",
-          'font-size':'14pt',
+          'font-weight':"lighter",
+          'font-size':'10px',
           'shape': 'diamond',
-          'background-image': gen_svg_gradient("rgba(144,80,94,0.5)","rgba(144,80,94,1)"),
+          'background-image': gen_svg_gradient(this.TOOL_COLOR(0.7),this.TOOL_COLOR()),
           'background-fit': 'cover',
           'background-image-opacity': 1,
           'border-color': null,
-          'border-width': 0
-          //'background-color': '#b56576'
+          'border-width': 0,
+          'label': function (ele) {
+                    return ele.data('view_value').label; // Access nested label
+                    //return ele.data('label'); // Access nested label
+                },
+          'text-valign': 'top',
+          'text-halign': 'center',
+          'text-outline-color': this.TOOL_COLOR(), // Outline color around the text
+          'text-outline-width': 0.3, // Thickness of the text outline
+          'color': this.TOOL_COLOR(0.9)
         },
         data: {
           'font-family': 'sans-serif',
-          'font-weight':"300",
-          'font-size':'14pt',
+          'font-weight':"lighter",
+          'font-size':'10px',
           'shape': 'round-rectangle',
-          'background-image': gen_svg_gradient("rgba(36,126,123,0.5)","rgba(36,126,123,1)"),
+          'background-image': gen_svg_gradient(this.DATA_COLOR(0.7),this.DATA_COLOR()),
           'background-fit': 'cover',
           'background-image-opacity': 1,
           'border-color': null,
-          'border-width': 0
-          //'background-color': '#2E9D99'
+          'border-width': 0,
+          'label': function (ele) {
+                    return ele.data('view_value').label; // Access nested label
+                    //return ele.data('label'); // Access nested label
+                },
+          'text-valign': 'top',
+          'text-halign': 'center',
+          'text-outline-color': this.DATA_COLOR(), // Outline color around the text
+          'text-outline-width': 0.3, // Thickness of the text outline
+          'color': this.DATA_COLOR(0.9)
         },
       },
       edge:{
         edge: {
           'line-fill': 'linear-gradient',
-          'line-gradient-stop-colors': 'rgba(79,79,79,1) rgba(169,169,169,1)',
-          'target-arrow-color': 'rgba(169,169,169,1)',
+          // 'line-color': 'rgb(118,118,118)',
+          //'line-gradient-stop-colors': 'rgba(79,79,79,1) rgba(169,169,169,1)',
+          //'target-arrow-color': 'rgba(169,169,169,1)',
           'target-arrow-shape': 'triangle',
           'width': 2,
-          'curve-style': 'bezier'
+          'curve-style': 'bezier',
+          'target-arrow-color': 'rgba(169,169,169,1)',
+          'line-gradient-stop-colors': 'rgba(79,79,79,1) rgba(169,169,169,1)',
+          'line-gradient-stop-positions': '30% 100%'
         }
       }
-    };
-
-    this.SELECT_COLOR = function(alpha = 1) {
-      return `rgba(82, 177, 82, ${alpha})`;
     };
 
     this.ONCLICK_STYLE = {
@@ -65,8 +91,10 @@ class dipam_diagram {
       edge:{
         edge: {
           'line-fill': 'linear-gradient',
-          'line-gradient-stop-colors': this.SELECT_COLOR() +" "+this.SELECT_COLOR(),
+          //'line-gradient-stop-colors': this.SELECT_COLOR()+" "+this.SELECT_COLOR(),
           'target-arrow-color': this.SELECT_COLOR(),
+          // 'line-color': this.SELECT_COLOR(),
+          'line-gradient-stop-colors': this.SELECT_COLOR(1)+' '+this.SELECT_COLOR(0.5),
           'width': 3
         }
       }
@@ -109,7 +137,7 @@ class dipam_diagram {
                     'overlay-opacity': 0,
                     'border-width': 0, // makes the handle easier to hit
                     'border-opacity': 0,
-                    'opacity': 1
+                    'opacity': 0.2
                   }
                 },
 
@@ -242,7 +270,7 @@ class dipam_diagram {
       var target_id = edge_obj.data("target");
       api_call = "/runtime/delete_link?source="+source_id+"&target="+target_id;
     }
-    //console.log("Removing ",elem_id," calling:",api_call);
+    console.log("Removing ",elem_id," calling:",api_call);
     fetch(api_call)
       .then(response => response.json())
       .then(data => {
@@ -284,19 +312,19 @@ class dipam_diagram {
 
 
     function _get_workflow_data(){
-      var diagram_instance = this;
+
       var workflow_to_save = {
-        'diagram': this.DIAGRAM_MAIN,
+        'diagram': diagram_instance.DIAGRAM_MAIN,
         'nodes': [],
         'edges': [],
       };
       // build the nodes
-      var diagram_nodes = this.get_nodes();
+      var diagram_nodes = diagram_instance.get_nodes();
       for (var i = 0; i < diagram_nodes.length; i++) {
         workflow_to_save.nodes.push( _normalize_data_to_save(diagram_nodes[i], true) );
       }
       // build the edges
-      var diagram_edges = this.get_edges();
+      var diagram_edges = diagram_instance.get_edges();
       for (var i = 0; i < diagram_edges.length; i++) {
         workflow_to_save.edges.push( _normalize_data_to_save(diagram_edges[i]) );
       }
@@ -318,91 +346,42 @@ class dipam_diagram {
 
     }
   }
-  build_nodes_topological_ordering(){
-    //build the topological execution order of the nodes
-    var topological_ordered_list = [];
+  cy_topological_sort() {
 
-    //get all nodes
-    var all_nodes = this.get_nodes();
-    var ids_queue = _get_nodes_att_values(all_nodes, 'id');
+      const orderedList = [];
+      const inDegree = new Map(); // Map to track in-degree of each node
+      const sources = []; // Queue to store nodes with no incoming edges
 
-    //console.log(ids_queue.shift(),ids_queue);
-    //var count = 15;
-    while (ids_queue.length > 0) {
-      //count--; if (count == 0) {break;}
-
-      //console.log(ids_queue.length, ids_queue, topological_ordered_list);
-      var n_id = ids_queue.shift();
-      var a_node = this.get_cy_elem_by_id(n_id);
-      var a_node_config = this.CONFIG[a_node._private.data.type][a_node._private.data.view_value];
-
-      //define the node method for both cases
-      var a_node_class = null;
-      var a_node_compatible_inputs = [];
-      if (a_node._private.data.type == 'tool') {
-        a_node_class = a_node_config["function"];
-        a_node_compatible_inputs = a_node_config["compatible_input"];
-      }else if (a_node._private.data.type == 'data') {
-        a_node_class = a_node_config["data_class"];
-      }
-
-      //var a_node_to_process = jQuery.extend(true, {}, a_node);
-      var a_node_to_process = a_node._private.data;
-      a_node_to_process['workflow'] = {};
-      a_node_to_process.workflow['class'] = a_node_class;
-      a_node_to_process.workflow['compatible_input'] = a_node_compatible_inputs;
-      a_node_to_process.workflow['input'] = _get_nodes_att_values(this.get_source_nodes(a_node),'id');
-      a_node_to_process.workflow['output'] = _get_nodes_att_values(this.get_target_nodes(a_node),'id');
-
-      if(!(_process_node(a_node_to_process))){
-        ids_queue.push(n_id);
-      }
-    }
-
-    return topological_ordered_list;
-
-    function _get_nodes_att_values(arr_nodes, att){
-      var arr_att = [];
-      for (var i = 0; i < arr_nodes.length; i++) {
-        arr_att.push(arr_nodes[i]._private.data[att]);
-      }
-      return arr_att;
-    }
-
-    function _process_node(a_node){
-      var add_it = false;
-      var inputs = a_node.workflow.input;
-
-      //check if all its inputs are inside the index_processed
-      var all_processed = true;
-      for (var j = 0; j < inputs.length; j++) {
-          if(_in_topological_order(inputs[j], topological_ordered_list)) {
-            all_processed = true;
-          }else {
-            all_processed = false;
-            break;
+      // Initialize in-degree map
+      this.cy.nodes().forEach(node => {
+          inDegree.set(node.id(), node.incomers('edge').length);
+          if (node.incomers('edge').length === 0) {
+              sources.push(node); // Node with no incoming edges
           }
-      }
-      if (all_processed) {
-          add_it = true;
-      }
+      });
 
-      if (add_it) {
-        topological_ordered_list.push(a_node);
-      }
+      while (sources.length > 0) {
+          const source = sources.shift(); // Take a node with no incoming edges
+          orderedList.push(source._private.data);
 
-      return add_it;
+          // Reduce the in-degree of all neighbors
+          source.outgoers('node').forEach(targetNode => {
+              const targetId = targetNode.id();
+              inDegree.set(targetId, inDegree.get(targetId) - 1);
 
-      function _in_topological_order(val, topological_ordered_list){
-        for (var k = 0; k < topological_ordered_list.length; k++) {
-          if(topological_ordered_list[k].id == val){
-            return true;
-          }
-        }
-        return false;
+              if (inDegree.get(targetId) === 0) {
+                  sources.push(targetNode); // Add to sources if in-degree becomes 0
+              }
+          });
       }
-    }
+      // Check if there are nodes left with non-zero in-degree (indicating a cycle)
+      if (orderedList.length !== this.cy.nodes().length) {
+          console.error("Graph contains a cycle, topological sorting not possible.");
+          return null;
+      }
+      return orderedList; // Return the ordered list of nodes
   }
+
   set_diagram_layout(workflow) {
     var list_nodes = workflow.nodes;
 
@@ -489,15 +468,14 @@ class dipam_diagram {
     * @param {string} n_type – the type of the node to be added, it's either "data" or "tool"
     * @param {json} n_data – the data of the node to be added (retrieved from the backend)
     */
-    let diagram_instance = this;
 
     // (1) create the node data – style, position, and view data
     var node_n = _gen_node_data(n_type, n_data);
     // (2) add node to cy diagram
-    diagram_instance.cy.add(node_n);
-    diagram_instance.init_elem_style( node_n,"node" );
+    this.cy.add(node_n);
+    this.init_elem_style( node_n,"node" );
     // (3) set undo/redo
-    diagram_instance.cy_undo_redo.do("add", diagram_instance.cy.$("#"+node_n.data.id));
+    this.cy_undo_redo.do("add", this.cy.$("#"+node_n.data.id));
 
     function _gen_node_data(n_type, n_data, a_value = null) {
       var node_obj = {
@@ -586,6 +564,13 @@ class dipam_diagram {
     }
     return target_element;
   }
+  // update_node_style(n_id,data){
+  //   if ("label" in data) {
+  //     var node = this.get_cy_elem_by_id(n_id);
+  //     node._private.data.label = data["label"];
+  //   }
+  //   return true;
+  // }
 
   // Edges
   get_edges(){
@@ -621,19 +606,12 @@ class dipam_diagram {
     /**
     * This method is automatically called after adding an edge into the diagram.
     */
-    var diagram_instance = this;
-    var source_node = diagram_instance.cy.nodes("node[id='"+edge_data.source+"']")[0];
-    var target_node = diagram_instance.cy.nodes("node[id='"+edge_data.target+"']")[0];
-
-    // add it as input to the target node
-    if (!("input" in target_node._private.data.view_value)) {
-      target_node._private.data.view_value["input"] = {};
-    }
-    target_node._private.data.view_value.input[ source_node._private.data["class"] ] = edge_data.source;
+    var source_node = this.cy.nodes("node[id='"+edge_data.source+"']")[0];
+    var target_node = this.cy.nodes("node[id='"+edge_data.target+"']")[0];
 
     if (!(target_node._private.active)) {
       console.log("Can't connect to non-active nodes");
-      diagram_instance.remove_edge(edge_data.id);
+      this.remove_edge(edge_data.id);
     }
 
     // API call to check compatibility
@@ -652,16 +630,21 @@ class dipam_diagram {
                 fetch("/runtime/add_link?source="+edge_data.source+"&target="+edge_data.target)
                   .then(response => response.json())
                   .then(data => {
-                    ;
-                    //return diagram_instance.save_workflow();
+                    console.log("Edge added between:",source_node._private.data.id," and ",target_node._private.data.id);
+                    // target_node._private.data["input"][ source_node._private.data["class"] ] = edge_data.source;
+                    interface_instance.diagram_onclick_handler();
                   })
-                  .catch(error => { return {"data":null, "log_type":"error", "log_msg":""} });
+                  .catch(error => {
+                    diagram_instance.remove_edge(edge_data.id);
+                    return {"data":null, "log_type":"error", "log_msg":""} });
               }
+            }else {
+              diagram_instance.remove_edge(edge_data.id);
             }
           });
 
-      //is cycle starting from node N
-      function _check_cycle(arr_nodes, origin){
+    //is cycle starting from node N
+    function _check_cycle(arr_nodes, origin){
 
         //check if one of the nodes is origin
         for (var i = 0; i < arr_nodes.length; i++) {
@@ -689,7 +672,6 @@ class dipam_diagram {
   }
 
   gen_edge_data(source_id,target_id){
-
     const EDGE_DATA = {id: "", name: "", type: "", view_value:"", source: "", target:""};
     var edge_obj = { data: JSON.parse(JSON.stringify(EDGE_DATA)) , group: 'edges'};
     edge_obj.data.id = "e-"+source_id+"_"+target_id;
@@ -697,7 +679,7 @@ class dipam_diagram {
     edge_obj.data.name = edge_obj.data.id;
     edge_obj.data.source = source_id;
     edge_obj.data.target = target_id;
-    console.log("new edge data:",edge_obj);
+    //console.log("new edge data:",edge_obj);
     return JSON.parse(JSON.stringify(edge_obj));
   }
 

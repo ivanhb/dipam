@@ -124,6 +124,8 @@ class DIPAM_RUNTIME:
             value_data = None
             if reload_value:
                 value_data = new_unit.load_value( unit_runtime_dir )
+                unit_runtime_dir = None
+
             new_unit.write_value(
                 data = value_data,
                 source_is_view = False,
@@ -144,8 +146,9 @@ class DIPAM_RUNTIME:
             self.runtime_units[unit_id].rm_storage(
                 os.path.join(self.dir["runtime"], "unit")
             )
-            return self.runtime_units.pop(unit_id, None)
-        return None
+            self.runtime_units.pop(unit_id, None)
+            return True
+        return None,"error","Something wrong happend while deleting the unit: "+unit_id
 
     def save_unit_data(self, data, unit_type, unit_class, unit_id, source_is_view = False):
         """
@@ -219,7 +222,7 @@ class DIPAM_RUNTIME:
         # check if both source and target are part of runtime units;
         if source_id in self.runtime_units and target_id in self.runtime_units:
             # delete it from the inputs of target
-            return self.runtime_units[target_id].remove_uinput(source_id)
+            return self.runtime_units[target_id].remove_input(source_id)
         return False, "error", "source/target node of the edge has not been found"
 
     def check_unit_compatibility(self, unit_id, unit_b_id = None):

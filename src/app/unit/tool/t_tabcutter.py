@@ -18,7 +18,7 @@ class T_TABCUTTER(T_DIPAM_UNIT):
             family = "General",
 
             param = [
-                ("din_rowsnum",True)
+                ("rowsnum",True)
             ],
 
             input = [
@@ -31,17 +31,18 @@ class T_TABCUTTER(T_DIPAM_UNIT):
         )
 
 
-    #   -----
-    #   Methods to manage the parametrs;
-    #   Each method describes how to normalize the value of a specific parameter returned from the view
-    #   The method to manage a param must be named as: param_manager__{PARAM_NAME}__(p_val)
-    #   -----
-    def direct_input_manager__din_rowsnum__(self, _val):
-        _val = _val.strip()
-        if _val == "":
-            return None, "error", "Please provide the number of rows to cut!"
+    def vinput_manager(self, data):
+        """
+        This method manages all the <data-dipam-value>(s) defined in the HTML template;
+        It reads and elaborates the given values and returns a new value to assign for the param value.
+        """
+        new_params = {}
         try:
-            _val_int = int( _val.strip() )
-            return _val_int
+            _val = data["din_rowsnum"].strip()
+            if _val == "":
+                return None, "error", "Please provide the number of rows to cut!"
+            new_params["rowsnum"] = int( _val )
         except:
             return None, "error", "The row number value is not supported"
+
+        return new_params

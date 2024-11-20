@@ -63,7 +63,10 @@
       <div id="gui">
 
         <div id="left">
-          <div id="control">
+          <div id="control"></div>
+
+          <div id="control_bottom">
+            <div id="popup_container"></div>
           </div>
         </div>
 
@@ -116,7 +119,7 @@
                 </span>
 
                 <span class="comp">
-                  <button id="btn_run_workflow" type="button" class="btn btn-primary">
+                  <button id="btn_run_workflow" type="button" class="btn btn-primary" value="ready">
                     <i class="fas fa-play me-2"></i>Run workflow
                   </button>
                 </span>
@@ -168,7 +171,6 @@
           </div>
 
           <div id="gui_bottom">
-            <div id="popup_container" class="popup-container"></div>
             <div id="workflow_timeline">
                 <div id="timeline_container" class="timeline-container">
                   <div id="start_block" class="timeline-block"></div>

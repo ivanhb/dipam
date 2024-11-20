@@ -70,8 +70,11 @@ class D_DIPAM_UNIT(DIPAM_UNIT):
                     l_files = [ data["finput"] ] if isinstance(data["finput"], list) else data["finput"]
                     new_value = self.finput_manager(l_files)
 
-                if "vinput" in data:
+                elif "vinput" in data:
                     new_value = self.vinput_manager(data["vinput"])
+
+                else:
+                    new_value = ""
             except:
                 return None,"error","Something wrong in the input(s) management"
 

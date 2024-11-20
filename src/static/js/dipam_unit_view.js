@@ -1,28 +1,146 @@
 class dipam_unit_view {
 
-  constructor() {}
+  constructor() {
+
+    // Dynamically define getters for each selector
+    this.DOM = {};
+
+    // Define a mapping of keys to their corresponding selectors
+    const selectors = {
+      CONTROL_BODY: "#control_body",
+      NODE_DATA: "#node_data",
+      INPUT_SECTION: "#input_section",
+      INPUT_SWITCH_CONTAINER: "#switch_data_input_btn",
+      INPUT_SWITCH_BTN: "#switch_input",
+      META_VIEW_VALUES: "#input_section [data-dipam-value]:not(#input_group [data-dipam-value])",
+      INPUT_GROUP_VALUES: "#input_group",
+      VIEW_VALUES: "#input_group [data-dipam-value]",
+      EDIT_BUTTON: "#edit_btn",
+      CANCEL_BUTTON: "#cancel_btn",
+      REMOVE_BUTTON: "#remove_btn"
+    };
+
+    Object.entries(selectors).forEach(([key, selector]) => {
+      Object.defineProperty(this.DOM, key, { get: () => $(selector) });
+    });
+  }
+
+  init_opr(){
+    /*Node id, class, type, and settings*/
+    const node_id = this.DOM.CONTROL_BODY.data('id');
+    const node_class = this.DOM.CONTROL_BODY.data('class');
+    const node_type = this.DOM.CONTROL_BODY.data('type');
+    this.set_node_interface_from_view_value(  node_id,node_type );
+
+    if (node_type == "data") {
+
+      //this.DOM.INPUT_SECTION.css('display','inline');
+
+      var selected_input = new Set();
+      var file_input = null;
+      this.DOM.VIEW_VALUES.each(function() {
+        let data_dipam_value = $(this).attr('data-dipam-value');
+        if ( data_dipam_value == "FINPUT") {
+          file_input = {};
+          file_input["multi"] = $(this).attr('data-multi');
+          file_input["ext"] = $(this).attr('data-ext');
+          file_input["description"] = $(this).attr('data-description');
+          $(this).remove();
+          selected_input.add("finput");
+        }else {
+          selected_input.add("vinput");
+        }
+      });
+
+
+      // in case a FINPUT is specified then create its DOM
+      if (selected_input.has("finput")) {
+        const button = $('<button>', { id: 'f_input_btn',class: 'file-upload-btn', text: 'Load File', click: function() { $('#f_input').click(); } });
+        const fileInput = $('<input>', { type: 'file', id: 'f_input', name: 'f_input', style: 'display:none', accept: '.txt'});
+        const finput_ul = this.build_finput_ul(node_id, "init");
+        const divWrapper = $('<div id="input_file"></div>').append(button, fileInput, finput_ul);
+        this.DOM.INPUT_SECTION.append(divWrapper);
+
+        $('#f_input').on('change', function(event) {
+            const selected_files = event.target.files;
+            let view_value = {};
+            view_value["finput"] = selected_files;
+            diagram_instance.set_node_view_value( node_type, node_id, view_value);
+            dipam_unit_value.build_finput_ul(node_id, "update");
+        });
+      }
+
+      const node_view_value = diagram_instance.get_node_view_value(node_id);
+
+      if ((selected_input.has("finput")) && (selected_input.has("vinput"))){
+
+        this.DOM.INPUT_SECTION.css('display','inline');
+
+        // display values input only
+        $("#input_file").css('display','none');
+
+        // display the switch button
+        this.DOM.INPUT_SWITCH_CONTAINER.css('display','inline');
+        this.DOM.INPUT_SWITCH_CONTAINER.after('<br style="height: 20px;">');
+
+        this.DOM.INPUT_SWITCH_BTN.on('change', function() {
+            var input_type = "vinput";
+            if (this.checked) {
+                input_type = "finput";
+            }
+            dipam_unit_value.toggle_input(input_type);
+            diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": input_type });
+        });
+
+        if ("selected_input" in node_view_value) {
+          this.toggle_input(node_view_value["selected_input"]);
+        }
+      }
+
+      // set <selected_input> in case its first time
+      if (!("selected_input" in node_view_value)) {
+        var input_type = "vinput";
+        if (selected_input.size == 1) {
+          input_type = selected_input.values().next().value;
+        }
+        diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": input_type });
+      }
+
+    }
+  }
 
   /**
   * This methods goes throught the interface of the visulized node and reads all the input(s)
   * inputs are converted into: "direct-input", "file-input", and all the metadata (e.g., label, description)
   */
-  get_node_view_value_from_interface( node_id, node_type, include_metadata = false ) {
+  get_node_view_value_from_interface( node_id, node_type ) {
 
     // select all DOMs that update the ONLY view value
     var view_value = {};
     $('#input_section [data-dipam-value]:not(#input_group [data-dipam-value])').each(function() {
         var _id = $(this).attr('data-dipam-value');
-        view_value[_id] = $(this).attr('value');
+        const corresponding_value = $(this).attr('value');
+        if (corresponding_value != undefined) {
+          view_value[_id] = $(this).attr('value');
+        }
     });
+    // in case of a tool the initial view value must include the input and the output element
+    if (node_type == "tool") {
+      view_value["input"] = {}
+      view_value["output"] = {}
+    }
 
     // select all DOMs that update the backend value
     var app_value = {};
     $('#input_group').find('[data-dipam-value]').each(function() {
-        if (!("vinput" in app_value)) {
-          app_value["vinput"] = {};
-        }
         var _id = $(this).attr('data-dipam-value');
-        app_value["vinput"][_id] = $(this).attr('value');
+        const corresponding_value = $(this).attr('value');
+        if (corresponding_value != undefined) {
+          if (!("vinput" in app_value)) {
+            app_value["vinput"] = {};
+          }
+          app_value["vinput"][_id] = $(this).attr('value');
+        }
     });
 
     const dom_finput = document.getElementById('f_input');
@@ -37,11 +155,12 @@ class dipam_unit_view {
     return Object.assign({}, view_value, app_value);
   }
 
-  /**
-  * Set the values of the DOMs in the template part of the input-group container
-  */
+
+  /****
+  * Methods to build interface parts
+  ****/
   set_node_interface_from_view_value( unit_id, unit_type) {
-    // take the view value from the diagram nodes
+    /* Set the values of the DOMs in the template part of the input-group container */
     var elem = null;
     var current_value = null;
     if ( (unit_type == "data") || (unit_type == "tool") ) {
@@ -64,9 +183,11 @@ class dipam_unit_view {
 
     $('#input_group').find('[data-dipam-value]').each(function() {
         var _id = $(this).attr('data-dipam-value');
-        var a_val = current_value["vinput"][_id];
-        if ((a_val != undefined) || (a_val != null)) {
-            this.value = __normal_html_value( a_val );
+        if ("vinput" in current_value) {
+          var a_val = current_value["vinput"][_id];
+          if ((a_val != undefined) || (a_val != null)) {
+              this.value = __normal_html_value( a_val );
+          }
         }
     });
 
@@ -77,6 +198,31 @@ class dipam_unit_view {
       return _val;
     }
   }
+  toggle_input(input_type){
+    if (input_type == "finput") {
+      this.DOM.INPUT_SWITCH_BTN.prop('checked', true);
+      this.DOM.INPUT_GROUP_VALUES.css('display','none');
+      $("#input_file").css('display','inline');
+    }else if (input_type == "vinput") {
+      this.DOM.INPUT_SWITCH_BTN.prop('checked', false);
+      this.DOM.INPUT_GROUP_VALUES.css('display','inline');
+      $("#input_file").css('display','none');
+    }
+  }
+  build_finput_ul(node_id, res = "init") {
+    var finput_li = "";
+    var view_value = diagram_instance.get_node_view_value(node_id);
+    if ("finput" in view_value) {
+      const selected_files = view_value["finput"];
+      finput_li = Array.from(selected_files).map(file => `<li>${file.name}</li>`).join('');
+      finput_li = "<li class='li-header'>Files loaded:</li>" + finput_li;
+    }
+    if (res == "init") {
+      return $('<ul>', { id: 'finput_ul', class: 'finput-ul', html: finput_li});
+    }
+    $("#finput_ul").html(finput_li);
+    return finput_li;
+  }
 
   /**
   * This function is executed to run all default DOM creations and Events of the info control section;
@@ -84,44 +230,25 @@ class dipam_unit_view {
   */
   set_events() {
 
-    var DOMS = {
-      // The base body
-      "CONTROL_BODY": $("#control_body"),
-      // INPUT part
-      "NODE_DATA": $('#node_data'),
-      "INPUT_SECTION": $('#input_section'),
-      "INPUT_SWITCH_CONTAINER": $('#switch_data_input_btn'),
-      "INPUT_SWITCH_BTN": $('#switch_input'),
-      "META_VIEW_VALUES": $('#input_section [data-dipam-value]:not(#input_group [data-dipam-value])'),
-      "INPUT_GROUP_VALUES": $('#input_group'),
-      "VIEW_VALUES": $('#input_group').find('[data-dipam-value]'),
-      // EDIT part
-      "EDIT_BUTTON":$('#edit_btn'),
-      "CANCEL_BUTTON":$('#cancel_btn'),
-      "REMOVE_BUTTON":$('#remove_btn')
-    }
-
-    /*Node id, class, type, and settings*/
-    const node_id = DOMS.CONTROL_BODY.data('id');
-    const node_class = DOMS.CONTROL_BODY.data('class');
-    const node_type = DOMS.CONTROL_BODY.data('type');
-
     /*Find and disable all <data-dipam-value>(s) */
-    DOMS.NODE_DATA.addClass('disabled');
-    DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
+    this.DOM.NODE_DATA.addClass('disabled');
+    this.DOM.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
 
-    DOMS.EDIT_BUTTON.on('click', function() {
+    this.DOM.EDIT_BUTTON.on('click', function() {
+      const node_id = dipam_unit_value.DOM.CONTROL_BODY.data('id');
+      const node_class = dipam_unit_value.DOM.CONTROL_BODY.data('class');
+      const node_type = dipam_unit_value.DOM.CONTROL_BODY.data('type');
       if ($(this).text() === 'Edit') {
         $(this).text('Save').removeClass('btn-primary').addClass('btn-success');
-        DOMS.CANCEL_BUTTON.show();
-        DOMS.REMOVE_BUTTON.show();
+        dipam_unit_value.DOM.CANCEL_BUTTON.show();
+        dipam_unit_value.DOM.REMOVE_BUTTON.show();
         // enable inputs and buttons
-        DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', false);
-        DOMS.NODE_DATA.removeClass('disabled');
+        dipam_unit_value.DOM.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', false);
+        dipam_unit_value.DOM.NODE_DATA.removeClass('disabled');
       } else {
         // in this case save values
         var node_view_value = diagram_instance.get_node_view_value(node_id);
-        console.log("Save data view=",node_view_value);
+        console.log("Save data: ",node_view_value);
 
         fetch('/runtime/save_unit', {
               method: 'POST',
@@ -135,7 +262,7 @@ class dipam_unit_view {
           })
           .then(response => {return response.json();})
           .then(data => {
-              console.log("Data to save", data);
+              console.log("Data saved: ", data);
               // in case of success:
               // (1) update the node diagram value
               // (2) generate the template interface
@@ -145,16 +272,16 @@ class dipam_unit_view {
               // show all returned messages;
               // in case of error
               // Note: previous code updating the interface is done anyway
-              if (! (vw_interface.show_popupmsg_all(data)) ) {
+              if (! (interface_instance.show_popupmsg_all(data)) ) {
                   return false;
               }
               __rm_edit_mode();
 
               // save also the new diagram workflow
-              //diagram_instance.save_workflow( false, vw_interface.show_popupmsg_warning);
+              //diagram_instance.save_workflow( false, interface_instance.show_popupmsg_warning);
           })
           .catch((error) => {
-              vw_interface.show_popupmsg({
+              interface_instance.show_popupmsg({
                   "data": null,
                   "log_type": "error",
                   "log_msg": "Error in the DIPAM API while saving the data of a unit – "+error
@@ -162,35 +289,40 @@ class dipam_unit_view {
           });
 
           function __rm_edit_mode() {
-            DOMS.EDIT_BUTTON.text('Edit').removeClass('btn-success').addClass('btn-primary');
-            DOMS.CANCEL_BUTTON.hide();
-            DOMS.REMOVE_BUTTON.hide();
-            DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
-            DOMS.NODE_DATA.addClass('disabled');
+            dipam_unit_value.DOM.EDIT_BUTTON.text('Edit').removeClass('btn-success').addClass('btn-primary');
+            dipam_unit_value.DOM.CANCEL_BUTTON.hide();
+            dipam_unit_value.DOM.REMOVE_BUTTON.hide();
+            dipam_unit_value.DOM.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
+            dipam_unit_value.DOM.NODE_DATA.addClass('disabled');
           }
       }
     });
 
-    DOMS.CANCEL_BUTTON.on('click', function() {
-      DOMS.EDIT_BUTTON.text('Edit').removeClass('btn-success').addClass('btn-primary');
-      DOMS.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
-      DOMS.NODE_DATA.addClass('disabled');
-      DOMS.CANCEL_BUTTON.hide();
-      DOMS.REMOVE_BUTTON.hide();
+    this.DOM.CANCEL_BUTTON.on('click', function() {
+      dipam_unit_value.DOM.EDIT_BUTTON.text('Edit').removeClass('btn-success').addClass('btn-primary');
+      dipam_unit_value.DOM.NODE_DATA.find('input, button, [data-dipam-value]').prop('disabled', true);
+      dipam_unit_value.DOM.NODE_DATA.addClass('disabled');
+      dipam_unit_value.DOM.CANCEL_BUTTON.hide();
+      dipam_unit_value.DOM.REMOVE_BUTTON.hide();
     });
 
-    DOMS.REMOVE_BUTTON.on('click', function() {
-      diagram_instance.remove_elem( node_id, vw_interface.show_popupmsg_all );
+    this.DOM.REMOVE_BUTTON.on('click', function() {
+      const node_id = dipam_unit_value.DOM.CONTROL_BODY.data('id');
+      diagram_instance.remove_elem( node_id, interface_instance.show_popupmsg_all );
       diagram_instance.save_workflow( false );
       diagram_instance.get_diagram_cy().emit('tap',[]);
     });
 
-    DOMS.META_VIEW_VALUES.on('input', function() {
+    this.DOM.META_VIEW_VALUES.on('input', function() {
       let view_value = {};
+      const node_id = dipam_unit_value.DOM.CONTROL_BODY.data('id');
+      const node_type = dipam_unit_value.DOM.CONTROL_BODY.data('type');
       view_value[$(this).attr('data-dipam-value')] = $(this).val();
       diagram_instance.set_node_view_value( node_type, node_id, view_value);
     });
-    DOMS.VIEW_VALUES.on('input', function() {
+    this.DOM.VIEW_VALUES.on('input', function() {
+      const node_id = dipam_unit_value.DOM.CONTROL_BODY.data('id');
+      const node_type = dipam_unit_value.DOM.CONTROL_BODY.data('type');
       let view_value = {};
       if (! ("vinput" in view_value)) {
         view_value["vinput"] = {};
@@ -198,111 +330,6 @@ class dipam_unit_view {
       view_value["vinput"][$(this).attr('data-dipam-value')] = $(this).val();
       diagram_instance.set_node_view_value( node_type, node_id, view_value);
     });
-
-    dipam_unit_value.set_node_interface_from_view_value(  node_id,node_type );
-
-    if (node_type == "data") {
-
-      //DOMS.INPUT_SECTION.css('display','inline');
-
-      var selected_input = new Set();
-      var file_input = null;
-      DOMS.VIEW_VALUES.each(function() {
-        let data_dipam_value = $(this).attr('data-dipam-value');
-        if ( data_dipam_value == "FINPUT") {
-          file_input = {};
-          file_input["multi"] = $(this).attr('data-multi');
-          file_input["ext"] = $(this).attr('data-ext');
-          file_input["description"] = $(this).attr('data-description');
-          $(this).remove();
-          selected_input.add("finput");
-        }else {
-          selected_input.add("vinput");
-        }
-      });
-
-
-      // in case a FINPUT is specified then create its DOM
-      if (selected_input.has("finput")) {
-        const button = $('<button>', { id: 'f_input_btn',class: 'file-upload-btn', text: 'Load File', click: function() { $('#f_input').click(); } });
-        const fileInput = $('<input>', { type: 'file', id: 'f_input', name: 'f_input', style: 'display:none', accept: '.txt'});
-        const finput_ul = __build_finput_ul(node_id, "init");
-        const divWrapper = $('<div id="input_file"></div>').append(button, fileInput, finput_ul);
-        DOMS.INPUT_SECTION.append(divWrapper);
-
-        $('#f_input').on('change', function(event) {
-            const selected_files = event.target.files;
-            let view_value = {};
-            view_value["finput"] = selected_files;
-            diagram_instance.set_node_view_value( node_type, node_id, view_value);
-            __build_finput_ul(node_id, "update");
-        });
-      }
-
-      const node_view_value = diagram_instance.get_node_view_value(node_id);
-
-      if ((selected_input.has("finput")) && (selected_input.has("vinput"))){
-
-        DOMS.INPUT_SECTION.css('display','inline');
-
-        // display values input only
-        $("#input_file").css('display','none');
-
-        // display the switch button
-        DOMS.INPUT_SWITCH_CONTAINER.css('display','inline');
-        DOMS.INPUT_SWITCH_CONTAINER.after('<br style="height: 20px;">');
-
-        DOMS.INPUT_SWITCH_BTN.on('change', function() {
-            var input_type = "vinput";
-            if (this.checked) {
-                input_type = "finput";
-            }
-            __toggle_input(input_type);
-            diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": input_type });
-        });
-
-        if ("selected_input" in node_view_value) {
-          __toggle_input(node_view_value["selected_input"]);
-        }
-      }
-
-      // set <selected_input> in case its first time
-      if (!("selected_input" in node_view_value)) {
-        var input_type = "vinput";
-        if (selected_input.size == 1) {
-          input_type = selected_input.values().next().value;
-        }
-        diagram_instance.set_node_view_value( node_type, node_id, { "selected_input": input_type });
-      }
-
-    }
-
-    function __toggle_input(input_type){
-      if (input_type == "finput") {
-        DOMS.INPUT_SWITCH_BTN.prop('checked', true);
-        DOMS.INPUT_GROUP_VALUES.css('display','none');
-        $("#input_file").css('display','inline');
-      }else if (input_type == "vinput") {
-        DOMS.INPUT_SWITCH_BTN.prop('checked', false);
-        DOMS.INPUT_GROUP_VALUES.css('display','inline');
-        $("#input_file").css('display','none');
-      }
-    }
-
-    function __build_finput_ul(node_id, res = "init") {
-      var finput_li = "";
-      var view_value = diagram_instance.get_node_view_value(node_id);
-      if ("finput" in view_value) {
-        const selected_files = view_value["finput"];
-        finput_li = Array.from(selected_files).map(file => `<li>${file.name}</li>`).join('');
-        finput_li = "<li class='li-header'>Files loaded:</li>" + finput_li;
-      }
-      if (res == "init") {
-        return $('<ul>', { id: 'finput_ul', class: 'finput-ul', html: finput_li});
-      }
-      $("#finput_ul").html(finput_li);
-      return finput_li;
-    }
 
   }
 

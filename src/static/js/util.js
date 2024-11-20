@@ -12,6 +12,9 @@ function decode_json(text){
   return msg;
 }
 
+function jquery2js(elem){
+  return elem.get(0);
+}
 
 /**
 * -----

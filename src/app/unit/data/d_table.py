@@ -38,6 +38,7 @@ class D_TABLE(D_DIPAM_UNIT):
         file_count = 1
         for start_idx in range(0, total_rows, step):
             end_idx = min(start_idx + step, total_rows)
+            print("MY VALUE:",value)
             chunk = value[start_idx:end_idx]
 
             if self.header:

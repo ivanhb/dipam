@@ -221,7 +221,10 @@ def _add_unit():
     return jsonify( {
         "id": _unit.id,
         "type":_unit.type,
-        "class":_unit.unit_class
+        "class":_unit.unit_class,
+        "view_value": {
+            "label":_unit.label
+        }
     } )
 
 @app.route('/runtime/delete_unit',methods=['GET'])
